@@ -75,6 +75,7 @@ def test_fresh_migration_schema_exists(postgres_engine):
     tables = set(sa.inspect(postgres_engine).get_table_names())
     assert {
         "users",
+        "device_sessions",
         "user_preferences",
         "user_settings",
         "accounts",

@@ -6,6 +6,8 @@ requires-python = ">=3.12,<3.15"
 dependencies = [
     "alembic>=1.19,<2.0",
     "fastapi>=0.115,<1.0",
+    "PyJWT>=2.10,<3.0",
+    "pwdlib[argon2]>=0.2,<1.0",
     "psycopg[binary]>=3.2,<4.0",
     "pydantic-settings>=2.7,<3.0",
     "redis>=5.2,<6.0",
@@ -22,6 +24,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = [
     "postgres: tests that require a real PostgreSQL database",
 ]

@@ -4,7 +4,15 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
+
+def _find_repository_root() -> Path:
+    for parent in Path(__file__).resolve().parents:
+        if (parent / ".git").exists():
+            return parent
+    return Path(__file__).resolve().parents[3]
+
+
+REPOSITORY_ROOT = _find_repository_root()
 
 
 class Settings(BaseSettings):
@@ -16,6 +24,11 @@ class Settings(BaseSettings):
     host_database_url: str | None = None
     redis_url: str
     log_level: str = "INFO"
+    jwt_secret: str = "development-only-change-me-32-bytes-minimum"
+    jwt_issuer: str = "ai-personal-finance-api"
+    jwt_audience: str = "ai-personal-finance-mobile"
+    access_token_ttl_minutes: int = Field(default=15, ge=1, le=60)
+    refresh_session_ttl_days: int = Field(default=30, ge=1, le=365)
 
     model_config = SettingsConfigDict(
         env_file=REPOSITORY_ROOT / ".env",

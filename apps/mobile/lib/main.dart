@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
 
+import 'auth/api_client.dart';
+import 'auth/auth_app.dart';
+
 void main() {
-  runApp(const MyApp());
+  runApp(
+    AuthApp(
+      api: ApiClient(
+        baseUrl: const String.fromEnvironment(
+          'API_BASE_URL',
+          defaultValue: 'http://localhost:8000',
+        ),
+      ),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

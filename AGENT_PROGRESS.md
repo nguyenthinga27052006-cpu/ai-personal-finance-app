@@ -3,7 +3,13 @@
 
 ## Current Phase
 
-Phase 03 - Database Foundation
+Phase 04 - Authentication + User Identity + Session Security
+
+STATUS: PASS
+
+Phase 04 authentication, refresh-session rotation, revocation, current-user dependency,
+mobile auth state, secure storage, protected routing, documentation, and PostgreSQL integration
+evidence are complete. The final gate passed. Phase 05 is next, but has not been started.
 
 ## Final Real-Postgres Verification Status
 
@@ -22,12 +28,17 @@ STATUS: PASS
 PHASE 03
 STATUS: PASS
 
-IMPLEMENTATION_COMPLETENESS: HIGH
+PHASE 04
+STATUS: PASS
+
+IMPLEMENTATION_COMPLETENESS:
+HIGH FOR PHASES 01-04; PROJECT OVERALL INCOMPLETE
 RELEASE_GATE: PASS
 
 
 FLUTTER_EXECUTABLE_EVIDENCE: PASS
 DART_EXECUTABLE_EVIDENCE: PASS
+NEXT: Phase 05 - Accounts + Categories + Merchants
 ## Acceptance Evidence
 
 | Criterion | Result | Evidence |
@@ -40,7 +51,7 @@ DART_EXECUTABLE_EVIDENCE: PASS
 | Actual PostgreSQL schema | PASS | 14 tables, constraints, indexes, and strict BIGINT verifier passed on PostgreSQL 18.6 |
 | Actual PostgreSQL seed | PASS | 15 system categories: 10 EXPENSE and 5 INCOME |
 | Seed idempotency | PASS | Seed ran twice; PostgreSQL integration test passed with count unchanged |
-| Financial invariants | IN_PROGRESS | Database constraints present; domain/application rules deferred |
+| Financial invariants | PASS FOR DATABASE-LEVEL CONSTRAINTS; DOMAIN/APPLICATION RULES DEFERRED | Database constraints present; domain/application rules deferred |
 | Full pytest suite | PASS | 21 passed, 6 warnings, 0 failed, 0 skipped; 12 PostgreSQL tests used PostgreSQL 18.6 |
 | Ruff | PASS | `python -m ruff check .`: all checks passed |
 | `/health` | PASS | HTTP 200, `{"status":"ok"}` |
@@ -87,6 +98,19 @@ docker compose --env-file .env -f .\infra\docker\docker-compose.dev.yml ps
 
 The current database migration, schema, seed/idempotency, integration tests, health, and readiness checks passed against PostgreSQL 18.6. Phase 03 is **PASS**.
 
+## Phase 04 Evidence
+
+- Full backend tests: 30 passed, 0 skipped, 6 warnings.
+- Dedicated integration database: `finance_test` on PostgreSQL 18; no PostgreSQL skips.
+- Root-level and API-directory PostgreSQL integration collection/execution: passed.
+- Full Flutter tests: passed.
+- Ruff for API source/tests: passed.
+- Docker: PostgreSQL 18 and Redis healthy; API and worker running.
+- Runtime: `/health` = `ok`, `/ready` = `ready`; register/me/logout smoke passed.
+- Alembic: one head, `7f4a9b2c1d0e`, adding `device_sessions`.
+- Acceptance report: `docs/security/PHASE_04_ACCEPTANCE_REPORT.md`.
+- Fix register: `docs/architecture/PHASE_04_FIX_REGISTER.md`.
+
 ## Boundary
 
-**STOP HERE. Do not proceed to Phase 04. Do not implement Authentication.**
+**Phase 04 PASS. Ready for Phase 05. Do not start Phase 05 in this task.**

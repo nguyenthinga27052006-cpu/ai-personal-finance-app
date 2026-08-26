@@ -128,6 +128,33 @@ class User(IdMixin, TimestampMixin, Base):
     user_settings: Mapped["UserSetting | None"] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    device_sessions: Mapped[list["DeviceSession"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class DeviceSession(IdMixin, TimestampMixin, Base):
+    __tablename__ = "device_sessions"
+
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    family_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    refresh_token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    device_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+    user: Mapped[User] = relationship(back_populates="device_sessions")
+
+    __table_args__ = (
+        Index("ix_device_sessions_user_id", "user_id"),
+        Index("ix_device_sessions_family_id", "family_id"),
+        Index("ix_device_sessions_expires_at", "expires_at"),
+    )
 
 
 class UserPreference(IdMixin, TimestampMixin, Base):

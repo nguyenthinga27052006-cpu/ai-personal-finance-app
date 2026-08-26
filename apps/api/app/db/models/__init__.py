@@ -8,6 +8,7 @@ from app.db.models.finance import (
     BudgetStatus,
     Category,
     CategoryType,
+    DeviceSession,
     EntryType,
     FinancialGoal,
     GoalContribution,
@@ -23,6 +24,7 @@ from app.db.models.finance import (
     User,
     UserPreference,
     UserSetting,
+    UserStatus,
 )
 
 __all__ = [
@@ -35,6 +37,7 @@ __all__ = [
     "BudgetStatus",
     "Category",
     "CategoryType",
+    "DeviceSession",
     "EntryType",
     "FinancialGoal",
     "GoalContribution",
@@ -49,5 +52,6 @@ __all__ = [
     "TransactionType",
     "User",
     "UserPreference",
+    "UserStatus",
     "UserSetting",
 ]

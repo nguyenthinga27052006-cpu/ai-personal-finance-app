@@ -1,6 +1,6 @@
 # Database Testing Strategy
 
-**Phase:** 03.5 Database Reconciliation & Hardening
+**Phase:** 03.5 Database Reconciliation & Hardening; Phase 04 authentication integration
 
 ## Unit Tests
 
@@ -26,10 +26,21 @@ Location: `apps/api/tests/integration/test_postgres_foundation.py`
 - Verify all 14 tables, BIGINT monetary columns, foreign keys, unique email, ownership references, system category ownership, transaction entries, transfer structure, refund structure, split structure, and seed idempotency.
 - Tests skip when the environment variable is absent or the schema has not been migrated. Skipped tests are not PostgreSQL evidence.
 
+For the current Phase 04 gate, the canonical local `.env` defines the isolated host test
+database as `POSTGRES_TEST_DATABASE_URL=...@localhost:5433/finance_test`. The application
+database remains `postgres:5432/finance` in Docker and `localhost:5433/finance` for host
+application tools. `apps/api/tests/conftest.py` loads the repository-root `.env` for pytest,
+so direct root and API-directory invocations use the same test configuration without a
+per-terminal environment export.
+
+The `finance_test` database is project-local and must never be replaced with production,
+staging, or the normal development database `finance` for integration testing. Migrate it
+to the current Alembic head before running the suite. Test identities use unique values and
+the suite does not reset the `finance` development database.
+
 Example:
 
 ```powershell
-$env:POSTGRES_TEST_DATABASE_URL="postgresql+psycopg://finance_dev:password@localhost:5433/finance"
 cd apps/api
 ..\.venv\Scripts\python.exe -m pytest tests/integration -m postgres -v
 ```
