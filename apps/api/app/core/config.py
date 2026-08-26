@@ -24,3 +24,11 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def get_sqlalchemy_database_url() -> str:
+    """Return a SQLAlchemy URL using the installed psycopg v3 driver."""
+    url = get_settings().database_url
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return url

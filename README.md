@@ -23,7 +23,7 @@ Hoặc dùng script:
 ./scripts/dev-up.ps1
 ```
 
-PostgreSQL 18 sử dụng volume local `finance-assistant_postgres_data` được mount tại `/var/lib/postgresql`, phù hợp với layout hiện tại của Docker Official Image.
+PostgreSQL 18 sử dụng volume local `finance-assistant_postgres_data` được mount tại `/var/lib/postgresql`. Host mapping là `localhost:5433 -> postgres:5432`; API và worker trong Docker luôn dùng `postgres:5432`.
 
 Kiểm tra API:
 
@@ -56,7 +56,7 @@ Thêm `-v` vào lệnh `docker compose down` nếu cần xóa dữ liệu local 
 ## Troubleshooting
 
 - `docker` không được nhận diện: cài và khởi động Docker Desktop, sau đó mở terminal mới.
-- Port `5432`, `6379` hoặc `8000` đã được dùng: chỉnh port tương ứng trong `.env` và kiểm tra lại URL kết nối.
+- Port `5433`, `6379` hoặc `8000` đã được dùng: chỉnh port tương ứng trong `.env` và kiểm tra lại URL kết nối. Không đổi `postgres:5432` trong `DATABASE_URL` của Docker.
 - `/health` trả lỗi: kiểm tra `docker compose ... ps` và `docker compose ... logs api`.
 - `/ready` trả `503`: chờ PostgreSQL/Redis healthy, rồi xem `docker compose ... ps` và logs của dependency.
 - Không muốn giữ dữ liệu local: chạy `docker compose --env-file .env -f infra/docker/docker-compose.dev.yml down -v`.

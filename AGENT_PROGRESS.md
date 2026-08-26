@@ -3,67 +3,89 @@
 
 ## Current Phase
 
-Phase 02 — Project Foundation
+Phase 03 - Database Foundation
 
-## Completed
+## Final Real-Postgres Verification Status
 
-- [x] Project repository
-- [x] Initial documentation
-- [x] Architecture review
-- [x] MVP V1 freeze
-- [x] Feature/domain/database/API/mobile mapping
-- [x] Financial rules and invariants freeze
-- [x] Architecture Decision Records
-- [x] Documentation structure
-- [x] Foundation API inventory
-- [x] Monorepo foundation structure
-- [x] Backend configuration layer
-- [x] Health and readiness endpoints
-- [x] Local PostgreSQL/Redis Compose definition with healthchecks
-- [x] Development scripts and setup documentation
+**STATUS: PASS for the Phase 03 PostgreSQL 18 acceptance gate.**
 
-## In Progress
+The current audit uses `localhost:5433` for host tools and `postgres:5432` inside Docker. The existing PostgreSQL 17.10 service remains untouched on host port 5432. PostgreSQL 18.6, fresh migration, schema, seed, integration, health, and readiness evidence passed.
 
-- [ ] Docker runtime smoke test (blocked in current terminal: Docker CLI unavailable)
+## Phase Status
 
-## Next
+PHASE 01
+STATUS: PASS
 
-- [ ] Add migrations and seed strategy in the next implementation phase
-- [ ] Bootstrap Flutter executable project
-- [ ] Implement first financial vertical slice
+PHASE 02
+STATUS: PASS
 
-## Last Agent Task
+PHASE 03
+STATUS: PASS
 
-Phase 02 — Project Foundation
+IMPLEMENTATION_COMPLETENESS: HIGH
+RELEASE_GATE: PASS
 
-## Tests
+FLUTTER_EXECUTABLE_EVIDENCE: BLOCKED
+DART_EXECUTABLE_EVIDENCE: BLOCKED
 
-- API pytest: 1 passed
-- API Ruff lint: passed
-- Docker Compose smoke test: blocked because Docker CLI is not installed on this machine
+## Acceptance Evidence
 
-## Open Risks
+| Criterion | Result | Evidence |
+|---|---|---|
+| Docker CLI available | PASS | Docker 29.7.2 and Compose v5.4.0 available |
+| PostgreSQL 18 container healthy | PASS | Compose reports healthy `postgres:18`; server metadata reports 18.6 |
+| Redis container healthy | PASS | Compose reports healthy Redis 8 |
+| Fresh PostgreSQL database | PASS | Fresh project-local volume migrated through `localhost:5433` to PostgreSQL 18.6 |
+| Alembic upgrade head | PASS | Revision `03811dfc2d31 (head)`; one coherent chain |
+| Actual PostgreSQL schema | PASS | 14 tables, constraints, indexes, and strict BIGINT verifier passed on PostgreSQL 18.6 |
+| Actual PostgreSQL seed | PASS | 15 system categories: 10 EXPENSE and 5 INCOME |
+| Seed idempotency | PASS | Seed ran twice; PostgreSQL integration test passed with count unchanged |
+| Financial invariants | IN_PROGRESS | Database constraints present; domain/application rules deferred |
+| Full pytest suite | PASS | 19 passed, 6 warnings, 0 failed, 0 skipped; 12 PostgreSQL tests used PostgreSQL 18.6 |
+| Ruff | PASS | `python -m ruff check .`: all checks passed |
+| `/health` | PASS | HTTP 200, `{"status":"ok"}` |
+| `/ready` | PASS | HTTP 200, `{"status":"ready"}` using Docker PostgreSQL 18.6 and Redis |
+| `git diff --check` | PASS | No whitespace errors |
 
-- Refund accounting and posted-record edit/void semantics require explicit implementation tests.
-- Timezone period boundaries and cached-balance reconciliation must be centralized in Phase 02.
-- API schemas, error codes, pagination and idempotency persistence are not yet executable contracts.
-- Notification center endpoint needs to be added before the notification implementation slice.
-- Docker Desktop/CLI is required to verify local service startup and `/ready` against real PostgreSQL/Redis.
-- PostgreSQL 18 previously used an incompatible `/var/lib/postgresql/data` volume layout; the Compose mount is now `/var/lib/postgresql` with a deterministic local volume name.
+## Changes Made During Real Verification
 
-## Decisions
+- Fixed PowerShell path construction in root `scripts/migrate.ps1` and `scripts/seed.ps1`.
+- Made both scripts fail when their Python command fails.
+- Fixed Alembic `[alembic]` configuration and psycopg v3 URL handling.
+- Registered ORM models in Alembic `env.py` before autogeneration.
+- Removed duplicate/stale migration roots and generated `03811dfc2d31` from current ORM metadata.
+- Added `apps/api/verify_postgres.py` for direct PostgreSQL catalog/data verification.
+- Centralized SQLAlchemy `postgresql+psycopg://` URL normalization.
 
-- Flutter
-- FastAPI
-- PostgreSQL
-- Redis
-- SQLAlchemy
-- Alembic
-- MVP V1 is frozen; advanced AI is disabled.
-- Canonical documentation root is `docs/`.
-- See `docs/IMPLEMENTATION_CONTRACT.md` and `docs/architecture/adr/` for Phase 01 decisions.
-- Phase 02 adds foundation only; no financial business logic or AI provider is enabled.
+## ORM Foundation Delivered
 
-## Next Phase Requirements
+- 14 SQLAlchemy models and relationships
+- Integer monetary columns with positive/non-zero check constraints
+- Foreign-key ownership and cascade semantics
+- Transfer, refund, and split transaction fields/relationships
+- Idempotent system category seed
+- Alembic migration infrastructure
 
-Phase 02 foundation is present in the repository. On a machine with Docker, inspect the named volume, run `./scripts/reset-dev-db.ps1` only when the old volume is confirmed to be this project's local development volume, then run `./scripts/dev-up.ps1`, verify `/health` and `/ready`, inspect Compose health status, and run `./scripts/test.ps1` and `./scripts/lint.ps1`. Financial features remain deferred until their authorization and invariant tests exist.
+## Documentation
+
+- `docs/database/schema.md`
+- `docs/database/MIGRATION_GUIDE.md`
+- `docs/database/seed.md`
+- `docs/database/FINANCIAL_DATA_RULES.md`
+- `docs/database/PHASE_03_ACCEPTANCE_REPORT.md`
+
+## Remaining Non-Release Blocker
+
+Flutter and Dart are not available in the current environment, so the mobile scaffold has no executable toolchain evidence. No Flutter feature is implemented in this phase.
+
+The completed runtime gate was:
+
+```powershell
+docker compose --env-file .env -f .\infra\docker\docker-compose.dev.yml ps
+```
+
+The fresh migration, strict schema verification, seed twice, integration tests, health, and readiness checks passed against PostgreSQL 18.6. Phase 03 is **PASS**.
+
+## Boundary
+
+**STOP HERE. Do not proceed to Phase 04. Do not implement Authentication.**
