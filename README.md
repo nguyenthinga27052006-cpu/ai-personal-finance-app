@@ -43,7 +43,7 @@ Swagger/OpenAPI: http://localhost:8000/docs
 ./scripts/seed.ps1
 ```
 
-Migration và seed hiện là lệnh guard có chủ đích: schema và business data được dành cho phase sau.
+Migration và seed là các lệnh foundation của Phase 03: migration tạo schema và seed tạo 15 system categories. Business APIs và business data workflows vẫn được dành cho phase sau.
 
 ### Stop local services
 

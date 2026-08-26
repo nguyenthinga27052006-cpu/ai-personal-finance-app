@@ -15,16 +15,16 @@ Seed data initializes system-wide reference data that all users can access. For 
 
 | Order | Name | Type | Description |
 |-------|------|------|-------------|
-| 1 | Food & Dining | EXPENSE | Groceries, restaurants, cafes |
+| 1 | Food | EXPENSE | Groceries, restaurants, cafes |
 | 2 | Housing | EXPENSE | Rent, mortgage, utilities |
 | 3 | Transportation | EXPENSE | Gas, public transit, car maintenance |
 | 4 | Shopping | EXPENSE | Clothing, general retail |
-| 5 | Health & Medical | EXPENSE | Doctor visits, prescriptions, health |
+| 5 | Health | EXPENSE | Doctor visits, prescriptions, health |
 | 6 | Education | EXPENSE | Tuition, books, courses |
 | 7 | Entertainment | EXPENSE | Movies, games, hobbies |
-| 8 | Utilities & Services | EXPENSE | Internet, phone, subscriptions |
-| 9 | Subscriptions | EXPENSE | Software, streaming, memberships |
-| 10 | Other (Expense) | EXPENSE | Miscellaneous expenses |
+| 8 | Utilities | EXPENSE | Internet, phone, subscriptions |
+| 9 | Subscription | EXPENSE | Software, streaming, memberships |
+| 10 | Other | EXPENSE | Miscellaneous expenses |
 
 ### Income Categories (5)
 
@@ -44,26 +44,23 @@ Seed data initializes system-wide reference data that all users can access. For 
 
 ### Idempotency Strategy
 
-The seed function checks for existing system categories before inserting:
+The seed function checks each `(name, type)` system-category identity before inserting:
 
 ```python
 def seed_system_categories(session: Session) -> None:
     """Seed system categories if not already present."""
-    # Check if already seeded
-    existing = session.query(Category).filter(Category.is_system == True).count()
-    if existing > 0:
-        return  # Already seeded
-    
-    # Create categories
-    categories = [
-        Category(name="Food & Dining", type=CategoryType.EXPENSE.value, is_system=True, ...),
-        ...
-    ]
-    session.add_all(categories)
+    for name, category_type, _kind in system_definitions:
+        exists = session.query(Category).filter(
+            Category.is_system.is_(True),
+            Category.name == name,
+            Category.type == category_type.value,
+        ).first()
+        if not exists:
+            session.add(Category(name=name, type=category_type, is_system=True, ...))
     session.flush()
 ```
 
-**Idempotency Guarantee**: Query before insert — if any system categories exist, skip insertion entirely. This ensures:
+**Idempotency Guarantee**: Query before insert for each identity. This ensures:
 - First run: Creates 15 categories
 - Second run: Detects existing categories, skips
 - Nth run: No changes, no duplicates

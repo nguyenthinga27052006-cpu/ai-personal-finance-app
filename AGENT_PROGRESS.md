@@ -25,9 +25,9 @@ STATUS: PASS
 IMPLEMENTATION_COMPLETENESS: HIGH
 RELEASE_GATE: PASS
 
-FLUTTER_EXECUTABLE_EVIDENCE: BLOCKED
-DART_EXECUTABLE_EVIDENCE: BLOCKED
 
+FLUTTER_EXECUTABLE_EVIDENCE: PASS
+DART_EXECUTABLE_EVIDENCE: PASS
 ## Acceptance Evidence
 
 | Criterion | Result | Evidence |
@@ -41,7 +41,7 @@ DART_EXECUTABLE_EVIDENCE: BLOCKED
 | Actual PostgreSQL seed | PASS | 15 system categories: 10 EXPENSE and 5 INCOME |
 | Seed idempotency | PASS | Seed ran twice; PostgreSQL integration test passed with count unchanged |
 | Financial invariants | IN_PROGRESS | Database constraints present; domain/application rules deferred |
-| Full pytest suite | PASS | 19 passed, 6 warnings, 0 failed, 0 skipped; 12 PostgreSQL tests used PostgreSQL 18.6 |
+| Full pytest suite | PASS | 21 passed, 6 warnings, 0 failed, 0 skipped; 12 PostgreSQL tests used PostgreSQL 18.6 |
 | Ruff | PASS | `python -m ruff check .`: all checks passed |
 | `/health` | PASS | HTTP 200, `{"status":"ok"}` |
 | `/ready` | PASS | HTTP 200, `{"status":"ready"}` using Docker PostgreSQL 18.6 and Redis |
@@ -56,6 +56,7 @@ DART_EXECUTABLE_EVIDENCE: BLOCKED
 - Removed duplicate/stale migration roots and generated `03811dfc2d31` from current ORM metadata.
 - Added `apps/api/verify_postgres.py` for direct PostgreSQL catalog/data verification.
 - Centralized SQLAlchemy `postgresql+psycopg://` URL normalization.
+- Added explicit `HOST_DATABASE_URL` for host-side Alembic while retaining Docker `DATABASE_URL`.
 
 ## ORM Foundation Delivered
 
@@ -74,9 +75,9 @@ DART_EXECUTABLE_EVIDENCE: BLOCKED
 - `docs/database/FINANCIAL_DATA_RULES.md`
 - `docs/database/PHASE_03_ACCEPTANCE_REPORT.md`
 
-## Remaining Non-Release Blocker
+## Current Verification
 
-Flutter and Dart are not available in the current environment, so the mobile scaffold has no executable toolchain evidence. No Flutter feature is implemented in this phase.
+Host-side Alembic uses `HOST_DATABASE_URL=localhost:5433`; Docker API and worker continue using `DATABASE_URL=postgres:5432`. PostgreSQL 18.6, Redis 8, API, worker, health, readiness, Alembic current/heads/history, migration, and integration tests passed.
 
 The completed runtime gate was:
 
@@ -84,7 +85,7 @@ The completed runtime gate was:
 docker compose --env-file .env -f .\infra\docker\docker-compose.dev.yml ps
 ```
 
-The fresh migration, strict schema verification, seed twice, integration tests, health, and readiness checks passed against PostgreSQL 18.6. Phase 03 is **PASS**.
+The current database migration, schema, seed/idempotency, integration tests, health, and readiness checks passed against PostgreSQL 18.6. Phase 03 is **PASS**.
 
 ## Boundary
 

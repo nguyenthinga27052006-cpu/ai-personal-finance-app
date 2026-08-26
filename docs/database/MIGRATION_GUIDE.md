@@ -9,11 +9,14 @@
 1. **PostgreSQL 18** installed and running
 2. **Python 3.12+** with project dependencies installed
 3. **SQLAlchemy 2.x** and **Alembic 1.19+** (in project `pyproject.toml`)
-4. `.env` file with `DATABASE_URL` configured
+4. `.env` file with both Docker and host database URLs configured
 
-Example `.env`:
+The URLs have different network contexts:
 ```bash
-DATABASE_URL=postgresql://username:password@localhost:5433/ai_finance_db
+# Used by API/worker containers inside Docker Compose.
+DATABASE_URL=postgresql://username:password@postgres:5432/ai_finance_db
+# Used by Alembic and host-side tools on Windows.
+HOST_DATABASE_URL=postgresql://username:password@localhost:5433/ai_finance_db
 ```
 
 ## Initial Setup (Fresh Database)
@@ -42,21 +45,20 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO finance_user
 ### Step 2: Configure `.env`
 
 ```bash
-DATABASE_URL=postgresql://finance_user:secure_password@localhost:5433/ai_finance_db
+DATABASE_URL=postgresql://finance_user:secure_password@postgres:5432/ai_finance_db
+HOST_DATABASE_URL=postgresql://finance_user:secure_password@localhost:5433/ai_finance_db
 ```
 
 ### Step 3: Verify Database Connection
 
 ```bash
-cd apps/api
-python -c "from app.core.config import settings; print(f'URL: {settings.database_url}')"
+python -c "from app.core.config import get_settings; print(f'Host URL: {get_settings().host_database_url}')"
 ```
 
 ### Step 4: Run Migrations
 
 ```bash
-cd apps/api
-python -m alembic upgrade head
+\.venv\Scripts\python.exe -m alembic -c .\apps\api\alembic.ini upgrade head
 ```
 
 **Expected Output**:
@@ -120,22 +122,19 @@ psql -U finance_user -d ai_finance_db -c "
 ### View Current Migration Status
 
 ```bash
-cd apps/api
-python -m alembic current
+\.venv\Scripts\python.exe -m alembic -c .\apps\api\alembic.ini current
 ```
 
 ### View Migration History
 
 ```bash
-cd apps/api
-python -m alembic history --verbose
+\.venv\Scripts\python.exe -m alembic -c .\apps\api\alembic.ini history --verbose
 ```
 
 ### Downgrade to Previous Migration
 
 ```bash
-cd apps/api
-python -m alembic downgrade -1
+\.venv\Scripts\python.exe -m alembic -c .\apps\api\alembic.ini downgrade -1
 ```
 
 ### Generate New Migration
@@ -143,8 +142,7 @@ python -m alembic downgrade -1
 When ORM models change, auto-generate a migration:
 
 ```bash
-cd apps/api
-python -m alembic revision --autogenerate -m "Add new field to User"
+\.venv\Scripts\python.exe -m alembic -c .\apps\api\alembic.ini revision --autogenerate -m "Add new field to User"
 ```
 
 Then review the generated file in `migrations/versions/` and adjust if needed.
@@ -154,8 +152,7 @@ Then review the generated file in `migrations/versions/` and adjust if needed.
 Create a migration file manually:
 
 ```bash
-cd apps/api
-python -m alembic revision -m "custom migration message"
+\.venv\Scripts\python.exe -m alembic -c .\apps\api\alembic.ini revision -m "custom migration message"
 ```
 
 Edit `migrations/versions/XXXX_custom_migration_message.py` with upgrade/downgrade logic.
