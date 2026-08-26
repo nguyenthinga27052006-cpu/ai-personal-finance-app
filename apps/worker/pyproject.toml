@@ -1,0 +1,12 @@
+[project]
+name = "finance-assistant-worker"
+version = "0.1.0"
+description = "Foundation worker for AI Personal Finance Assistant"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+    "redis>=5.2,<6.0",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
