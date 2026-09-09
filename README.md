@@ -43,7 +43,7 @@ Swagger/OpenAPI: http://localhost:8000/docs
 ./scripts/seed.ps1
 ```
 
-Migration và seed là các lệnh foundation của Phase 03: migration tạo schema và seed tạo 15 system categories. Business APIs và business data workflows vẫn được dành cho phase sau.
+Migration và seed vẫn là các lệnh foundation của Phase 03; business APIs hiện đã bao gồm auth, accounts, catalog, transactions, budgets/goals, analytics và insights theo progress checkpoint.
 
 ### Stop local services
 
@@ -80,4 +80,4 @@ Xem [docs/README.md](docs/README.md) và [docs/IMPLEMENTATION_CONTRACT.md](docs/
 
 ## Current Status
 
-Phase 02 foundation: API health/readiness, local PostgreSQL/Redis Compose và scaffold worker đã có. Financial business features, migrations, mobile implementation và AI provider chưa được triển khai.
+The current master baseline covers Phase 00 through Phase 16 and is **PASS WITH DOCUMENTED LIMITATIONS**. The full local regression gate, runtime health/readiness, and current Android Journeys A-D are verified on 2026-09-09. This does not claim production readiness. See [docs/project-status/MASTER_STATUS.md](docs/project-status/MASTER_STATUS.md) for the canonical status and [AGENT_PROGRESS.md](AGENT_PROGRESS.md) for the agent work log.

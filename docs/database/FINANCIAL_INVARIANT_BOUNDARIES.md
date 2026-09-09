@@ -1,6 +1,6 @@
 # Financial Invariant Boundaries
 
-**Phase:** 03.5 Database Reconciliation & Hardening
+**Phase:** 06 - Financial Core
 
 This document separates what PostgreSQL guarantees from rules that remain deferred to domain and application layers. A column or relationship existing in the schema does not mean the corresponding business rule is implemented.
 
@@ -19,7 +19,7 @@ This document separates what PostgreSQL guarantees from rules that remain deferr
 - System categories have `user_id IS NULL`; user categories require an owner.
 - Cascade rules protect dependent records according to the ORM foreign-key policy.
 
-## Domain Invariants: Deferred
+## Domain Invariants: Implemented in Phase 06
 
 These rules require coordinated domain logic and are intentionally not implemented as application services in Phase 03.5:
 
@@ -33,19 +33,30 @@ These rules require coordinated domain logic and are intentionally not implement
 - Transaction currency matches the account currency.
 - Transfer is not counted as user-level income or expense.
 
-## Application Invariants: Deferred
+## Application Invariants: Implemented in Phase 06
 
 These rules require authorization, orchestration, audit/event behavior, or operational jobs:
 
 - User authorization and server-side ownership checks at API boundaries.
 - Client-supplied `user_id` is ignored for ownership decisions.
-- Financial writes are atomic across transaction, entries, items, balance cache, and required events.
-- Idempotency keys for retryable financial writes.
+- Financial writes are atomic across transaction, entries, items, and balance cache.
+- Idempotency keys for transaction, transfer, and refund writes.
+- Timezone-aware transaction timestamps are accepted and preserved.
+
+## Current Acceptance Evidence
+
+- `apps/api/tests/test_phase06_acceptance.py` verifies transaction, transfer, and refund rollback with controlled failure injection; no financial records, entries, items, transfer group, or cached balance remain after rollback.
+- The same suite verifies mixed income/expense/refund/transfer ledger reconciliation against cached balances and explicit cross-user transfer/refund denial without side effects.
+- `apps/api/tests/integration/test_postgres_financial_core.py` verifies the mixed financial lifecycle and PostgreSQL ledger-to-cache reconciliation.
+
+## Application Invariants: Deferred
+
 - Posted-record edit/void policy and reversal semantics.
 - Audit events and immutable financial history.
 - Cached balance reconciliation against the ledger.
-- Timezone-aware day/month reporting boundaries.
+- Timezone-aware day/month reporting boundaries for aggregates.
 - Notification, dashboard, analytics, and AI behavior.
+- Persisted audit-event history and posted-record correction/void workflows remain deferred; posted records are not exposed through a hard-delete endpoint.
 
 ## Balance Policy
 

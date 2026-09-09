@@ -1,0 +1,13 @@
+# Budget and Goal Rules
+
+Budgets are user-owned monthly date ranges with a positive integer limit and one currency. A definition is unique per user, period and currency. Dates are calendar dates in the user's timezone; transaction timestamps are converted to that timezone before inclusion.
+
+Only posted `EXPENSE` transactions count as spending. `INCOME` and `TRANSFER` do not. A refund reduces its original expense by the refunded amount, capped by the original amount. Split expenses are allocated by their positive item amounts, preserving integer minor units. The reusable `effective_expenses` service is the source of truth and has no cache.
+
+For a budget, `spent` is effective expense in the period, `remaining = total_limit - spent`, and `utilization = spent / total_limit` as a decimal number in the API. `days_elapsed` is inclusive from start through today, clamped to the period; future budgets have zero elapsed days. `days_remaining` is the remaining period days. Velocity is `spent / days_elapsed`, or zero before the period. Projection is velocity times total period days while a period is active, otherwise spent. Risk uses the maximum of current and projected utilization: `SAFE` below 80%, `WARNING` from 80% to below 90%, `DANGER` from 90% to below 100%, and `OVER` at or above 100%. Limits are positive, so division by zero is impossible.
+
+Goals are user-owned positive integer targets. A contribution is an immutable positive financial record and belongs to the goal; it can be created and listed, but not silently edited or deleted. An optional account must belong to the same user. `current` is the sum of contributions, `remaining = max(target - current, 0)`, and `progress = min(current / target, 1)`. Required monthly saving is the ceiling of remaining divided by the number of calendar months remaining, with at least one month; a passed or today deadline requires the full remaining amount immediately. A completed goal has zero remaining and zero required saving. Zero target amounts are rejected by validation.
+
+Actual monthly saving is current contributions divided by elapsed 30-day periods since goal creation. Baseline forecast is `AHEAD` when actual exceeds required, `ON_TRACK` when equal, and `BEHIND` otherwise. This is a deterministic comparison, not an AI prediction.
+
+All calculations are recomputed from transaction/contribution rows on every API read. No cached budget value can become the source of truth.
