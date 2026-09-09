@@ -4,6 +4,7 @@ from datetime import date, datetime
 from enum import Enum
 
 from sqlalchemy import (
+    JSON,
     BigInteger,
     Boolean,
     CheckConstraint,
@@ -194,6 +195,123 @@ class UserSetting(IdMixin, TimestampMixin, Base):
     user: Mapped[User] = relationship(back_populates="user_settings")
 
 
+class Notification(IdMixin, TimestampMixin, Base):
+    __tablename__ = "notifications"
+
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    type: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=False)
+    source: Mapped[str] = mapped_column(String(120), nullable=False)
+    source_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    rule_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False)
+    subject_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    period_start: Mapped[date | None] = mapped_column(Date, nullable=True)
+    period_end: Mapped[date | None] = mapped_column(Date, nullable=True)
+    dedupe_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    evidence: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False, default=dict)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False, default="IN_APP")
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    user: Mapped[User] = relationship()
+    events: Mapped[list["NotificationEvent"]] = relationship(
+        back_populates="notification", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_notifications_user_created", "user_id", "created_at"),
+        Index("ix_notifications_user_read", "user_id", "read_at"),
+        Index("ix_notifications_user_expires", "user_id", "expires_at"),
+    )
+
+
+class NotificationEvent(IdMixin, TimestampMixin, Base):
+    __tablename__ = "notification_events"
+
+    notification_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("notifications.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False, default="IN_APP")
+    result: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    event_metadata: Mapped[dict[str, object]] = mapped_column(
+        "metadata", JSON, nullable=False, default=dict
+    )
+
+    notification: Mapped[Notification] = relationship(back_populates="events")
+
+    __table_args__ = (
+        Index("ix_notification_events_notification", "notification_id", "created_at"),
+        Index("ix_notification_events_user", "user_id", "created_at"),
+    )
+
+
+class Recommendation(IdMixin, TimestampMixin, Base):
+    __tablename__ = "recommendations"
+
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    type: Mapped[str] = mapped_column(String(64), nullable=False)
+    reason: Mapped[str] = mapped_column(String, nullable=False)
+    suggested_action: Mapped[str] = mapped_column(String, nullable=False)
+    expected_impact: Mapped[str] = mapped_column(String, nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False)
+    confidence: Mapped[float] = mapped_column(nullable=False)
+    source_insight_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    source_metric: Mapped[str] = mapped_column(String(160), nullable=False)
+    subject_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    period_start: Mapped[date] = mapped_column(Date, nullable=False)
+    period_end: Mapped[date] = mapped_column(Date, nullable=False)
+    deterministic_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    dedupe_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    ranking_score: Mapped[float] = mapped_column(nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="ACTIVE")
+    feedback_score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    user: Mapped[User] = relationship()
+    events: Mapped[list["RecommendationEvent"]] = relationship(
+        back_populates="recommendation", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_recommendations_user_status", "user_id", "status"),
+        Index("ix_recommendations_user_created", "user_id", "created_at"),
+    )
+
+
+class RecommendationEvent(IdMixin, TimestampMixin, Base):
+    __tablename__ = "recommendation_events"
+
+    recommendation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("recommendations.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    feedback: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    metadata_json: Mapped[dict[str, object]] = mapped_column(
+        "metadata", JSON, nullable=False, default=dict
+    )
+
+    recommendation: Mapped[Recommendation] = relationship(back_populates="events")
+
+    __table_args__ = (
+        Index("ix_recommendation_events_recommendation", "recommendation_id", "created_at"),
+        Index("ix_recommendation_events_user", "user_id", "created_at"),
+    )
+
+
 class Account(IdMixin, TimestampMixin, Base):
     __tablename__ = "accounts"
 
@@ -338,6 +456,7 @@ class Transaction(IdMixin, TimestampMixin, Base):
     source: Mapped[TransactionSource] = mapped_column(
         String(32), nullable=False, default=TransactionSource.MANUAL.value
     )
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
     external_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
     parent_transaction_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("transactions.id"), nullable=True
@@ -363,6 +482,7 @@ class Transaction(IdMixin, TimestampMixin, Base):
         Index("ix_transactions_account_date", "account_id", "transaction_date"),
         Index("ix_transactions_category_date", "category_id", "transaction_date"),
         Index("ix_transactions_merchant_date", "merchant_id", "transaction_date"),
+        UniqueConstraint("user_id", "idempotency_key", name="uq_transactions_user_idempotency"),
     )
 
 
@@ -434,6 +554,10 @@ class Budget(IdMixin, TimestampMixin, Base):
     __table_args__ = (
         CheckConstraint("start_date <= end_date", name="ck_budgets_period_valid"),
         CheckConstraint("total_limit > 0", name="ck_budgets_total_limit_positive"),
+        UniqueConstraint(
+            "user_id", "period_type", "start_date", "end_date", "currency",
+            name="uq_budget_definition",
+        ),
         Index("ix_budgets_user_period", "user_id", "start_date", "end_date"),
     )
 
@@ -455,6 +579,7 @@ class BudgetCategory(IdMixin, TimestampMixin, Base):
     __table_args__ = (
         CheckConstraint("limit_amount > 0", name="ck_budget_categories_limit_positive"),
         UniqueConstraint("budget_id", "category_id", name="uq_budget_category"),
+        Index("ix_budget_categories_category_id", "category_id"),
     )
 
 
@@ -501,7 +626,11 @@ class GoalContribution(IdMixin, TimestampMixin, Base):
     goal: Mapped[FinancialGoal] = relationship(back_populates="contributions")
     account: Mapped[Account | None] = relationship(back_populates="goal_contributions")
 
-    __table_args__ = (CheckConstraint("amount > 0", name="ck_goal_contributions_amount_positive"),)
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="ck_goal_contributions_amount_positive"),
+        Index("ix_goal_contributions_goal_id", "goal_id"),
+        Index("ix_goal_contributions_date", "contribution_date"),
+    )
 
 
 def seed_system_categories(session) -> None:

@@ -1,8 +1,8 @@
-# API Foundation
+# Finance Assistant API
 
-This package currently exposes only foundation endpoints:
+This package exposes the verified API surface for the current project phases:
 
 - `GET /health`
 - `GET /ready`
-
-Financial business features are intentionally not implemented in Phase 02.
+- Auth, accounts, catalog, transactions, budgets/goals, analytics, and insights under `/api/v1`.
+- See the repository progress checkpoint and API documentation for acceptance status and known gaps.

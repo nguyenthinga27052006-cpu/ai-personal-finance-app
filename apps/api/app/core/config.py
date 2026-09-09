@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     jwt_audience: str = "ai-personal-finance-mobile"
     access_token_ttl_minutes: int = Field(default=15, ge=1, le=60)
     refresh_session_ttl_days: int = Field(default=30, ge=1, le=365)
+    notification_worker_token: str = "development-worker-token"
+    ai_provider: str = "fake"
+    ai_model: str = "foundation-simple"
+    ai_fallback_model: str = "foundation-fallback"
+    ai_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    ai_enabled: bool = False
 
     model_config = SettingsConfigDict(
         env_file=REPOSITORY_ROOT / ".env",
@@ -36,6 +42,17 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def validate_security_defaults(self) -> "Settings":
+        if self.app_env.lower() not in {"development", "test"}:
+            if self.jwt_secret == "development-only-change-me-32-bytes-minimum":
+                raise ValueError("JWT_SECRET must be configured outside development/test")
+            if self.notification_worker_token == "development-worker-token":
+                raise ValueError(
+                    "NOTIFICATION_WORKER_TOKEN must be configured outside development/test"
+                )
+        return self
 
 
 @lru_cache

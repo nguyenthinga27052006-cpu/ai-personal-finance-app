@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.ai_personal_finance"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

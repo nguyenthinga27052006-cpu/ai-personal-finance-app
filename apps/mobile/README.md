@@ -1,3 +1,7 @@
-# Mobile Foundation
+# Finance Assistant Mobile
 
-Flutter application bootstrap is reserved for the next foundation increment. This directory preserves the documented monorepo boundary without adding mobile features in Phase 02.
+The Flutter app provides authenticated core finance screens, Insights, Recommendations,
+and an AI Assistant tab backed by the API. The AI surface supports suggested and
+natural-language financial questions with loading, success, insufficient-data, unsupported,
+and provider-error states. It preserves the View -> ViewModel/Repository -> API boundary
+and does not calculate financial facts locally.

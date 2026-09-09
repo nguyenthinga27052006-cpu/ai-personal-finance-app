@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'api_client.dart';
 import 'auth_controller.dart';
+import '../finance/finance_home.dart';
 
 class AuthApp extends StatefulWidget {
   const AuthApp({super.key, required this.api});
@@ -33,10 +34,13 @@ class _AuthAppState extends State<AuthApp> {
       animation: controller,
       builder: (context, _) {
         return switch (controller.status) {
-          AuthStatus.unknown || AuthStatus.refreshing when controller.user == null => const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            ),
-          AuthStatus.authenticated => _ProtectedHome(controller: controller),
+          AuthStatus.unknown || AuthStatus.refreshing
+              when controller.user == null =>
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
+          AuthStatus.authenticated => _ProtectedHome(
+            controller: controller,
+            api: widget.api,
+          ),
           _ => _AuthPage(controller: controller),
         };
       },
@@ -69,11 +73,19 @@ class _AuthPageState extends State<_AuthPage> {
 
   Future<void> submit() async {
     final success = registerMode
-        ? await widget.controller.register(email.text, password.text, displayName.text)
+        ? await widget.controller.register(
+            email.text,
+            password.text,
+            displayName.text,
+          )
         : await widget.controller.login(email.text, password.text);
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(widget.controller.errorMessage ?? 'Authentication failed')),
+        SnackBar(
+          content: Text(
+            widget.controller.errorMessage ?? 'Authentication failed',
+          ),
+        ),
       );
     }
   }
@@ -92,7 +104,10 @@ class _AuthPageState extends State<_AuthPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (registerMode)
-                  TextField(controller: displayName, decoration: const InputDecoration(labelText: 'Name')),
+                  TextField(
+                    controller: displayName,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
                 TextField(
                   controller: email,
                   keyboardType: TextInputType.emailAddress,
@@ -109,8 +124,14 @@ class _AuthPageState extends State<_AuthPage> {
                   child: Text(registerMode ? 'Register' : 'Login'),
                 ),
                 TextButton(
-                  onPressed: loading ? null : () => setState(() => registerMode = !registerMode),
-                  child: Text(registerMode ? 'Already have an account?' : 'Create an account'),
+                  onPressed: loading
+                      ? null
+                      : () => setState(() => registerMode = !registerMode),
+                  child: Text(
+                    registerMode
+                        ? 'Already have an account?'
+                        : 'Create an account',
+                  ),
                 ),
               ],
             ),
@@ -122,24 +143,18 @@ class _AuthPageState extends State<_AuthPage> {
 }
 
 class _ProtectedHome extends StatelessWidget {
-  const _ProtectedHome({required this.controller});
+  const _ProtectedHome({required this.controller, required this.api});
 
   final AuthController controller;
+  final ApiClient api;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Personal Finance'),
-        actions: [
-          IconButton(
-            tooltip: 'Log out',
-            onPressed: controller.logout,
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
-      body: Center(child: Text('Signed in as ${controller.user?.email ?? ''}')),
+    return FinanceHome(
+      gateway: api,
+      aiGateway: api,
+      email: controller.user?.email ?? '',
+      onLogout: controller.logout,
     );
   }
 }
