@@ -80,7 +80,7 @@ Xem [docs/README.md](docs/README.md) và [docs/IMPLEMENTATION_CONTRACT.md](docs/
 
 ## Current Status
 
-The current master baseline covers Phase 00 through Phase 18 documentation and is **PASS WITH DOCUMENTED LIMITATIONS**. Phase 16 is **CLOSED**, Phase 17 is **PASS WITH DOCUMENTED LIMITATIONS**, and Phase 18 is a local release candidate with a **CONDITIONAL GO** decision. This does not claim staging, production or store verification.
+The current master baseline covers Phase 00 through Phase 18 and is **FAIL** at final V1 regression because current Journey A failed. Phase 16 is **CLOSED**, Phase 17 is **PASS WITH DOCUMENTED LIMITATIONS**, and Phase 18 is the final V1 phase with a **NO-GO** decision pending Journey A remediation. This does not claim staging, production or store verification.
 
 ### Phase 17 local checks
 
@@ -94,4 +94,4 @@ When the API is running locally, Prometheus-style metrics are available at `http
 
 Current evidence: `python -m pytest apps/api/tests -q` collected 119 tests, with 119 passed, 0 failed, and 9 warnings. The Phase 17 focused suite has 9 passing tests. Backup artifacts, restore execution, financial restore integrity, RPO/RTO measurement, external tracing/error tracking, production-scale metrics, and fired alerts remain NOT VERIFIED.
 
-Phase 17 documentation: [docs/phase17/README.md](docs/phase17/README.md), [MASTER_STATUS.md](docs/project-status/MASTER_STATUS.md), [PHASE_STATUS.md](docs/project-status/PHASE_STATUS.md), [PRODUCTION_READINESS_MATRIX.md](docs/phase17/PRODUCTION_READINESS_MATRIX.md), [PHASE17_REGRESSION.md](docs/phase17/PHASE17_REGRESSION.md), [PHASE17_ACCEPTANCE_MATRIX.md](docs/phase17/PHASE17_ACCEPTANCE_MATRIX.md), and [PHASE17_FILE_INVENTORY.md](docs/phase17/PHASE17_FILE_INVENTORY.md). Phase 18 release-candidate package: [docs/phase18/README.md](docs/phase18/README.md).
+Phase 17 documentation: [docs/phase17/README.md](docs/phase17/README.md), [MASTER_STATUS.md](docs/project-status/MASTER_STATUS.md), [PHASE_STATUS.md](docs/project-status/PHASE_STATUS.md), [PRODUCTION_READINESS_MATRIX.md](docs/phase17/PRODUCTION_READINESS_MATRIX.md), [PHASE17_REGRESSION.md](docs/phase17/PHASE17_REGRESSION.md), [PHASE17_ACCEPTANCE_MATRIX.md](docs/phase17/PHASE17_ACCEPTANCE_MATRIX.md), and [PHASE17_FILE_INVENTORY.md](docs/phase17/PHASE17_FILE_INVENTORY.md). Final V1 report: [FINAL_V1_FULL_REGRESSION_00_18.md](docs/project-status/FINAL_V1_FULL_REGRESSION_00_18.md).

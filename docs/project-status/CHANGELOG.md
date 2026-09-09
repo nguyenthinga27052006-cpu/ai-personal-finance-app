@@ -1,11 +1,19 @@
 # PROJECT STATUS CHANGELOG
 
+## 2026-09-09 — Final V1 Full Regression
+
+Canonical report: `docs/project-status/FINAL_V1_FULL_REGRESSION_00_18.md`.
+
+Result: **FAIL**. Release decision: **NO-GO** because current Journey A failed its required account UI assertion and the repeat did not complete. Backend/database/quality evidence passed; external release gates remain NOT VERIFIED.
+
+Phase 18 is the final V1 phase. No Phase 19 exists.
+
 ## 2026-09-09 — Phase 18 Release Candidate Documentation
 
 Added `docs/phase18/` release-candidate baseline, versioning, reproducible-build, migration, deployment, rollback, backup/restore, smoke/E2E, monitoring, security, store, legal, admin/ops, runbook, incident, release-notes, limitations, metrics, architecture, package-manifest, decision, checklist and handover documents. Added legal placeholders under `docs/legal/`.
 
 Status: **PASS WITH DOCUMENTED LIMITATIONS**.
-Decision: **CONDITIONAL GO** for local release candidate only; production, staging, store, hosted CI, backup/restore and external security/observability gates remain NOT VERIFIED.
+Historical release-candidate decision before final regression: CONDITIONAL GO for local RC only. The current final V1 decision is NO-GO because Journey A failed.
 
 Phase 18 baseline SHA: `49fe3386bb20900cc7343332fd81a49e52380588`.
 Phase 18 is not production-ready and no production approval is claimed.

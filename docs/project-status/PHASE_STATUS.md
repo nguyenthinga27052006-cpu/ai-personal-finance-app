@@ -887,10 +887,10 @@ Phase 18 is the current release-candidate workstream.
 ## PHASE 18
 
 ### Status
-PASS WITH DOCUMENTED LIMITATIONS
+FAIL
 
 ### Release decision
-CONDITIONAL GO for a local release candidate only. This is not production approval.
+NO-GO until Journey A is fixed and rerun successfully.
 
 ### Evidence
 Baseline, versioning, reproducible build, migration, deployment, rollback, smoke/E2E, monitoring, security, store, legal, handover, metrics, architecture and package documents are in `docs/phase18/`.
@@ -898,8 +898,8 @@ Baseline, versioning, reproducible build, migration, deployment, rollback, smoke
 ### Open gates
 Backup artifact, restore execution, financial restore integrity, hosted CI, staging, production, release signing, store approval, external monitoring/tracing/error tracking, security scan results and SBOM remain NOT VERIFIED.
 
-Phase 18 status: **PASS WITH DOCUMENTED LIMITATIONS**.
-Phase 19: **NOT STARTED**. No next phase beyond Phase 18 is defined for this release-candidate baseline.
+Phase 18 status: **FAIL** due to current critical Journey A E2E failure.
+Phase 18 is the final V1 phase. No Phase 19 exists.
 
 ---
 

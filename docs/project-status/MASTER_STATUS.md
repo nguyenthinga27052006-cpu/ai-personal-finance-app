@@ -4,6 +4,7 @@
 
 Project: AI Personal Finance Assistant
 Current Phase: Phase 18 RELEASE CANDIDATE
+Overall Status: **FAIL**
 Last Verified: 2026-09-09 (Phase 16 baseline); 2026-09-09 (Phase 17 complete)
 Current Branch: `main`
 Current HEAD: use the actual value from the final `git rev-parse HEAD` command.
@@ -17,6 +18,7 @@ Canonical evidence:
 - Phase 00-16 canonical regression: [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSION_PHASE_00_16.md)
 - Phase 17 canonical regression: [PHASE17_REGRESSION.md](../phase17/PHASE17_REGRESSION.md)
 - Phase 18 release-candidate package: [README.md](../phase18/README.md)
+- Final V1 canonical regression: [FINAL_V1_FULL_REGRESSION_00_18.md](FINAL_V1_FULL_REGRESSION_00_18.md)
 - Current canonical project status: [MASTER_STATUS.md](MASTER_STATUS.md)
 
 Historical reports remain historical and are not treated as current execution proof unless this baseline records a current command.
@@ -43,7 +45,7 @@ Historical reports remain historical and are not treated as current execution pr
 | 15 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Security regression, auth/BOLA, request limits, rate limits, threat model | `b3c07aa` — verified Phase 04-16 implementation | Distributed limits, production network controls, vault rotation, dependency scan and retention workflows deferred |
 | 16 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Full local gate plus current Android Journeys A, B, C, D | `b3c07aa` — verified Phase 04-16 implementation | Real-model AI, coverage, performance threshold, hosted CI limitations |
 | 17 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Local verification: 119 backend tests, 9 focused Phase 17 tests, quality checks, observability, AI cost controls, and documentation | Source HEAD `f569550`; final docs HEAD from Git | Hosted CI unavailable; distributed systems/cloud resources not available for full testing |
-| 18 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Release candidate audit, versioning, deployment, smoke, security, store and handover documentation | Baseline `49fe338` | Backup/restore, hosted CI, staging, production and store gates remain unverified |
+| 18 | FAIL | 2026-09-09 | Final V1 full regression: current Journey A critical E2E failure | `FINAL_V1_FULL_REGRESSION_00_18.md` | Journey A failed; release gates remain open |
 
 Phase status vocabulary is limited to `PASS`, `FAIL`, `BLOCKED`, `PASS WITH DOCUMENTED LIMITATIONS`, and `NOT APPLICABLE`.
 
@@ -68,12 +70,11 @@ No critical Phase 00-16 blocker was found in the current regression.
 
 **Phase 16:** CLOSED.
 **Phase 17:** PASS WITH DOCUMENTED LIMITATIONS.
-**Phase 18:** RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS.
-**Phase 18 status:** PASS WITH DOCUMENTED LIMITATIONS.
+**Phase 18:** FAIL — current critical Journey A E2E failure.
+**Phase 18 status:** FAIL.
 
-Phase 18 decision: **CONDITIONAL GO** for a local release candidate only; this is not production approval.
-Phase 18 status: **PASS WITH DOCUMENTED LIMITATIONS**.
-Phase 19: **NOT STARTED**. No next phase beyond Phase 18 is defined for this release-candidate baseline.
+Phase 18 decision: **NO-GO** until Journey A is fixed and rerun successfully.
+Phase 18 is the final V1 phase. No Phase 19 exists.
 
 ## 4. Non-blocking Limitations
 - Real-model semantic evaluation was not completed; current AI evaluation uses the deterministic `FakeProvider`.
@@ -176,8 +177,7 @@ These items were completed by the six Phase 17 implementation commits and the cu
 
 ## 9. Next Phase
 
-Phase 18: **RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS**.
-Decision: **CONDITIONAL GO** for a local release candidate only; this is not production approval.
+Phase 18 is the final V1 phase. Current decision: **NO-GO** until Journey A is fixed and rerun successfully. No Phase 19 exists.
 
 ## 10. Phase 17 Verification Matrix
 

@@ -5,12 +5,12 @@
 
 Phase 18 - Release Candidate and Handover
 
-STATUS: PASS WITH DOCUMENTED LIMITATIONS
+STATUS: FAIL — current Journey A critical E2E failure
 
 ## CURRENT STATE
 
 - CURRENT PHASE: Phase 18 - Release Candidate and Handover
-- CURRENT PROJECT GATE: Phase 18 Release Candidate / Handover — CONDITIONAL GO
+- CURRENT PROJECT GATE: Phase 18 Final V1 Regression — NO-GO pending Journey A remediation
 - PHASE 06: PASS
 - PHASE 07: PASS
 - PHASE 08: PASS WITH DOCUMENTED LIMITATIONS
@@ -26,7 +26,7 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 - IMPLEMENTATION BASELINE: `b3c07aa`
 - CURRENT HEAD: `a3d98a2e474e8c3b090d432d48981a393bb206c5`
 - PHASE 17: PASS WITH DOCUMENTED LIMITATIONS
-- PHASE 18: RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS
+- PHASE 18: FAIL — current Journey A critical E2E failure
 
 Phase 17 implementation summary (historical/current dependency):
 - Structured JSON logging, request/trace correlation, and local Prometheus metrics
@@ -46,8 +46,11 @@ Phase 18 release-candidate summary:
 - Release Candidate Identity: `1.0.0+1`.
 - Release Artifacts: NOT VERIFIED; no production APK/release artifact is claimed.
 - API/worker version: `0.1.0`; migration head: `c93e2b7f4a18`.
-- Decision: CONDITIONAL GO for local RC only; not production approval.
+- Decision: NO-GO until Journey A is fixed and rerun successfully.
 - External gates, store signing, backup/restore, hosted CI and production deployment remain NOT VERIFIED.
+- FINAL V1 CANONICAL REPORT: `docs/project-status/FINAL_V1_FULL_REGRESSION_00_18.md`
+- FINAL V1 DECISION: NO-GO until Journey A is fixed and rerun successfully.
+- Phase 18 is the final V1 phase; no Phase 19 exists.
 
 **PHASE 16 BUG FIX SUMMARY** (Latest Session):
 - **Bug**: Mobile app crashes on loadCore due to unsafe JSON numeric type casting

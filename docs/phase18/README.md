@@ -1,9 +1,9 @@
 # Phase 18 Release Candidate
 
 Status: RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS
-Decision: CONDITIONAL GO for local RC only; not production approval.
-Phase status: PASS WITH DOCUMENTED LIMITATIONS
-Phase 19: NOT STARTED
+Decision: NO-GO pending Journey A remediation; not production approval.
+Phase status: FAIL
+Phase 18 is the final V1 phase. No Phase 19 exists.
 
 - Baseline audit: [PHASE18_BASELINE_AUDIT.md](PHASE18_BASELINE_AUDIT.md)
 - Versioning/build: [RELEASE_VERSIONING.md](RELEASE_VERSIONING.md), [REPRODUCIBLE_BUILD.md](REPRODUCIBLE_BUILD.md)
