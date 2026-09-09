@@ -1,0 +1,28 @@
+services:
+  api:
+    image: ${APP_IMAGE:?Set APP_IMAGE to a trusted immutable digest}
+    environment:
+      APP_ENV: staging
+      DATABASE_URL: ${DATABASE_URL:?Set staging DATABASE_URL from secret manager}
+      REDIS_URL: ${REDIS_URL:?Set staging REDIS_URL from secret manager}
+      JWT_SECRET: ${JWT_SECRET:?Set staging JWT_SECRET from secret manager}
+      NOTIFICATION_WORKER_TOKEN: ${NOTIFICATION_WORKER_TOKEN:?Set staging worker token}
+      RELEASE: ${RELEASE:?Set RELEASE to commit SHA}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  worker:
+    image: ${WORKER_IMAGE:?Set WORKER_IMAGE to a trusted immutable digest}
+    environment:
+      REDIS_URL: ${REDIS_URL:?Set staging REDIS_URL from secret manager}
+      API_URL: ${API_URL:?Set staging API_URL}
+      NOTIFICATION_WORKER_TOKEN: ${NOTIFICATION_WORKER_TOKEN:?Set staging worker token}
+      RELEASE: ${RELEASE:?Set RELEASE to commit SHA}
+
+# PostgreSQL and Redis are intentionally external in staging. They must be dedicated
+# managed services or isolated stateful services; do not reuse local volumes.
