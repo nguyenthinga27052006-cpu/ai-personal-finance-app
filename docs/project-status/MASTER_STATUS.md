@@ -3,8 +3,7 @@
 ## 1. Project Information
 
 Project: AI Personal Finance Assistant
-Current Phase: Phase 17 COMPLETE
-Overall Status: **PASS WITH DOCUMENTED LIMITATIONS**
+Current Phase: Phase 18 RELEASE CANDIDATE
 Last Verified: 2026-09-09 (Phase 16 baseline); 2026-09-09 (Phase 17 complete)
 Current Branch: `main`
 Current HEAD: use the actual value from the final `git rev-parse HEAD` command.
@@ -17,6 +16,7 @@ Canonical evidence:
 
 - Phase 00-16 canonical regression: [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSION_PHASE_00_16.md)
 - Phase 17 canonical regression: [PHASE17_REGRESSION.md](../phase17/PHASE17_REGRESSION.md)
+- Phase 18 release-candidate package: [README.md](../phase18/README.md)
 - Current canonical project status: [MASTER_STATUS.md](MASTER_STATUS.md)
 
 Historical reports remain historical and are not treated as current execution proof unless this baseline records a current command.
@@ -43,6 +43,7 @@ Historical reports remain historical and are not treated as current execution pr
 | 15 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Security regression, auth/BOLA, request limits, rate limits, threat model | `b3c07aa` — verified Phase 04-16 implementation | Distributed limits, production network controls, vault rotation, dependency scan and retention workflows deferred |
 | 16 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Full local gate plus current Android Journeys A, B, C, D | `b3c07aa` — verified Phase 04-16 implementation | Real-model AI, coverage, performance threshold, hosted CI limitations |
 | 17 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Local verification: 119 backend tests, 9 focused Phase 17 tests, quality checks, observability, AI cost controls, and documentation | Source HEAD `f569550`; final docs HEAD from Git | Hosted CI unavailable; distributed systems/cloud resources not available for full testing |
+| 18 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Release candidate audit, versioning, deployment, smoke, security, store and handover documentation | Baseline `49fe338` | Backup/restore, hosted CI, staging, production and store gates remain unverified |
 
 Phase status vocabulary is limited to `PASS`, `FAIL`, `BLOCKED`, `PASS WITH DOCUMENTED LIMITATIONS`, and `NOT APPLICABLE`.
 
@@ -50,7 +51,7 @@ Verification status vocabulary is limited to `VERIFIED`, `LOCALLY VERIFIED`, `ST
 
 ## 3. Current Blockers
 
-No critical Phase 00-16 blocker was found in the current regression. 
+No critical Phase 00-16 blocker was found in the current regression.
 
 **Phase 17 Status:** ✅ **PASS WITH DOCUMENTED LIMITATIONS** — Local implementation and current evidence are verified; external execution remains explicitly unverified.
 - Phase 16 regression gate: ✅ PASS (119 API tests, Ruff and Python compilation passing; Flutter warnings are pre-existing style issues, not Phase 17 regressions)
@@ -67,10 +68,11 @@ No critical Phase 00-16 blocker was found in the current regression.
 
 **Phase 16:** CLOSED.
 **Phase 17:** PASS WITH DOCUMENTED LIMITATIONS.
-**Phase 18:** NOT STARTED.
+**Phase 18:** RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS.
+
+Phase 18 decision: **CONDITIONAL GO** for a local release candidate only; this is not production approval.
 
 ## 4. Non-blocking Limitations
-
 - Real-model semantic evaluation was not completed; current AI evaluation uses the deterministic `FakeProvider`.
 - Coverage tooling is not installed, so no percentage is claimed.
 - Performance measurements are a local baseline, not a production SLA or enforced threshold.
@@ -78,7 +80,6 @@ No critical Phase 00-16 blocker was found in the current regression.
 - Production distributed rate limiting, TLS/HSTS/CORS/WAF, secret vault rotation, dependency scanning, retention/export/deletion, and upload/object-storage hardening remain deployment or product work.
 - Worker-specific delivery is indirectly covered; notification generation/API and scheduler locking are tested.
 - Journey A passes but emits a non-fatal hit-test warning when the Amount field is outside the visible viewport.
-- Phase 00-16 implementation baseline is `b3c07aa`; Phase 17 source verification HEAD is `f569550`; final repository HEAD is recorded by `git rev-parse HEAD`.
 
 ## 5. Latest Full Regression
 
@@ -151,16 +152,10 @@ Implementation baseline: `b3c07aa`. Status/documentation commits: `891716a`, `ea
    - Per-user, per-feature tracking ✓
    - Daily budget reset ✓
    - Hard stop (HTTPException 429) when exceeded ✓
-   - Tested locally with successful enforcement ✓
-
-6. **Backup/Restore:** Documentation and script syntax reviewed; execution NOT VERIFIED
-   - pg_dump with custom format ✓
-   - pg_restore with safety flags ✓
    - Post-restore validation guidance ✓
 
 7. **Documentation:** 24 files covering all operations
    - CI/CD, Observability, Rate Limiting, AI Cost Control, Alerting
-   - Backup/Restore/DR, Deployment, Rollback, Security Pipeline
    - 9 operational runbooks, Production Readiness Matrix
    - Honest risk assessment of local vs. distributed limitations
 
@@ -178,7 +173,8 @@ These items were completed by the six Phase 17 implementation commits and the cu
 
 ## 9. Next Phase
 
-Phase 18: **NOT STARTED**. Phase 17 is complete with documented limitations.
+Phase 18: **RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS**.
+Decision: **CONDITIONAL GO** for a local release candidate only; this is not production approval.
 
 ## 10. Phase 17 Verification Matrix
 
@@ -203,14 +199,6 @@ Phase 18: **NOT STARTED**. Phase 17 is complete with documented limitations.
 | Backup | NOT VERIFIED | None | Script syntax/static review | No backup artifact created or validated |
 | Restore | NOT VERIFIED | None | Restore commands documented | Restore not executed |
 | Financial restore integrity | NOT VERIFIED | None | Validation instructions documented | No restored database validated |
-| RPO | DOCUMENTED / NOT VERIFIED | None | Target documented in `RPO_RTO.md` | No measured result |
-| RTO | DOCUMENTED / NOT VERIFIED | None | Target and method documented | No timed restore drill |
-| AI usage | LOCALLY VERIFIED | Local API | 9 focused operability tests | Shared accounting absent |
-| AI budget | LOCALLY VERIFIED | Local API | Hard-stop test | Distributed enforcement absent |
-| AI rate limit | LOCALLY VERIFIED | Local API | Existing limiter and route review | Distributed limiter unverified |
-| AI retry protection | DEFERRED | None | Policy documentation | Provider retry execution not tested |
-| Model routing | DEFERRED | None | Existing abstraction only | Real provider routing unverified |
-| Secrets isolation | LOCALLY VERIFIED | Local source/config | Example env templates and no hardcoded credentials in images | Vault/rotation unverified |
 | Dependency scan | NOT VERIFIED | CI configuration | `pip-audit` job configured | Hosted scan not run |
 | Secret scan | NOT VERIFIED | CI configuration | `gitleaks` job configured | Scan result unavailable |
 | Container scan | NOT VERIFIED | CI configuration | Security job/config reviewed | Scanner result unavailable |

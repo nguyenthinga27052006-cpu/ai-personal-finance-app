@@ -3,13 +3,13 @@
 
 ## Current Phase
 
-Phase 17 - Production Infrastructure and Operational Controls
+Phase 18 - Release Candidate and Handover
 
 STATUS: PASS WITH DOCUMENTED LIMITATIONS
 
 ## CURRENT STATE
 
-- CURRENT PHASE: Phase 17 - Production Infrastructure and Operational Controls
+- CURRENT PHASE: Phase 18 - Release Candidate and Handover
 - CURRENT PROJECT GATE: Phase 17 documentation/status consistency complete
 - PHASE 06: PASS
 - PHASE 07: PASS
@@ -25,10 +25,10 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 - FULL REGRESSION: `docs/project-status/FULL_REGRESSION_PHASE_00_16.md`
 - IMPLEMENTATION BASELINE: `b3c07aa`
 - CURRENT HEAD: final consistency commit; exact value is recorded by the final Git commands.
-- PHASE 17: COMPLETE WITH DOCUMENTED LIMITATIONS
-- PHASE 18: NOT STARTED
+- PHASE 17: PASS WITH DOCUMENTED LIMITATIONS
+- PHASE 18: RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS
 
-Phase 17 implementation summary:
+Phase 17 implementation summary (historical/current dependency):
 - Structured JSON logging, request/trace correlation, and local Prometheus metrics
 - Per-user/per-feature AI daily budgets with hard-stop enforcement
 - GitHub Actions workflow, Docker hardening, staging/production templates
@@ -41,6 +41,11 @@ Phase 17 verification summary:
 - API and worker Docker images were built locally.
 - Hosted CI, staging, production, restore execution, external monitoring, and security scan results are not verified.
 - Status documents are being synchronized under the canonical Phase 17 evidence set.
+
+Phase 18 release-candidate summary:
+- Release identity: mobile 1.0.0+1; API/worker 0.1.0; baseline SHA 49fe338.
+- Decision: CONDITIONAL GO for local RC only; not production approval.
+- External gates, store signing, backup/restore, hosted CI and production deployment remain NOT VERIFIED.
 
 **PHASE 16 BUG FIX SUMMARY** (Latest Session):
 - **Bug**: Mobile app crashes on loadCore due to unsafe JSON numeric type casting
@@ -188,19 +193,19 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 - No migration, dependency upgrade, package cache change, or production data modification.
 - Phase 16: CLOSED.
 - Phase 17: PASS WITH DOCUMENTED LIMITATIONS.
-- Phase 18: NOT STARTED.
+- Historical Phase 18 checkpoint: NOT STARTED.
 
 NEXT: Preserve the Phase 16 baseline and resolve documented non-blocking limitations before any Phase 17 work.
 
 HISTORICAL Phase 17 checkpoint:
 NOT STARTED
 
-Phase 18:
+HISTORICAL / SUPERSEDED Phase 18 checkpoint:
 NOT STARTED
 
 CURRENT:
 Phase 17: COMPLETE WITH DOCUMENTED LIMITATIONS
-Phase 18: NOT STARTED
+Phase 18: RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS
 
 ## Phase 15 Progress
 

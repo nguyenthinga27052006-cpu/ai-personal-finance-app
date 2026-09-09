@@ -801,9 +801,9 @@ Implementation commit: `b3c07aa`; status/documentation commit is separate.
 ### Next Action
 Historical Phase 16 checkpoint: stop at Phase 16; Phase 17/18 were not started at that checkpoint.
 
-### CURRENT
+### Historical snapshot
 Phase 17 COMPLETE WITH DOCUMENTED LIMITATIONS.
-Phase 18 NOT STARTED.
+Phase 18 NOT STARTED at the Phase 16 checkpoint. The current Phase 18 release-candidate status appears in the PHASE 18 section below.
 
 ## PHASE 17
 
@@ -882,7 +882,21 @@ PASS — Phase 16 regression gate shows no financial logic regression. Flutter l
 Implementation baseline: `b3c07aa`. Phase 17 core commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`. Source verification HEAD: `f569550`; final repository HEAD: use the actual value from the final `git rev-parse HEAD` command.
 
 ### Next Action
-Phase 18 NOT STARTED. Future work is limited to external staging/production verification and the documented limitations above.
+Phase 18 is the current release-candidate workstream.
+
+## PHASE 18
+
+### Status
+PASS WITH DOCUMENTED LIMITATIONS
+
+### Release decision
+CONDITIONAL GO for a local release candidate only. This is not production approval.
+
+### Evidence
+Baseline, versioning, reproducible build, migration, deployment, rollback, smoke/E2E, monitoring, security, store, legal, handover, metrics, architecture and package documents are in `docs/phase18/`.
+
+### Open gates
+Backup artifact, restore execution, financial restore integrity, hosted CI, staging, production, release signing, store approval, external monitoring/tracing/error tracking, security scan results and SBOM remain NOT VERIFIED.
 
 ---
 

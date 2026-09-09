@@ -1,5 +1,15 @@
 # PROJECT STATUS CHANGELOG
 
+## 2026-09-09 — Phase 18 Release Candidate Documentation
+
+Added `docs/phase18/` release-candidate baseline, versioning, reproducible-build, migration, deployment, rollback, backup/restore, smoke/E2E, monitoring, security, store, legal, admin/ops, runbook, incident, release-notes, limitations, metrics, architecture, package-manifest, decision, checklist and handover documents. Added legal placeholders under `docs/legal/`.
+
+Status: **PASS WITH DOCUMENTED LIMITATIONS**.
+Decision: **CONDITIONAL GO** for local release candidate only; production, staging, store, hosted CI, backup/restore and external security/observability gates remain NOT VERIFIED.
+
+Phase 18 baseline SHA: `49fe3386bb20900cc7343332fd81a49e52380588`.
+Phase 18 is not production-ready and no production approval is claimed.
+
 ## 2026-09-09 — Phase 17 Final Documentation Synchronization
 
 ### Phase 17
@@ -55,7 +65,7 @@ Limitations:
 
 Verification Status: **PASS WITH DOCUMENTED LIMITATIONS** — Phase 17 implementation is complete and current local evidence is recorded. Hosted CI, staging, production, backup/restore execution, external observability, and security scan outputs remain unverified.
 
-Next Action: Phase 18 NOT STARTED. External verification remains future work.
+Historical Phase 17 next action: Phase 18 NOT STARTED. This was superseded by the current Phase 18 release-candidate package.
 
 Related implementation commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`; source verification HEAD: `f569550`; final documentation HEAD is recorded by `git rev-parse HEAD`.
 

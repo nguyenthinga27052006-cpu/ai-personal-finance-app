@@ -20,6 +20,6 @@
 | 15 | PASS WITH DOCUMENTED LIMITATIONS | `docs/security/PHASE_15_SECURITY_REVIEW_REPORT.md` | `docs/architecture/PHASE_15_CHANGELOG.md` | `docs/architecture/PHASE_15_FINAL_CHECKPOINT.md` | 16 |
 | 16 | PASS WITH DOCUMENTED LIMITATIONS | `docs/project-status/MASTER_STATUS.md` and `docs/project-status/FULL_REGRESSION_PHASE_00_16.md` | `docs/architecture/PHASE_16_CHANGELOG.md` | `docs/architecture/PHASE_16_CLOSURE_REPORT.md` | 17 |
 | 17 | PASS WITH DOCUMENTED LIMITATIONS | `docs/phase17/PHASE17_ACCEPTANCE_MATRIX.md` | `docs/project-status/CHANGELOG.md` | `docs/phase17/PHASE17_REGRESSION.md` | 18 |
-| 18 | NOT STARTED | - | - | - | - |
+| 18 | PASS WITH DOCUMENTED LIMITATIONS | `docs/phase18/RELEASE_DECISION.md` | `docs/phase18/RELEASE_NOTES_V1.md` | `docs/phase18/HANDOVER.md` | External gates |
 
-Phase 16 is CLOSED with its documented limitations. Phase 17 is PASS WITH DOCUMENTED LIMITATIONS based on current local evidence. Phase 18 is NOT STARTED. Remaining limitations are tracked in `docs/project-status/MASTER_STATUS.md` and `docs/testing/PHASE16_UNPASSED_ITEMS.md`.
+Phase 16 is CLOSED with its documented limitations. Phase 17 is PASS WITH DOCUMENTED LIMITATIONS based on current local evidence. Phase 18 is a local release candidate with a CONDITIONAL GO decision; staging, production, store, backup/restore and hosted gates remain NOT VERIFIED.
