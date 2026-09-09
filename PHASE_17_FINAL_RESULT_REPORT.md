@@ -10,9 +10,9 @@
 
 Phase 17 implementation is **COMPLETE AND LOCALLY VERIFIED WITH DOCUMENTED LIMITATIONS**. The implementation includes CI/CD pipeline, observability (structured logging with correlation IDs and Prometheus metrics), AI cost controls (per-user and per-feature daily budgets), container security hardening, backup/restore procedures, and comprehensive operational runbooks.
 
-**Verification Status:** PASS WITH DOCUMENTED LIMITATIONS — All Phase 17 components are implemented, locally verified, and committed. Known limitations are expected distributed-system and cloud-resource constraints that cannot be verified on a development machine.
+**Verification Status:** PASS WITH DOCUMENTED LIMITATIONS — All implemented local-scope components were locally verified; externally dependent capabilities remain explicitly NOT VERIFIED.
 
-**Implementation Scope:** 6 logical implementation commits, synchronized evidence documents, and 9 focused Phase 17 tests.
+**Implementation Scope:** 6 Phase 17 core implementation commits, later hardening/documentation/status commits, synchronized evidence documents, and 9 focused Phase 17 tests.
 
 ---
 
@@ -48,7 +48,7 @@ Establish production operations infrastructure including CI/CD pipeline, observa
 - **Jobs** (5 parallel):
    1. **Backend**: Ruff linting, Python compilation, pytest against PostgreSQL 18 + Redis 8 (119 tests in the current gate)
   2. **Worker**: Dependency validation, Python compilation check
-  3. **Flutter**: `flutter analyze`, `flutter test`, `flutter build apk --debug`, `flutter build web`
+   3. **Flutter**: current workflow runs `flutter analyze`, `flutter test`, and `flutter build apk --debug`; local Phase 16 evidence separately includes `flutter build web`
   4. **Containers**: Docker build API and worker images, tag with digest
   5. **Security**: gitleaks secret scanning, pip-audit strict CVE detection
 - **Service Dependencies**: PostgreSQL 18 (localhost:5432), Redis 8 (localhost:6379)
@@ -165,7 +165,7 @@ Nine comprehensive operational runbooks (documented in `docs/phase17/RUNBOOK_*.m
 
 ## GIT COMMITS CREATED
 
-**Total: 6 logical commits**
+**Phase 17 core implementation commits:** 6
 
 1. **b017e4f** — `feat: add phase17 observability and ai controls`
    - observability.py, ai/usage.py, routes.py modifications
@@ -190,6 +190,15 @@ Nine comprehensive operational runbooks (documented in `docs/phase17/RUNBOOK_*.m
 6. **b3b555b** — `chore: finalize phase17 verification and status updates`
    - docs/project-status/PHASE_STATUS.md, MASTER_STATUS.md, CHANGELOG.md
    - 3 files changed, 265 insertions
+
+Later hardening/documentation/status commits:
+
+- `3648157` — observability response hardening
+- `4b5e0a2` — Phase 17 consistency documentation
+- `dfc49d8` — clean worktree documentation
+- `00aa048` — status vocabulary documentation
+
+The final repository HEAD is the actual value recorded by `git rev-parse HEAD`; it is not represented by the six core implementation commits.
 
 **Current final HEAD**: recorded by the final `git rev-parse HEAD` command.
 **Working Tree**: CLEAN after source and documentation commits.
@@ -251,19 +260,19 @@ Nine comprehensive operational runbooks (documented in `docs/phase17/RUNBOOK_*.m
 
 | Component | Local Verification | Status |
 |-----------|-------------------|---------|
-| Observability (logging, metrics) | ✅ PASS | Ready for production |
-| AI cost controls (budgets, enforcement) | ✅ PASS | Ready for production |
-| CI/CD pipeline (workflow, jobs, services) | ✅ PASS | Ready for deployment |
-| Container security (Dockerfile, user, health) | ✅ PASS | Ready for deployment |
-| Backup/restore procedures | ✅ PASS | Ready for production |
-| Operational runbooks | ✅ COMPLETE | Ready for incidents |
+| Observability (logging, metrics) | LOCALLY VERIFIED | Ready for deployment verification |
+| AI cost controls (budgets, enforcement) | LOCALLY VERIFIED | Ready for deployment verification |
+| CI/CD pipeline (workflow, jobs, services) | LOCALLY VERIFIED | Ready for hosted verification |
+| Container security (Dockerfile, user, health) | LOCALLY VERIFIED | Ready for deployment verification |
+| Backup/restore procedures | DOCUMENTED / NOT VERIFIED | Requires artifact and restore drill |
+| Operational runbooks | LOCALLY VERIFIED | Incident exercises pending |
 | Documentation | ✅ COMPLETE | All 24 files present |
 | Phase 16 regression | ✅ PASS | No financial logic regression |
-| Git commits | ✅ COMPLETE | 6 logical commits created |
+| Git commits | VERIFIED | Core and later hardening/documentation commits listed above |
 
 **Final Verdict**: ✅ **PHASE 17 COMPLETE WITH DOCUMENTED LIMITATIONS**
 
-All Phase 17 implementation objectives achieved. All components tested and verified locally. Ready for cloud deployment with expected deferred constraints (hosted CI, distributed systems, cloud resources).
+All Phase 17 implementation objectives are documented, with local-scope components locally verified. Externally dependent capabilities remain explicitly NOT VERIFIED; this is not a production-readiness claim.
 
 ---
 

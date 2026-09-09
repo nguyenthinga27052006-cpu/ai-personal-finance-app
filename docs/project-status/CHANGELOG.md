@@ -100,7 +100,7 @@ Limitations:
 - Performance values are local baseline measurements, not production SLAs.
 - Hosted CI workflow not implemented.
 - Regression evidence was executed against `b3c07aa`; status-only commits are `891716a`, `ea8e631`, and the final documentation consistency commit.
-- Phase 17 and Phase 18 remain not started.
+- Historical Phase 16 checkpoint: Phase 17 and Phase 18 remained not started at that time; current Phase 17 status is PASS WITH DOCUMENTED LIMITATIONS and Phase 18 is NOT STARTED.
 
 Related implementation commit: `b3c07aa` (`chore: commit verified phase 04-16 implementation`).
 No executable tests were rerun for this documentation-only consistency correction.

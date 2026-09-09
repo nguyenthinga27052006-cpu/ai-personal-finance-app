@@ -10,7 +10,7 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 ## CURRENT STATE
 
 - CURRENT PHASE: Phase 17 - Production Infrastructure and Operational Controls
-- CURRENT PROJECT GATE: NUMERIC CASTING BUG FIXED ✅
+- CURRENT PROJECT GATE: Phase 17 documentation/status consistency complete
 - PHASE 06: PASS
 - PHASE 07: PASS
 - PHASE 08: PASS WITH DOCUMENTED LIMITATIONS
@@ -65,7 +65,7 @@ not invalidate the critical Phase 08 acceptance evidence.
 
 **REPORT TIMESTAMP DISCREPANCY - Phase 06 Comprehensive Re-Audit (document dated 2026-09-04)**: Verified no blocking defects. The date is retained as written and is not used as proof of test execution time. All database, domain, and application invariants correctly implemented. Cross-phase dependencies (Phase 07/09/10) all working correctly. 27 tests passed, 0 failed. No code changes required. CLEARED FOR PHASE 11.
 
-> The phase snapshots below are HISTORICAL / SUPERSEDED context. The canonical current status is the Phase 16 block above and [docs/project-status/MASTER_STATUS.md](docs/project-status/MASTER_STATUS.md).
+> The phase snapshots below are HISTORICAL / SUPERSEDED context. The numeric-casting fix below is historical Phase 16 evidence, not the current project gate. The canonical current status is [docs/project-status/MASTER_STATUS.md](docs/project-status/MASTER_STATUS.md).
 
 Phase 08 - Flutter Core Experience
 

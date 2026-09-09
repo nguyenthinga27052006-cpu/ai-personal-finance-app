@@ -7,9 +7,9 @@ Current Phase: Phase 17 COMPLETE
 Overall Status: **PASS WITH DOCUMENTED LIMITATIONS**
 Last Verified: 2026-09-09 (Phase 16 baseline); 2026-09-09 (Phase 17 complete)
 Current Branch: `main`
-Current HEAD: `dfc49d8dbc7569e8cdaf336de64ec399b4021e10`.
+Current HEAD: use the actual value from the final `git rev-parse HEAD` command.
 Implementation baseline commit: `b3c07aa` (`chore: commit verified phase 04-16 implementation`)
-Phase 17 Implementation Commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b` (6 logical commits with observability, CI/CD, containers, backup/restore, runbooks, documentation)
+Phase 17 core implementation commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`. Later hardening/documentation/status commits are recorded separately in the canonical Phase 17 report.
 Working Tree: **CLEAN** after source and documentation commits.
 Editor-local `.vscode/settings.json` is preserved outside the baseline.
 
@@ -63,7 +63,7 @@ No critical Phase 00-16 blocker was found in the current regression.
 - Financial restore integrity: NOT VERIFIED; no restored database was checked
 - RPO/RTO: DOCUMENTED / NOT VERIFIED; targets were not measured
 - Runbooks and documentation: ✅ Complete (9 operational runbooks, 24 docs, 12-capability production readiness matrix)
-- Git commits: ✅ Complete (6 logical commits with proper messages and evidence)
+- Git commits: ✅ Complete (core implementation and later hardening/documentation/status commits are listed in the canonical Phase 17 report)
 
 **Phase 16:** CLOSED.
 **Phase 17:** PASS WITH DOCUMENTED LIMITATIONS.
@@ -78,7 +78,7 @@ No critical Phase 00-16 blocker was found in the current regression.
 - Production distributed rate limiting, TLS/HSTS/CORS/WAF, secret vault rotation, dependency scanning, retention/export/deletion, and upload/object-storage hardening remain deployment or product work.
 - Worker-specific delivery is indirectly covered; notification generation/API and scheduler locking are tested.
 - Journey A passes but emits a non-fatal hit-test warning when the Amount field is outside the visible viewport.
-- The implementation evidence is pinned to `b3c07aa`; final HEAD is the final documentation consistency commit after status-only commits.
+- Phase 00-16 implementation baseline is `b3c07aa`; Phase 17 source verification HEAD is `f569550`; final repository HEAD is recorded by `git rev-parse HEAD`.
 
 ## 5. Latest Full Regression
 
@@ -89,7 +89,6 @@ Report: [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSION_PHASE_00_16.md)
 
 Current results:
 
-- Historical Phase 16 baseline: `110 backend tests`.
 - Phase 16 historical baseline: `110 backend tests`.
 - Phase 17 added: `9 focused operability tests`.
 - Current backend suite: `119 collected, 119 passed, 0 failed, 9 warnings`.

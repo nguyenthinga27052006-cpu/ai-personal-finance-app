@@ -879,7 +879,7 @@ PASS — Phase 16 regression gate shows no financial logic regression. Flutter l
 - Real-model AI evaluation and production model routing are deferred; tests use local/deterministic providers.
 
 ### Related Commit
-Implementation baseline: `b3c07aa`. Phase 17 commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`. Source verification HEAD: `f569550`; final repository HEAD: `dfc49d8dbc7569e8cdaf336de64ec399b4021e10`.
+Implementation baseline: `b3c07aa`. Phase 17 core commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`. Source verification HEAD: `f569550`; final repository HEAD: use the actual value from the final `git rev-parse HEAD` command.
 
 ### Next Action
 Phase 18 NOT STARTED. Future work is limited to external staging/production verification and the documented limitations above.

@@ -10,7 +10,7 @@
 - Implementation/source verification HEAD: `f569550`
 - Implementation baseline: `b3c07aa`
 - Phase 17 implementation commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`
-- Final repository HEAD: `dfc49d8dbc7569e8cdaf336de64ec399b4021e10`
+- Final repository HEAD: use the actual value from the final `git rev-parse HEAD` command.
 - Working Tree: **CLEAN** after source and documentation commits.
 
 ## Phase 16 Regression
