@@ -25,6 +25,7 @@ from app.ai.errors import (
 from app.ai.gateway import default_gateway
 from app.ai.nl_query import execute_nl_query
 from app.ai.schemas import AIExecuteRequest, AIExecuteResponse
+from app.ai.usage import AIUsageLimitExceeded, get_ai_usage_budget
 from app.auth.dependencies import CurrentUser
 from app.auth.rate_limit import AuthRateLimiter, get_ai_rate_limiter
 from app.db.session import get_db
@@ -101,6 +102,7 @@ def execute(
     x_request_id: str | None = Header(default=None, alias="X-Request-ID"),
 ) -> AIExecuteResponse:
     _check_ai_rate_limit(request, current_user.id, limiter)
+    _consume_ai_budget(current_user.id, payload.task)
     task_tools = {
         "financial_summary": {
             "get_current_balance",
@@ -150,6 +152,7 @@ def query(
     x_request_id: str | None = Header(default=None, alias="X-Request-ID"),
 ) -> dict[str, object]:
     _check_ai_rate_limit(request, current_user.id, limiter)
+    _consume_ai_budget(current_user.id, "nl_query")
     context = ExecutionContext(
         db=db,
         user=current_user,
@@ -191,3 +194,14 @@ def _check_ai_rate_limit(request: Request, user_id: str, limiter: AuthRateLimite
             status_code=429,
             detail={"code": "rate_limited", "message": "Too many AI requests"},
         )
+
+
+def _consume_ai_budget(user_id: str, feature: str) -> None:
+    try:
+        get_ai_usage_budget().consume(user_id, feature, units=1)
+    except AIUsageLimitExceeded as exc:
+        raise HTTPException(
+            status_code=429,
+            headers={"Retry-After": str(exc.retry_after)},
+            detail={"code": "ai_budget_exceeded", "message": str(exc)},
+        ) from exc

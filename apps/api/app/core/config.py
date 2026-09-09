@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     ai_fallback_model: str = "foundation-fallback"
     ai_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
     ai_enabled: bool = False
+    ai_daily_budget_units: int = Field(default=100, ge=1)
+    ai_max_retries: int = Field(default=2, ge=0, le=5)
+    release: str = "local"
 
     model_config = SettingsConfigDict(
         env_file=REPOSITORY_ROOT / ".env",
