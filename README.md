@@ -80,7 +80,7 @@ Xem [docs/README.md](docs/README.md) và [docs/IMPLEMENTATION_CONTRACT.md](docs/
 
 ## Current Status
 
-The current master baseline covers Phase 00 through Phase 17 and is **PASS WITH DOCUMENTED LIMITATIONS**. Phase 18 is **NOT STARTED**. This does not claim staging or production verification.
+The current master baseline covers Phase 00 through Phase 17 and is **PASS WITH DOCUMENTED LIMITATIONS**. Phase 16 is **CLOSED** and Phase 18 is **NOT STARTED**. This does not claim staging or production verification.
 
 ### Phase 17 local checks
 
@@ -91,5 +91,7 @@ docker build -t finance-assistant-worker:test apps/worker
 ```
 
 When the API is running locally, Prometheus-style metrics are available at `http://localhost:8000/metrics`. The backup/restore entry point is `./scripts/backup-restore-drill.ps1`; actual restore execution remains unverified.
+
+Current evidence: `python -m pytest apps/api/tests -q` collected 119 tests, with 119 passed, 0 failed, and 9 warnings. The Phase 17 focused suite has 9 passing tests. Backup artifacts, restore execution, financial restore integrity, RPO/RTO measurement, external tracing/error tracking, production-scale metrics, and fired alerts remain NOT VERIFIED.
 
 Phase 17 documentation: [docs/phase17/README.md](docs/phase17/README.md), [MASTER_STATUS.md](docs/project-status/MASTER_STATUS.md), [PHASE_STATUS.md](docs/project-status/PHASE_STATUS.md), [PRODUCTION_READINESS_MATRIX.md](docs/phase17/PRODUCTION_READINESS_MATRIX.md), [PHASE17_REGRESSION.md](docs/phase17/PHASE17_REGRESSION.md), [PHASE17_ACCEPTANCE_MATRIX.md](docs/phase17/PHASE17_ACCEPTANCE_MATRIX.md), and [PHASE17_FILE_INVENTORY.md](docs/phase17/PHASE17_FILE_INVENTORY.md).

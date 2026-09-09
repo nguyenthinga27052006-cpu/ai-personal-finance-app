@@ -11,14 +11,18 @@
 | Logs | Yes | Focused runtime test | Local API | `observability.py`, operability test | LOCALLY VERIFIED | External sink absent |
 | request_id | Yes | Header assertion | Local API | `test_phase17_operability.py` | LOCALLY VERIFIED | Distributed propagation unverified |
 | trace_id | Yes | Header assertion | Local API | `test_phase17_operability.py` | LOCALLY VERIFIED | External tracing unverified |
-| Metrics | Yes | `/metrics` assertion | Local API | `app_http_requests_total` assertion | LOCALLY VERIFIED | Scaled aggregation absent |
-| Tracing | Documented | No exporter test | None | `OBSERVABILITY.md` | DEFERRED | OpenTelemetry provider absent |
-| Error tracking | Documented | No provider test | None | `OBSERVABILITY.md` | NOT VERIFIED | Provider integration absent |
+| Metrics | Yes | Histogram/parser tests | Local API | `test_phase17_operability.py` | LOCALLY VERIFIED | Production-scale aggregation absent |
+| Request correlation | Yes | Runtime headers and error response | Local API | `test_phase17_operability.py` | LOCALLY VERIFIED | External sink absent |
+| Trace context propagation | Yes | Strict traceparent tests | Local API | `test_phase17_operability.py` | LOCALLY VERIFIED | External exporter absent |
+| External tracing backend/exporter | Not configured | No external execution | None | `OBSERVABILITY.md` | NOT VERIFIED | Provider absent |
+| Error tracking runtime | Yes | Unhandled request integration test | Local API | `test_phase17_operability.py` | LOCALLY VERIFIED | External provider absent |
+| External error tracking provider | Not configured | No provider execution | None | `OBSERVABILITY.md` | NOT VERIFIED | Provider integration absent |
 | Alerts | Rules documented | No firing test | None | `ALERTING.md` | NOT VERIFIED | Monitoring backend absent |
-| Backup | Procedure | Script review | Local source | `backup-restore-drill.ps1` | NOT VERIFIED | No backup artifact checked |
+| Backup | Procedure documented | Script syntax/static review | Local source | `backup-restore-drill.ps1` | NOT VERIFIED | No backup artifact created or validated |
 | Restore | Procedure | No execution evidence | None | `RESTORE_DRILL.md` | NOT VERIFIED | Restore not run |
-| RPO | Target documented | No measurement | None | `RPO_RTO.md` | DEFERRED | Target only |
-| RTO | Target documented | No timed drill | None | `RPO_RTO.md` | DEFERRED | Target only |
+| Financial restore integrity | Validation documented | No restored database | None | `RESTORE_DRILL.md` | NOT VERIFIED | Financial invariants not checked after restore |
+| RPO | Target documented | No measurement | None | `RPO_RTO.md` | DOCUMENTED / NOT VERIFIED | Target only |
+| RTO | Target documented | No timed drill | None | `RPO_RTO.md` | DOCUMENTED / NOT VERIFIED | Target only |
 | AI budget | Yes | Focused test | Local API | `InMemoryAIUsageBudget` test | LOCALLY VERIFIED | Shared store absent |
 | AI user limits | Yes | Per-user assertions | Local API | operability test | LOCALLY VERIFIED | Distributed enforcement absent |
 | AI feature limits | Yes | Per-feature assertions | Local API | operability test | LOCALLY VERIFIED | Distributed enforcement absent |

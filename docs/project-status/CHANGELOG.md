@@ -30,13 +30,18 @@ Changed:
 
 Tests:
 
-- Phase 16 baseline: 110 backend tests; latest recorded Phase 16 gate: 112 backend tests PASS, Ruff PASS, Compileall PASS
-- Phase 17 additions: 2 focused tests in `test_phase17_operability.py`
+- Phase 16 historical baseline: 110 backend tests
+- Current backend command: 119 collected, 119 passed, 0 failed, 9 warnings
+- Phase 17 focused tests: 9 passed in `test_phase17_operability.py`
+- Current Phase 16 gate: 119 backend tests passed, 10 warnings; Ruff and compileall passed; Flutter tests/builds passed
 - Flutter analyze: 33 print warnings (pre-existing Phase 16 style issues, not Phase 17 regression)
 - Observability verification: Metrics collection, correlation IDs, JSON logging all functional ✓
 - AI cost control verification: Budget enforcement, per-user/per-feature tracking, hard-stop limit all functional ✓
 - Docker builds: API image 312 MB with non-root user, worker image successful ✓
-- Backup/restore procedure: documented and reviewed; actual backup artifact and restore execution NOT VERIFIED
+- Backup: script syntax/static review only; backup artifact creation and validation NOT VERIFIED
+- Restore: NOT VERIFIED; no restore executed
+- Financial restore integrity: NOT VERIFIED; no restored database checked
+- RPO/RTO: DOCUMENTED / NOT VERIFIED; targets not measured
 - CI/CD workflow: Syntax verified, job structure correct, dependencies proper
 
 Limitations:
@@ -45,14 +50,14 @@ Limitations:
 - Distributed rate limiting deferred (requires shared storage; local budget implemented)
 - OpenTelemetry exporters not configured (local in-process metrics only)
 - Monitoring backend absent (alert rules defined, no firing mechanism)
-- Cloud backup/restore unavailable (script verified, full drill deferred)
+- Cloud backup/restore unavailable; script syntax/static review only, full drill and artifact validation NOT VERIFIED
 - Real-model AI evaluation deferred (inherited from Phase 13-14; uses FakeProvider)
 
-Verification Status: **PASS WITH DOCUMENTED LIMITATIONS** — Phase 17 implementation is complete and local evidence is recorded. Hosted CI, staging, production, restore execution, external observability, and security scan outputs remain unverified.
+Verification Status: **PASS WITH DOCUMENTED LIMITATIONS** — Phase 17 implementation is complete and current local evidence is recorded. Hosted CI, staging, production, backup/restore execution, external observability, and security scan outputs remain unverified.
 
 Next Action: Phase 18 NOT STARTED. External verification remains future work.
 
-Related implementation commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`.
+Related implementation commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`; source verification HEAD: `f569550`; final documentation HEAD is recorded by `git rev-parse HEAD`.
 
 ---
 

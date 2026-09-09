@@ -7,7 +7,7 @@ Current Phase: Phase 17 COMPLETE
 Overall Status: **PASS WITH DOCUMENTED LIMITATIONS**
 Last Verified: 2026-09-09 (Phase 16 baseline); 2026-09-09 (Phase 17 complete)
 Current Branch: `main`
-Current HEAD: `b3b555b` (`chore: finalize phase17 verification and status updates`)
+Current HEAD: final documentation reconciliation commit, recorded by `git rev-parse HEAD`.
 Implementation baseline commit: `b3c07aa` (`chore: commit verified phase 04-16 implementation`)
 Phase 17 Implementation Commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b` (6 logical commits with observability, CI/CD, containers, backup/restore, runbooks, documentation)
 Working Tree: **DIRTY during documentation synchronization** (3 pre-existing untracked test/report artifacts are intentionally not part of the docs commit).
@@ -36,7 +36,7 @@ Canonical evidence is recorded in [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSI
 | 14 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | AI query/categorization/OCR abstraction/chat/mobile AI tests and Journey D | `b3c07aa` — verified Phase 04-16 implementation | No durable chat or production OCR/object storage |
 | 15 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Security regression, auth/BOLA, request limits, rate limits, threat model | `b3c07aa` — verified Phase 04-16 implementation | Distributed limits, production network controls, vault rotation, dependency scan and retention workflows deferred |
 | 16 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Full local gate plus current Android Journeys A, B, C, D | `b3c07aa` — verified Phase 04-16 implementation | Real-model AI, coverage, performance threshold, hosted CI limitations |
-| 17 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Local verification: CI/CD, Docker builds, observability, AI cost controls, backup/restore, runbooks (24 docs, 6 commits) | `b3b555b` | Hosted CI unavailable; distributed systems/cloud resources not available for full testing |
+| 17 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Local verification: 119 backend tests, 9 focused Phase 17 tests, quality checks, observability, AI cost controls, and documentation | Source HEAD `f569550`; final docs HEAD from Git | Hosted CI unavailable; distributed systems/cloud resources not available for full testing |
 
 Allowed status vocabulary above is limited to `PASS`, `FAIL`, `BLOCKED`, `PASS WITH DOCUMENTED LIMITATIONS`, and `NOT APPLICABLE`.
 
@@ -44,17 +44,22 @@ Allowed status vocabulary above is limited to `PASS`, `FAIL`, `BLOCKED`, `PASS W
 
 No critical Phase 00-16 blocker was found in the current regression. 
 
-**Phase 17 Status:** ✅ **COMPLETE WITH DOCUMENTED LIMITATIONS** — Local implementation verified and committed. All Phase 17 components delivered; external execution remains explicitly unverified.
-- Phase 16 regression gate: ✅ PASS (112 API tests, ruff linting, Python compilation all passing; Flutter warnings are pre-existing style issues, not Phase 17 regressions)
+**Phase 17 Status:** ✅ **PASS WITH DOCUMENTED LIMITATIONS** — Local implementation and current evidence are verified; external execution remains explicitly unverified.
+- Phase 16 regression gate: ✅ PASS (119 API tests, Ruff and Python compilation passing; Flutter warnings are pre-existing style issues, not Phase 17 regressions)
 - CI/CD pipeline: ✅ Verified locally (GitHub Actions workflow with 5 parallel jobs: backend, worker, Flutter, containers, security)
 - Docker builds: ✅ Verified (API 312MB and worker images build successfully with non-root user, health checks)
 - Observability: ✅ Verified (structured JSON logging, correlation IDs, Prometheus metrics all functional)
 - AI cost controls: ✅ Verified (per-user/per-feature daily budgets with hard-stop enforcement tested)
-- Backup/restore procedure: LOCALLY VERIFIED as a procedure; actual backup artifact, restore execution, and financial integrity are NOT VERIFIED
+- Backup: DOCUMENTED / NOT VERIFIED; no backup artifact was created or validated
+- Restore: NOT VERIFIED; no restore was executed
+- Financial restore integrity: NOT VERIFIED; no restored database was checked
+- RPO/RTO: DOCUMENTED / NOT VERIFIED; targets were not measured
 - Runbooks and documentation: ✅ Complete (8 operational runbooks, 24 docs, 12-capability production readiness matrix)
 - Git commits: ✅ Complete (6 logical commits with proper messages and evidence)
 
-**Phase 18:** Not started. Phase 17 complete with documented limitations.
+**Phase 16:** CLOSED.
+**Phase 17:** PASS WITH DOCUMENTED LIMITATIONS.
+**Phase 18:** NOT STARTED.
 
 ## 4. Non-blocking Limitations
 
@@ -76,7 +81,9 @@ Report: [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSION_PHASE_00_16.md)
 
 Current results:
 
-- Backend: `110 passed, 10 warnings`.
+- Historical Phase 16 baseline: `110 backend tests`.
+- Authoritative current backend: `119 collected, 119 passed, 0 failed, 9 warnings`.
+- Full Phase 16 gate backend: `119 passed, 10 warnings`.
 - Ruff and compileall: pass.
 - Flutter analyze: no errors; existing `avoid_print` infos in integration/state-trace tests.
 - Flutter unit/widget tests: `11 passed`.
@@ -109,7 +116,7 @@ Implementation baseline: `b3c07aa`. Status/documentation commits: `891716a`, `ea
 
 ### Verified Components:
 1. **Phase 16 Regression Gate:** All checks passing
-   - API pytest: 112 tests PASS ✓
+   - API pytest: 119 tests PASS ✓
    - Ruff: PASS ✓  
    - Compileall: PASS ✓
    - Flutter analyze: 33 print warnings (pre-existing, not Phase 17 regression)
@@ -136,7 +143,7 @@ Implementation baseline: `b3c07aa`. Status/documentation commits: `891716a`, `ea
    - Hard stop (HTTPException 429) when exceeded ✓
    - Tested locally with successful enforcement ✓
 
-6. **Backup/Restore:** Procedure verified
+6. **Backup/Restore:** Documentation and script syntax reviewed; execution NOT VERIFIED
    - pg_dump with custom format ✓
    - pg_restore with safety flags ✓
    - Post-restore validation guidance ✓
@@ -152,7 +159,7 @@ Implementation baseline: `b3c07aa`. Status/documentation commits: `891716a`, `ea
 - Distributed rate limiting deferred (requires shared storage)
 - OpenTelemetry exporters not configured (local metrics only)
 - Monitoring backend absent (alert rules defined, no firing mechanism)
-- Cloud backup/restore unavailable (script verified, full drill deferred)
+- Cloud backup/restore unavailable; script syntax/static review only, full drill and artifact validation NOT VERIFIED
 
 ### Historical Next Steps:
 These items were completed by the six Phase 17 implementation commits and the current documentation synchronization. They are retained as historical context.
@@ -183,12 +190,12 @@ Phase 18: **NOT STARTED**. Phase 17 is complete with documented limitations.
 | Error tracking | NOT VERIFIED | None | No provider execution evidence | Provider integration absent |
 | Alerts | NOT VERIFIED | None | Alert rules/runbooks documented | No firing backend |
 | Alert routing | NOT VERIFIED | None | No external routing evidence | Pager/notification integration absent |
-| Backup | NOT VERIFIED | None | Script/procedure reviewed | No checked backup artifact |
+| Backup | NOT VERIFIED | None | Script syntax/static review | No backup artifact created or validated |
 | Restore | NOT VERIFIED | None | Restore commands documented | Restore not executed |
 | Financial restore integrity | NOT VERIFIED | None | Validation instructions documented | No restored database validated |
-| RPO | DEFERRED | None | Target documented in `RPO_RTO.md` | No measured production result |
-| RTO | DEFERRED | None | Target and method documented | No timed restore drill |
-| AI usage | LOCALLY VERIFIED | Local API | 2 focused operability tests | Shared accounting absent |
+| RPO | DOCUMENTED / NOT VERIFIED | None | Target documented in `RPO_RTO.md` | No measured result |
+| RTO | DOCUMENTED / NOT VERIFIED | None | Target and method documented | No timed restore drill |
+| AI usage | LOCALLY VERIFIED | Local API | 9 focused operability tests | Shared accounting absent |
 | AI budget | LOCALLY VERIFIED | Local API | Hard-stop test | Distributed enforcement absent |
 | AI rate limit | LOCALLY VERIFIED | Local API | Existing limiter and route review | Distributed limiter unverified |
 | AI retry protection | DEFERRED | None | Policy documentation | Provider retry execution not tested |

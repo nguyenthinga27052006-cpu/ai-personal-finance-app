@@ -25,7 +25,7 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 - FULL REGRESSION: `docs/project-status/FULL_REGRESSION_PHASE_00_16.md`
 - IMPLEMENTATION BASELINE: `b3c07aa`
 - CURRENT HEAD: final documentation consistency commit; exact value is recorded in the final report.
-- PHASE 17: COMPLETE WITH DOCUMENTED LIMITATIONS
+- PHASE 17: PASS WITH DOCUMENTED LIMITATIONS
 - PHASE 18: NOT STARTED
 
 Phase 17 implementation summary:
@@ -35,8 +35,9 @@ Phase 17 implementation summary:
 - Backup/restore procedures, rollback guidance, and nine operational runbooks
 
 Phase 17 verification summary:
-- Two focused operability tests are present for observability and AI budgets.
-- Latest recorded Phase 16 gate passed 112 backend tests, Ruff, and compileall.
+- Nine focused Phase 17 operability tests pass for trace validation, sanitization, runtime error capture, bounded metrics, and AI budgets.
+- Authoritative current backend run: 119 collected, 119 passed, 0 failed, 9 warnings.
+- Latest Phase 16 gate: 119 backend tests passed with 10 warnings; Ruff and compileall passed; Flutter tests/builds passed.
 - API and worker Docker images were built locally.
 - Hosted CI, staging, production, restore execution, external monitoring, and security scan results are not verified.
 - Status documents are being synchronized under the canonical Phase 17 evidence set.
@@ -185,7 +186,9 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 - Official limitations remain documented in `docs/testing/PHASE16_UNPASSED_ITEMS.md`: real-model AI semantics, coverage tooling, performance thresholds, and hosted CI are not verified.
 - Closure report: `docs/architecture/PHASE_16_CLOSURE_REPORT.md`.
 - No migration, dependency upgrade, package cache change, or production data modification.
-- Phase 17 and Phase 18 are not implemented or opened.
+- Phase 16: CLOSED.
+- Phase 17: PASS WITH DOCUMENTED LIMITATIONS.
+- Phase 18: NOT STARTED.
 
 NEXT: Preserve the Phase 16 baseline and resolve documented non-blocking limitations before any Phase 17 work.
 

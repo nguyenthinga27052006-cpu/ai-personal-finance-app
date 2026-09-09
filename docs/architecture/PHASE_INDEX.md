@@ -22,4 +22,4 @@
 | 17 | PASS WITH DOCUMENTED LIMITATIONS | `docs/phase17/PHASE17_ACCEPTANCE_MATRIX.md` | `docs/project-status/CHANGELOG.md` | `docs/phase17/PHASE17_REGRESSION.md` | 18 |
 | 18 | NOT STARTED | - | - | - | - |
 
-Phase 16 critical E2E and local regression gates are currently passing. The remaining limitations are tracked in `docs/project-status/MASTER_STATUS.md` and `docs/testing/PHASE16_UNPASSED_ITEMS.md`. Phase 17 and Phase 18 are not opened.
+Phase 16 is CLOSED with its documented limitations. Phase 17 is PASS WITH DOCUMENTED LIMITATIONS based on current local evidence. Phase 18 is NOT STARTED. Remaining limitations are tracked in `docs/project-status/MASTER_STATUS.md` and `docs/testing/PHASE16_UNPASSED_ITEMS.md`.

@@ -817,7 +817,7 @@ CI/CD pipeline, container orchestration, structured logging, metrics, tracing, A
 - Observability: Structured JSON logging, correlation ID context variables, Prometheus metrics endpoint
 - AI Cost Control: Per-user and per-feature daily budget tracking with hard-stop enforcement
 - Containers: Docker images with non-root user, health checks, and graceful shutdown handling
-- Backup/Restore: pg_dump/pg_restore procedure with post-restore validation
+- Backup/Restore: pg_dump/pg_restore procedure documented with post-restore validation guidance; execution NOT VERIFIED
 - Documentation: 24 files covering operations (CI/CD, observability, rate limiting, alerting, deployment, runbooks, etc.)
 - Runbooks: 8 operational runbooks (API, Database, Queue, AI Provider, Backup, Rollback, Secret Compromise, Container, Cost Spike)
 - Production Readiness Matrix: capability-by-capability implementation and verification status
@@ -826,28 +826,31 @@ CI/CD pipeline, container orchestration, structured logging, metrics, tracing, A
 `.github/workflows/ci.yml`, `apps/api/Dockerfile`, `apps/worker/Dockerfile`, `apps/api/app/observability.py`, `apps/api/app/main.py`, `apps/api/app/ai/usage.py`, `apps/api/app/ai/routes.py`, `apps/api/core/config.py`, `scripts/backup-restore-drill.ps1`, `infra/docker/docker-compose.staging.yml`, `infra/environments/*`, `docs/phase17/*` (24 files), `apps/api/tests/test_phase17_operability.py`.
 
 ### Verification Method
-COMBINATION: EXECUTABLE TEST (2 focused Phase 17 operability tests), BUILD VERIFICATION (API and worker Docker images), STATIC VERIFICATION (workflow and configuration review), RUNTIME VERIFICATION (local observability endpoint and correlation headers), and DOCUMENT VERIFICATION (runbooks and readiness matrix).
+COMBINATION: EXECUTABLE TEST (9 focused Phase 17 operability tests), BUILD VERIFICATION (API and worker Docker images), STATIC VERIFICATION (workflow and configuration review), RUNTIME VERIFICATION (local observability endpoint and correlation headers), and DOCUMENT VERIFICATION (runbooks and readiness matrix).
 
 ### Commands
 - Git audit: `git status --short`, `git log -10 --oneline`, `git diff --check`
-- Phase 16 regression evidence: `scripts/phase16-gate.ps1` (latest recorded result: 112 API tests PASS, ruff PASS, compileall PASS)
-- Phase 17 focused tests: `apps/api/.venv/Scripts/python.exe -m pytest apps/api/tests/test_phase17_operability.py` (2 tests; source inventory verified)
-- Phase 17 test inventory: Phase 16 baseline 110 backend tests; Phase 17 additions 2; current full-suite total not independently rerun in this documentation pass
+- Phase 16 regression evidence: `scripts/phase16-gate.ps1` (119 API tests PASS, 10 warnings, Ruff PASS, compileall PASS; Flutter tests/builds PASS)
+- Phase 17 focused tests: `python -m pytest apps/api/tests/test_phase17_operability.py -q` (9 passed)
+- Phase 17 test inventory: Phase 16 historical baseline 110 backend tests; current full suite 119 passed, 0 failed, 9 warnings
 - Docker builds: `docker build -t finance-assistant-api:test apps/api`, `docker build -t finance-assistant-worker:test apps/worker`
 - CI validation: Workflow syntax check (`yq` or visual review), job structure verification
 
 ### Test Result
 Phase 16 baseline: 110 backend tests (historical baseline stated by project directive).
-Phase 16 latest recorded gate: 112 backend tests passed, with Ruff and compileall passing.
-Phase 17 additions: 2 focused tests in `test_phase17_operability.py`.
+Phase 16 latest gate: 119 backend tests passed with 10 warnings, with Ruff and compileall passing.
+Phase 17 focused tests: 9 passed in `test_phase17_operability.py`.
 Current full backend total: NOT VERIFIED in this documentation pass; no new full-suite total is claimed.
 
 ### Evidence
-- Phase 16 regression gate: All checks passing (112 API tests, Python linting, compilation)
+- Phase 16 regression gate: All checks passing (119 API tests, Python linting, compilation, Flutter tests and builds)
 - Observability: Metrics collection, correlation IDs, structured logging verified locally
 - AI cost controls: Per-user and per-feature budget enforcement verified with hard-stop at limit
 - Docker builds: Both API (312 MB) and worker images build successfully with security hardening
-- Backup procedure: script structure and error handling reviewed; backup artifact and actual restore execution are NOT VERIFIED
+- Backup: script syntax/static review only; backup artifact creation is NOT VERIFIED
+- Restore: NOT VERIFIED; no restore executed
+- Financial restore integrity: NOT VERIFIED; no restored database checked
+- RPO/RTO: DOCUMENTED / NOT VERIFIED; targets not measured
 - CI/CD workflow: GitHub Actions jobs configured with proper dependencies and artifact handling
 - Documentation: Production Readiness Matrix covers 12 capabilities with honest risk assessment
 
@@ -871,7 +874,7 @@ PASS — Phase 16 regression gate shows no financial logic regression. Flutter l
 - Real-model AI evaluation and production model routing are deferred; tests use local/deterministic providers.
 
 ### Related Commit
-Implementation baseline: `b3c07aa`. Phase 17 commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`.
+Implementation baseline: `b3c07aa`. Phase 17 commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`. Source verification HEAD: `f569550`; final documentation HEAD from Git.
 
 ### Next Action
 Phase 18 NOT STARTED. Future work is limited to external staging/production verification and the documented limitations above.
@@ -924,7 +927,7 @@ All 12 capabilities assessed with honest risk:
 5. Metrics: ✓ Local endpoint functional, scaling deferred
 6. Tracing/error tracking: Documented, exporters deferred
 7. Alerting: Rules documented, firing backend deferred
-8. Backup/restore: ✓ Procedure verified, cloud backup deferred
+8. Backup/restore: Procedure documented; backup artifact, restore execution, and financial integrity NOT VERIFIED
 9. RPO/RTO: Targets documented, production measurement deferred
 10. AI usage/rate limits: ✓ Implemented and verified
 11. Security supply chain: Workflow configured, hosted scanning deferred

@@ -14,9 +14,13 @@
 | Structured logging | YES | YES | NO | NO | `observability.py` | API | External sink absent |
 | request_id | YES | YES | NO | NO | Focused operability test | API | Distributed propagation unverified |
 | trace_id | YES | YES | NO | NO | Focused operability test | API | Exporter absent |
-| Metrics | YES | YES | NO | NO | Local `/metrics` test | SRE | Scaled aggregation absent |
-| Tracing | Documented | NO | NO | NO | `OBSERVABILITY.md` | SRE | OpenTelemetry not configured |
-| Error tracking | Documented | NO | NO | NO | `OBSERVABILITY.md` | SRE | Provider absent |
+| Request correlation | YES | YES | NO | NO | Focused runtime test | API | External sink absent |
+| Trace context propagation | YES | YES | NO | NO | Strict traceparent tests | API | Exporter absent |
+| External tracing backend/exporter | NO | NO | NO | NO | No external execution | SRE | OpenTelemetry not configured |
+| Error tracking runtime | YES | YES | NO | NO | Unhandled request integration test | API | External provider absent |
+| External error tracking provider | NO | NO | NO | NO | No provider execution | SRE | Provider absent |
+| Prometheus metrics | YES | YES | NO | NO | Histogram/parser tests | SRE | Production-scale aggregation absent |
+| Production-scale metrics | NO | NO | NO | NO | No multi-process/backend test | SRE | Hosted metrics backend absent |
 | Alerts | Documented | NO | NO | NO | `ALERTING.md` | SRE | No firing backend |
 | Alert routing | Documented | NO | NO | NO | Alerting/runbook docs | SRE | External route absent |
 | Backup | YES | NO | NO | NO | Backup script/procedure | DBA/SRE | No artifact checked |
