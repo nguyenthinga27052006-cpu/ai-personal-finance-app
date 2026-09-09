@@ -48,6 +48,9 @@ void main() {
     await _enter(tester, 'Name', accountName);
     await _enter(tester, 'Opening balance', '100000');
     await tester.tap(find.text('Create'));
+    // Explicitly wait for the dialog close animation and state update to complete
+    await tester.pumpAndSettle(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(seconds: 2));
     await _waitForText(tester, accountName);
     expect(find.text('100,000 VND'), findsOneWidget);
 
@@ -62,6 +65,9 @@ void main() {
     await _enter(tester, 'Amount', '50000');
     await _enter(tester, 'Note', incomeNote);
     await tester.tap(find.text('Save'));
+    // Explicitly wait for the dialog close animation and state update to complete
+    await tester.pumpAndSettle(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(seconds: 1));
     await _settle(tester, incomeNote);
 
     await tester.tap(find.byTooltip('Add transaction'));
@@ -69,6 +75,9 @@ void main() {
     await _enter(tester, 'Amount', '25000');
     await _enter(tester, 'Note', expenseNote);
     await tester.tap(find.text('Save'));
+    // Explicitly wait for the dialog close animation and state update to complete
+    await tester.pumpAndSettle(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(seconds: 1));
     await _settle(tester, expenseNote);
     expect(find.text('25,000 VND'), findsOneWidget);
 
