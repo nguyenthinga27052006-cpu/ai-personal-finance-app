@@ -7,13 +7,19 @@ Current Phase: Phase 17 COMPLETE
 Overall Status: **PASS WITH DOCUMENTED LIMITATIONS**
 Last Verified: 2026-09-09 (Phase 16 baseline); 2026-09-09 (Phase 17 complete)
 Current Branch: `main`
-Current HEAD: final documentation reconciliation commit, recorded by `git rev-parse HEAD`.
+Current HEAD: `dfc49d8dbc7569e8cdaf336de64ec399b4021e10`.
 Implementation baseline commit: `b3c07aa` (`chore: commit verified phase 04-16 implementation`)
 Phase 17 Implementation Commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b` (6 logical commits with observability, CI/CD, containers, backup/restore, runbooks, documentation)
 Working Tree: **CLEAN** after source and documentation commits.
 Editor-local `.vscode/settings.json` is preserved outside the baseline.
 
-Canonical evidence is recorded in [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSION_PHASE_00_16.md). Historical reports remain historical and are not treated as current execution proof unless this baseline records a current command.
+Canonical evidence:
+
+- Phase 00-16 canonical regression: [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSION_PHASE_00_16.md)
+- Phase 17 canonical regression: [PHASE17_REGRESSION.md](../phase17/PHASE17_REGRESSION.md)
+- Current canonical project status: [MASTER_STATUS.md](MASTER_STATUS.md)
+
+Historical reports remain historical and are not treated as current execution proof unless this baseline records a current command.
 
 ## 2. Phase Overview
 
@@ -38,7 +44,9 @@ Canonical evidence is recorded in [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSI
 | 16 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Full local gate plus current Android Journeys A, B, C, D | `b3c07aa` — verified Phase 04-16 implementation | Real-model AI, coverage, performance threshold, hosted CI limitations |
 | 17 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Local verification: 119 backend tests, 9 focused Phase 17 tests, quality checks, observability, AI cost controls, and documentation | Source HEAD `f569550`; final docs HEAD from Git | Hosted CI unavailable; distributed systems/cloud resources not available for full testing |
 
-Allowed status vocabulary above is limited to `PASS`, `FAIL`, `BLOCKED`, `PASS WITH DOCUMENTED LIMITATIONS`, and `NOT APPLICABLE`.
+Phase status vocabulary is limited to `PASS`, `FAIL`, `BLOCKED`, `PASS WITH DOCUMENTED LIMITATIONS`, and `NOT APPLICABLE`.
+
+Verification status vocabulary is limited to `VERIFIED`, `LOCALLY VERIFIED`, `STAGING VERIFIED`, `PRODUCTION VERIFIED`, `NOT VERIFIED`, and `DEFERRED`.
 
 ## 3. Current Blockers
 
@@ -66,7 +74,7 @@ No critical Phase 00-16 blocker was found in the current regression.
 - Real-model semantic evaluation was not completed; current AI evaluation uses the deterministic `FakeProvider`.
 - Coverage tooling is not installed, so no percentage is claimed.
 - Performance measurements are a local baseline, not a production SLA or enforced threshold.
-- No hosted `.github` CI workflow was found; `scripts/phase16-gate.ps1` is a local gate.
+- GitHub Actions workflow exists at `.github/workflows/ci.yml`, but no hosted GitHub Actions execution evidence was verified. `scripts/phase16-gate.ps1` is a local gate.
 - Production distributed rate limiting, TLS/HSTS/CORS/WAF, secret vault rotation, dependency scanning, retention/export/deletion, and upload/object-storage hardening remain deployment or product work.
 - Worker-specific delivery is indirectly covered; notification generation/API and scheduler locking are tested.
 - Journey A passes but emits a non-fatal hit-test warning when the Amount field is outside the visible viewport.
@@ -82,7 +90,10 @@ Report: [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSION_PHASE_00_16.md)
 Current results:
 
 - Historical Phase 16 baseline: `110 backend tests`.
-- Authoritative current backend: `119 collected, 119 passed, 0 failed, 9 warnings`.
+- Phase 16 historical baseline: `110 backend tests`.
+- Phase 17 added: `9 focused operability tests`.
+- Current backend suite: `119 collected, 119 passed, 0 failed, 9 warnings`.
+- Post-Phase-17 regression: `119 backend tests passed`.
 - Full Phase 16 gate backend: `119 passed, 10 warnings`.
 - Ruff and compileall: pass.
 - Flutter analyze: no errors; existing `avoid_print` infos in integration/state-trace tests.

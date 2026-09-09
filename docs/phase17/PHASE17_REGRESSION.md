@@ -7,18 +7,19 @@
 ## Git
 
 - Branch: `main`
-- Source verification HEAD: `f569550`
+- Implementation/source verification HEAD: `f569550`
 - Implementation baseline: `b3c07aa`
 - Phase 17 implementation commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`
-- Documentation reconciliation commit: current final HEAD from `git rev-parse HEAD`.
+- Final repository HEAD: `dfc49d8dbc7569e8cdaf336de64ec399b4021e10`
 - Working Tree: **CLEAN** after source and documentation commits.
 
 ## Phase 16 Regression
 
 - Command: `scripts\\phase16-gate.ps1`
-- Historical Phase 16 baseline: 110 backend tests.
-- Authoritative backend command: `python -m pytest apps/api/tests -q` collected 119 items, with 119 passed, 0 failed, and 9 warnings.
-- Focused Phase 17 command: `python -m pytest apps/api/tests/test_phase17_operability.py -q` passed 9 tests.
+- Phase 16 historical baseline: 110 backend tests.
+- Phase 17 added: 9 focused operability tests.
+- Current backend suite: `python -m pytest apps/api/tests -q` collected 119 items, with 119 passed, 0 failed, and 9 warnings.
+- Post-Phase-17 regression: 119 backend tests passed.
 - Ruff: `python -m ruff check apps/api/app apps/api/tests` passed.
 - Compileall: `python -m compileall -q apps/api/app` passed.
 - Financial regression: PASS; no Phase 17 financial logic regression was identified.

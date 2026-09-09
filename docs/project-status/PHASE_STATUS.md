@@ -842,9 +842,10 @@ COMBINATION: EXECUTABLE TEST (9 focused Phase 17 operability tests), BUILD VERIF
 
 ### Test Result
 Phase 16 baseline: 110 backend tests (historical baseline stated by project directive).
-Phase 16 latest gate: 119 backend tests passed with 10 warnings, with Ruff and compileall passing.
-Phase 17 focused tests: 9 passed in `test_phase17_operability.py`.
-Current authoritative backend: 119 collected, 119 passed, 0 failed, 9 warnings.
+Phase 16 historical baseline: 110 backend tests.
+Phase 17 added: 9 focused operability tests.
+Current backend suite: 119 collected, 119 passed, 0 failed, 9 warnings.
+Post-Phase-17 regression: 119 backend tests passed.
 
 ### Evidence
 - Phase 16 regression gate: All checks passing (119 API tests, Python linting, compilation, Flutter tests and builds)
@@ -878,7 +879,7 @@ PASS — Phase 16 regression gate shows no financial logic regression. Flutter l
 - Real-model AI evaluation and production model routing are deferred; tests use local/deterministic providers.
 
 ### Related Commit
-Implementation baseline: `b3c07aa`. Phase 17 commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`. Source verification HEAD: `f569550`; final documentation HEAD from Git.
+Implementation baseline: `b3c07aa`. Phase 17 commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`. Source verification HEAD: `f569550`; final repository HEAD: `dfc49d8dbc7569e8cdaf336de64ec399b4021e10`.
 
 ### Next Action
 Phase 18 NOT STARTED. Future work is limited to external staging/production verification and the documented limitations above.

@@ -192,11 +192,15 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 
 NEXT: Preserve the Phase 16 baseline and resolve documented non-blocking limitations before any Phase 17 work.
 
-Phase 17:
+HISTORICAL Phase 17 checkpoint:
 NOT STARTED
 
 Phase 18:
 NOT STARTED
+
+CURRENT:
+Phase 17: COMPLETE WITH DOCUMENTED LIMITATIONS
+Phase 18: NOT STARTED
 
 ## Phase 15 Progress
 
