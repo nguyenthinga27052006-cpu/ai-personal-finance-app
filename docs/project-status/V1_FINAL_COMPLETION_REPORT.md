@@ -1,7 +1,7 @@
 # V1 Final Completion Report
 
-Date: 2026-09-09  
-Scope: Phase 00 -> Phase 18  
+Date: 2026-09-10
+Scope: Phase 00 -> Phase 18
 Phase 18 is the final V1 phase. No later phase exists.
 
 ## Historical Baseline
@@ -47,12 +47,12 @@ Journey D retains the expected `SUCCESS` assertion and now includes non-sensitiv
 
 | Journey | Result | Evidence |
 |---|---|---|
-| A | PASS once after lifecycle fix | Reached A21 and exited 0; prior three-run evidence also passed before the lifecycle race was found |
-| B | NOT VERIFIED post-fix | The post-fix B run did not complete and was interrupted |
-| C | NOT VERIFIED post-fix | The post-fix B/C batch stopped before C |
-| D #1 | PASS | Reached D07 and exited 0 |
-| D #2 | PASS | Reached D07 and exited 0 |
-| D #3 | PASS | Reached D07 and exited 0 |
+| A #1 | FAIL | Hit-test failure on Add transaction control; did not complete |
+| A #2 | PASS | Reached A21 and exited 0 |
+| A #3 | PASS | Reached A21 and exited 0 |
+| B | FAIL | Expected budget notification title was absent from the UI |
+| C | PASS | Exited 0 with all assertions passing |
+| D | FAIL | Failed waiting for `Ask your finances` after selecting AI |
 
 ## Automated Regression
 
@@ -61,20 +61,23 @@ Journey D retains the expected `SUCCESS` assertion and now includes non-sensitiv
 - Ruff: **PASS**.
 - Python compile checks: **PASS** for API and worker.
 - Focused Flutter tests: **PASS**, including AI and account state regressions.
-- Full Flutter test suite: **NOT VERIFIED after final focused-test correction**.
-- Flutter analyze: **NOT PASS**, informational `avoid_print` findings remain in integration tests.
-- Android debug/release builds: **NOT VERIFIED in this continuation**.
-- Web build/runtime/E2E: **NOT VERIFIED**.
-- Database verification: **NOT VERIFIED in this continuation**; historical schema evidence remains preserved.
-- Runtime health/ready/metrics/openapi: **NOT VERIFIED in this continuation**; Docker runtime was unavailable during the earlier check.
+- Full Flutter test suite: **PASS**, 13 tests passed.
+- Flutter analyze: **EXIT 1**, with 35 informational `avoid_print` findings in integration tests and no reported errors.
+- Android debug build: **PASS**.
+- Android release build: **PASS**; signing/store readiness remains unverified.
+- Web build: **PASS**.
+- Web runtime: **NOT VERIFIED**; the build was served locally, but browser automation could not launch because the Playwright Chromium executable was unavailable.
+- Web E2E: **NOT VERIFIED**.
+- Database verification: **PASS**, PostgreSQL 18.6, 14 tables, BIGINT money columns, constraints, 13 indexes, seeded categories, Alembic head `c93e2b7f4a18`.
+- Runtime: **PASS**, `/health`, `/ready`, `/metrics`, and `/openapi.json` each returned HTTP 200 after API/worker rebuild and recreation.
 
 ## Financial and AI Safety
 
-Backend financial invariant coverage passed within the 119-test suite. Journey D passed 3/3 locally and uses the application AI endpoint and analytics tool path. Real-model production quality and external security scans remain NOT VERIFIED.
+Backend financial invariant coverage passed within the 119-test suite. Journey D's focused regression passed and the latest live D run failed before the AI screen became visible. Real-model production quality and external security scans remain NOT VERIFIED.
 
 ## Final V1 Status
 
-**NO-GO.** Journey D is fixed and passes 3/3, but post-fix B/C evidence and the complete release/runtime matrix are incomplete. No GO or CONDITIONAL GO claim is made.
+**NO-GO.** Current post-commit Journey A #1, Journey B, and Journey D failed. Journey A #2/#3 and C passed. Web runtime/E2E also remain unverified.
 
 ## Remediation Changes
 
