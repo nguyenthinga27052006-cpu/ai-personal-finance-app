@@ -10,7 +10,7 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 ## CURRENT STATE
 
 - CURRENT PHASE: Phase 18 - Release Candidate and Handover
-- CURRENT PROJECT GATE: Phase 17 documentation/status consistency complete
+- CURRENT PROJECT GATE: Phase 18 Release Candidate / Handover — CONDITIONAL GO
 - PHASE 06: PASS
 - PHASE 07: PASS
 - PHASE 08: PASS WITH DOCUMENTED LIMITATIONS
@@ -24,7 +24,7 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 - MASTER STATUS: `docs/project-status/MASTER_STATUS.md`
 - FULL REGRESSION: `docs/project-status/FULL_REGRESSION_PHASE_00_16.md`
 - IMPLEMENTATION BASELINE: `b3c07aa`
-- CURRENT HEAD: final consistency commit; exact value is recorded by the final Git commands.
+- CURRENT HEAD: `a3d98a2e474e8c3b090d432d48981a393bb206c5`
 - PHASE 17: PASS WITH DOCUMENTED LIMITATIONS
 - PHASE 18: RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS
 
@@ -43,7 +43,9 @@ Phase 17 verification summary:
 - Status documents are being synchronized under the canonical Phase 17 evidence set.
 
 Phase 18 release-candidate summary:
-- Release identity: mobile 1.0.0+1; API/worker 0.1.0; baseline SHA 49fe338.
+- Release Candidate Identity: `1.0.0+1`.
+- Release Artifacts: NOT VERIFIED; no production APK/release artifact is claimed.
+- API/worker version: `0.1.0`; migration head: `c93e2b7f4a18`.
 - Decision: CONDITIONAL GO for local RC only; not production approval.
 - External gates, store signing, backup/restore, hosted CI and production deployment remain NOT VERIFIED.
 

@@ -898,6 +898,9 @@ Baseline, versioning, reproducible build, migration, deployment, rollback, smoke
 ### Open gates
 Backup artifact, restore execution, financial restore integrity, hosted CI, staging, production, release signing, store approval, external monitoring/tracing/error tracking, security scan results and SBOM remain NOT VERIFIED.
 
+Phase 18 status: **PASS WITH DOCUMENTED LIMITATIONS**.
+Phase 19: **NOT STARTED**. No next phase beyond Phase 18 is defined for this release-candidate baseline.
+
 ---
 
 ### Phase 17 Implementation Details

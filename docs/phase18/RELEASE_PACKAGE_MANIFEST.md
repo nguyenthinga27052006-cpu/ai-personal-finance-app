@@ -4,6 +4,7 @@
 |---|---|
 | Source | Git SHA `49fe3386bb20900cc7343332fd81a49e52380588` at baseline audit |
 | Release version | Mobile `1.0.0+1`; API/worker `0.1.0` |
+| Release artifacts | NOT VERIFIED; identity does not imply a production artifact exists |
 | API image | `finance-assistant-api:<git-sha>` convention; digest NOT VERIFIED |
 | Worker image | `finance-assistant-worker:<git-sha>` convention; digest NOT VERIFIED |
 | Mobile APK | Release artifact NOT VERIFIED; prior debug APK evidence exists |

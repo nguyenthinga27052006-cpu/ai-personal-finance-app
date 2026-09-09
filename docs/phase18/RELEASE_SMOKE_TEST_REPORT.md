@@ -2,6 +2,8 @@
 
 Status: PARTIALLY VERIFIED from prior Phase 16 local evidence; Phase 18 rerun: NOT RUN.
 
+Release artifacts: NOT VERIFIED. Prior Phase 16 evidence is not Phase 18 execution evidence.
+
 | Area | Required flow | Status |
 |---|---|---|
 | Auth | register/login/refresh/logout | LOCALLY VERIFIED historically |

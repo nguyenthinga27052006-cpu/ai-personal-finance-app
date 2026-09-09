@@ -69,8 +69,11 @@ No critical Phase 00-16 blocker was found in the current regression.
 **Phase 16:** CLOSED.
 **Phase 17:** PASS WITH DOCUMENTED LIMITATIONS.
 **Phase 18:** RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS.
+**Phase 18 status:** PASS WITH DOCUMENTED LIMITATIONS.
 
 Phase 18 decision: **CONDITIONAL GO** for a local release candidate only; this is not production approval.
+Phase 18 status: **PASS WITH DOCUMENTED LIMITATIONS**.
+Phase 19: **NOT STARTED**. No next phase beyond Phase 18 is defined for this release-candidate baseline.
 
 ## 4. Non-blocking Limitations
 - Real-model semantic evaluation was not completed; current AI evaluation uses the deterministic `FakeProvider`.

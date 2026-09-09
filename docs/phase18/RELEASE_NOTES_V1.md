@@ -1,6 +1,8 @@
 # V1 Release Notes
 
 Release candidate: `1.0.0+1`
+Release Candidate Identity: `1.0.0+1`
+Release Artifacts: NOT VERIFIED
 Date: 2026-09-09
 Source: `49fe3386bb20900cc7343332fd81a49e52380588` at baseline audit
 Status: RELEASE CANDIDATE - LOCALLY VERIFIED WITH DOCUMENTED PRODUCTION/STORE LIMITATIONS

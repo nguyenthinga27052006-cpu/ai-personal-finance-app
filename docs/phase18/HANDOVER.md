@@ -22,6 +22,6 @@ Secrets belong in the environment secret manager. Backups must be isolated and v
 
 ## Before production
 
-Close RC-001 through RC-005 in `RELEASE_DECISION.md`, obtain release signing, run staging/production deployment checks, execute smoke/E2E, produce security scan/SBOM evidence and establish monitoring/alert routing.
+Close RELEASE GATES RC-001 through RC-005 in `RELEASE_DECISION.md`, obtain release signing, run staging/production deployment checks, execute smoke/E2E, produce security scan/SBOM evidence and establish monitoring/alert routing.
 
 Owners: Platform/SRE, DBA, Security, Mobile/Release, API/Finance, AI/Product. Exact personnel and contacts are NOT VERIFIED.
