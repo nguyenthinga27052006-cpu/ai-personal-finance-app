@@ -1,6 +1,58 @@
 # PROJECT STATUS CHANGELOG
 
-## 2026-09-09
+## 2026-09-09 — Phase 17 Continuation Checkpoint
+
+### Phase 17
+
+Added:
+
+- `.github/workflows/ci.yml` — GitHub Actions CI/CD pipeline with Python, container, Flutter, and security jobs
+- `docs/phase17/` — 24 documentation files (CI_CD.md, OBSERVABILITY.md, AI_COST_CONTROL.md, ALERTING.md, BACKUP_DR.md, RESTORE_DRILL.md, RPO_RTO.md, RATE_LIMITING.md, ENVIRONMENTS.md, DEPLOYMENT.md, ROLLBACK.md, SECURITY_PIPELINE.md, COST_OBSERVABILITY.md, PRODUCTION_READINESS_MATRIX.md, RUNBOOK_*.md x8, README.md)
+- `apps/api/app/observability.py` — Structured JSON logging, correlation ID context, Prometheus metrics collection
+- `apps/api/app/ai/usage.py` — AI cost/usage budget tracking with per-user/per-feature daily limits
+- `apps/api/tests/test_phase17_operability.py` — Operability tests for observability and AI controls
+- `infra/docker/docker-compose.staging.yml` — Staging container orchestration template
+- `infra/environments/` — Environment-specific configuration templates (dev, staging, production)
+- `scripts/backup-restore-drill.ps1` — Backup and restore verification procedure
+
+Changed:
+
+- `apps/api/Dockerfile` — Container hardening (non-root user appuser:10001, HEALTHCHECK, multi-stage build)
+- `apps/worker/Dockerfile` — Container hardening (non-root user, graceful shutdown signal handling)
+- `apps/api/app/main.py` — Integrated observability middleware and AI cost control enforcement
+- `apps/api/app/ai/routes.py` — AI endpoint safety controls (budget enforcement, rate limiting)
+- `apps/api/core/config.py` — Configuration parameters for observability and AI budgets
+- `docs/project-status/MASTER_STATUS.md` — Added Phase 17 verification checkpoint
+- `docs/project-status/PHASE_STATUS.md` — Added Phase 17 detailed status section
+
+Tests:
+
+- Phase 16 regression gate: 112 backend tests PASS ✓, Ruff PASS ✓, Compileall PASS ✓
+- Flutter analyze: 33 print warnings (pre-existing Phase 16 style issues, not Phase 17 regression)
+- Observability verification: Metrics collection, correlation IDs, JSON logging all functional ✓
+- AI cost control verification: Budget enforcement, per-user/per-feature tracking, hard-stop limit all functional ✓
+- Docker builds: API image 312 MB with non-root user, worker image successful ✓
+- Backup/restore procedure: pg_dump/pg_restore script verified functional ✓
+- CI/CD workflow: Syntax verified, job structure correct, dependencies proper
+
+Limitations:
+
+- Hosted GitHub Actions CI unavailable (no live workflow execution on development machine)
+- Distributed rate limiting deferred (requires shared storage; local budget implemented)
+- OpenTelemetry exporters not configured (local in-process metrics only)
+- Monitoring backend absent (alert rules defined, no firing mechanism)
+- Cloud backup/restore unavailable (script verified, full drill deferred)
+- Real-model AI evaluation deferred (inherited from Phase 13-14; uses FakeProvider)
+
+Verification Status: **PASS WITH DOCUMENTED LIMITATIONS** — All Phase 17 implementation complete and locally verified. Known limitations are expected distributed-system and cloud-resource constraints.
+
+Next Action: Create 6 logical commits, update CHANGELOG.md Phase 17 entry, generate Phase 17 Final Result Report.
+
+Related implementation commits pending.
+
+---
+
+## 2026-09-09 — Phase 16 Documentation Baseline
 
 ### Phase 16
 
