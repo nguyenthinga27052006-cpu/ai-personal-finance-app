@@ -4,6 +4,8 @@ Date: 2026-09-10
 Scope: Phase 00 -> Phase 18
 Phase 18 is the final V1 phase. No later phase exists.
 
+Open issues are tracked in [docs/qa/FAILURE_HISTORY.md](../qa/FAILURE_HISTORY.md).
+
 ## Historical Baseline
 
 Previous audited state: `3fc7115`  
@@ -78,6 +80,8 @@ Backend financial invariant coverage passed within the 119-test suite. Journey D
 ## Final V1 Status
 
 **NO-GO.** Current post-commit Journey A #1, Journey B, and Journey D failed. Journey A #2/#3 and C passed. Web runtime/E2E also remain unverified.
+
+Blocking issues: **FH-004**, **FH-005**, and **FH-006** in [docs/qa/FAILURE_HISTORY.md](../qa/FAILURE_HISTORY.md).
 
 ## Remediation Changes
 
