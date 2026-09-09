@@ -11,7 +11,7 @@
 - Implementation baseline: `b3c07aa`
 - Phase 17 implementation commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`
 - Documentation reconciliation commit: current final HEAD from `git rev-parse HEAD`.
-- Working tree status is reported by the final `git status --short` command; no CLEAN claim is made while source changes remain.
+- Working Tree: **CLEAN** after source and documentation commits.
 
 ## Phase 16 Regression
 

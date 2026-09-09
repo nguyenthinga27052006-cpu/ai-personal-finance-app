@@ -10,7 +10,7 @@ Current Branch: `main`
 Current HEAD: final documentation reconciliation commit, recorded by `git rev-parse HEAD`.
 Implementation baseline commit: `b3c07aa` (`chore: commit verified phase 04-16 implementation`)
 Phase 17 Implementation Commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b` (6 logical commits with observability, CI/CD, containers, backup/restore, runbooks, documentation)
-Working Tree: **DIRTY during final consistency work** while source observability files are being committed.
+Working Tree: **CLEAN** after source and documentation commits.
 Editor-local `.vscode/settings.json` is preserved outside the baseline.
 
 Canonical evidence is recorded in [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSION_PHASE_00_16.md). Historical reports remain historical and are not treated as current execution proof unless this baseline records a current command.

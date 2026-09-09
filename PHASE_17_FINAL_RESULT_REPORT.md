@@ -192,7 +192,7 @@ Nine comprehensive operational runbooks (documented in `docs/phase17/RUNBOOK_*.m
    - 3 files changed, 265 insertions
 
 **Current final HEAD**: recorded by the final `git rev-parse HEAD` command.
-**Working Tree**: Final state is reported by the required `git status --short` command; CLEAN is claimed only if that command is empty.
+**Working Tree**: CLEAN after source and documentation commits.
 
 ---
 
