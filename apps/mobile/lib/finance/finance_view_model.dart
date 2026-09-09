@@ -18,8 +18,16 @@ class FinanceViewModel extends ChangeNotifier {
   List<NotificationModel> notifications = const [];
   List<RecommendationModel> recommendations = const [];
   DashboardModel? dashboard;
+  var _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 
   Future<void> loadCore() async {
+    if (_disposed) return;
     loading = true;
     error = null;
     notifyListeners();
@@ -35,6 +43,7 @@ class FinanceViewModel extends ChangeNotifier {
         repository.recommendations(),
         repository.dashboard(),
       ]);
+      if (_disposed) return;
       accounts = results[0] as List<AccountModel>;
       transactions = results[1] as List<TransactionModel>;
       categories = results[2] as List<CategoryModel>;
@@ -45,10 +54,11 @@ class FinanceViewModel extends ChangeNotifier {
       recommendations = results[7] as List<RecommendationModel>;
       dashboard = results[8] as DashboardModel;
     } catch (exception) {
+      if (_disposed) return;
       error = exception.toString();
     } finally {
       loading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 

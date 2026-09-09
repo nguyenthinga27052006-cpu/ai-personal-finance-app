@@ -106,6 +106,7 @@ void main() {
   });
 
   testWidgets('Phase 16 Journey D: AI query tool answer', (tester) async {
+    _markD('D01 APP START');
     final fixture = await _createFixture();
     final account = await fixture.api.createAccount({
       'name': 'Phase 16 AI account',
@@ -127,6 +128,7 @@ void main() {
       'question': 'How much did I spend this month?',
       'currency': 'VND',
     });
+    _markD('D02 API RESPONSE RECEIVED status=${rawResponse['status']}');
     expect(rawResponse['intent'], 'monthly_expense');
     expect(rawResponse['tool'], 'get_monthly_expense');
     expect(rawResponse['source'], 'analytics.service');
@@ -141,17 +143,24 @@ void main() {
 
     await _pumpAuthenticatedApp(tester, fixture.api);
     await _waitForText(tester, 'Home');
+    _markD('D03 AUTH COMPLETE');
     await tester.tap(find.text('AI').last);
     await _waitForText(tester, 'Ask your finances');
+    _markD('D04 AI SCREEN OPEN');
     final question = find.widgetWithText(TextField, 'Ask a financial question');
     await tester.tap(question);
     await tester.enterText(question, 'How much did I spend this month?');
     await tester.tap(find.byTooltip('Ask'));
+    _markD('D05 REQUEST SUBMITTED');
+    _markD('D06 SUCCESS EXPECTATION START expected=${rawResponse['status']}');
     await _waitForText(tester, rawResponse['status'] as String);
+    _markD('D07 SUCCESS VISIBLE');
     expect(find.text(rawResponse['answer'] as String), findsOneWidget);
     expect(find.text('Source: analytics.service'), findsOneWidget);
   });
 }
+
+void _markD(String marker) => print(marker);
 
 class _MemoryTokenStorage implements TokenStorage {
   String? accessToken;
@@ -234,6 +243,14 @@ Future<void> _waitForText(WidgetTester tester, String text) async {
   for (var attempt = 0; attempt < 40; attempt++) {
     await tester.pump(const Duration(milliseconds: 250));
     if (find.text(text).evaluate().isNotEmpty) return;
+  }
+  if (text == 'SUCCESS') {
+    _markD(
+      'D08 timeout states success=${find.text('SUCCESS').evaluate().isNotEmpty} '
+      'error=${find.text('Provider or network error').evaluate().isNotEmpty} '
+      'ready=${find.text('Ready').evaluate().isNotEmpty} '
+      'loading=${find.byType(CircularProgressIndicator).evaluate().isNotEmpty}',
+    );
   }
   expect(find.text(text), findsWidgets, reason: 'Expected E2E state: $text');
 }
