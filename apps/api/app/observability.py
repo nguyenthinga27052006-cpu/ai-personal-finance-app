@@ -3,16 +3,13 @@ from __future__ import annotations
 import json
 import logging
 import time
-import uuid
-from collections import Counter
-from contextvars import ContextVar
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import Any
 
 from fastapi import Request
 
-request_id_context: ContextVar[str] = ContextVar("request_id", default="-")
-trace_id_context: ContextVar[str] = ContextVar("trace_id", default="-")
+from app.tracing import request_id_context, trace_id_context
 
 
 class JsonFormatter(logging.Formatter):
@@ -42,12 +39,25 @@ def configure_logging(level: str) -> None:
 @dataclass
 class Metrics:
     requests: Counter[str]
-    durations_ms: dict[str, list[float]]
+    duration_counts: Counter[str]
+    duration_sums_ms: defaultdict[str, float]
+    duration_buckets: dict[str, Counter[float]]
+
+    BUCKETS = (5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, float("inf"))
 
     def observe_request(self, route: str, method: str, status: int, duration_ms: float) -> None:
         key = f"{method} {route} {status}"
         self.requests[key] += 1
-        self.durations_ms.setdefault(f"{method} {route}", []).append(duration_ms)
+        duration_key = f"{method} {route}"
+        self.duration_counts[duration_key] += 1
+        self.duration_sums_ms[duration_key] += duration_ms
+        for bucket in self.BUCKETS:
+            if duration_ms <= bucket:
+                self.duration_buckets.setdefault(duration_key, Counter())[bucket] += 1
+
+    @staticmethod
+    def _label(value: str) -> str:
+        return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
 
     def prometheus(self) -> str:
         lines = [
@@ -58,33 +68,43 @@ class Metrics:
             method, route, status = key.split(" ", 2)
             lines.append(
                 "app_http_requests_total{"
-                f'method="{method}",route="{route}",status="{status}"}} {count}'
+                f'method="{self._label(method)}",route="{self._label(route)}",'
+                f'status="{status}"}} {count}'
             )
         lines.extend([
             "# HELP app_http_request_duration_ms HTTP request duration in milliseconds.",
-            "# TYPE app_http_request_duration_ms summary",
+            "# TYPE app_http_request_duration_ms histogram",
         ])
-        for key, values in sorted(self.durations_ms.items()):
+        for key, buckets in sorted(self.duration_buckets.items()):
             method, route = key.split(" ", 1)
-            if not values:
-                continue
-            ordered = sorted(values)
-            p95 = ordered[min(len(ordered) - 1, int(len(ordered) * 0.95))]
+            for bucket in self.BUCKETS:
+                le = "+Inf" if bucket == float("inf") else str(bucket)
+                lines.append(
+                    "app_http_request_duration_ms_bucket{"
+                    f'method="{self._label(method)}",route="{self._label(route)}",le="{le}"}} '
+                    f"{buckets.get(bucket, 0)}"
+                )
+            labels = f'method="{self._label(method)}",route="{self._label(route)}"'
             lines.append(
-                "app_http_request_duration_ms{"
-                f'method="{method}",route="{route}",quantile="0.95"}} {p95:.3f}'
+                f"app_http_request_duration_ms_count{{{labels}}} {self.duration_counts[key]}"
+            )
+            lines.append(
+                f"app_http_request_duration_ms_sum{{{labels}}} {self.duration_sums_ms[key]:.3f}"
             )
         return "\n".join(lines) + "\n"
 
 
-metrics = Metrics(requests=Counter(), durations_ms={})
+metrics = Metrics(
+    requests=Counter(),
+    duration_counts=Counter(),
+    duration_sums_ms=defaultdict(float),
+    duration_buckets={},
+)
 
 
 def correlation_ids(request: Request) -> tuple[str, str]:
-    request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
-    trace_id = (
-        request.headers.get("traceparent")
-        or request.headers.get("x-trace-id")
-        or str(uuid.uuid4())
-    )
-    return request_id, trace_id
+    trace_context = __import__(
+        "app.tracing",
+        fromlist=["extract_trace_context"],
+    ).extract_trace_context(request)
+    return trace_context.request_id, trace_context.trace_id
