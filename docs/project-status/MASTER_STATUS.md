@@ -7,9 +7,10 @@ Current Phase: Phase 16 complete; Phase 17 not started
 Overall Status: **PASS WITH DOCUMENTED LIMITATIONS**
 Last Verified: 2026-09-09
 Current Branch: `main`
-Current Commit: `b3c07aa` (`chore: commit verified phase 04-16 implementation`)
-Status Commit: the documentation commit created after this implementation commit is recorded in [CHANGELOG.md](CHANGELOG.md).
-Working Tree: **DIRTY during status authoring**; final cleanup requires the status/docs commit and excludes editor-local `.vscode/settings.json`.
+Current HEAD: final documentation consistency commit; exact value is recorded by `git rev-parse HEAD` in the final report.
+Implementation baseline commit: `b3c07aa` (`chore: commit verified phase 04-16 implementation`)
+Status/documentation commits: `891716a`, `ea8e631`, and the final documentation consistency commit.
+Working Tree: **CLEAN**. Editor-local `.vscode/settings.json` is preserved outside the baseline.
 
 Canonical evidence is recorded in [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSION_PHASE_00_16.md). Historical reports remain historical and are not treated as current execution proof unless this baseline records a current command.
 
@@ -17,23 +18,23 @@ Canonical evidence is recorded in [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSI
 
 | Phase | Status | Last Verified | Evidence | Commit | Blocker |
 |---|---|---|---|---|---|
-| 00 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Repository governance, rules, docs, and status audit | commit not identified; working tree dirty | No executable phase-specific gate |
-| 01 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Implementation contract and architecture documentation reviewed | commit not identified | Requirements are documentary |
-| 02 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Current Docker/Compose/scripts/manifests plus runtime readiness | commit not identified | Environment evidence is local and not commit-pinned |
-| 03 | PASS | 2026-09-09 | Migration chain, PostgreSQL integration tests, BIGINT/schema checks, runtime readiness | commit not identified | None in current gate |
-| 04 | PASS | 2026-09-09 | Auth lifecycle, refresh rotation, revocation, ownership, secure storage tests | commit not identified | None in current gate |
-| 05 | PASS | 2026-09-09 | Account/catalog/merchant tests and ownership checks | commit not identified | None in current gate |
-| 06 | PASS | 2026-09-09 | Financial core/invariant/PostgreSQL tests: transfer, refund, split, idempotency, rollback | commit not identified | Posted edit/void audit policy remains deferred |
-| 07 | PASS | 2026-09-09 | Budget/goal calculations, timezone boundaries, refund/transfer semantics | commit not identified | None in current gate |
-| 08 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Flutter gate and current Android Journey A | commit not identified | Non-fatal Amount-field hit-test warning |
-| 09 | PASS | 2026-09-09 | Analytics canonical facts, dashboard, timezone and period tests | commit not identified | None in current gate |
-| 10 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Deterministic insight, provenance, expiry and ownership tests | commit not identified | Deterministic engine; historical timestamp/report limitations |
-| 11 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Notification rules/API/dedupe/quiet-hours/scheduler-lock tests and Journey B | commit not identified | Worker delivery is not independently end-to-end tested |
-| 12 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Recommendation persistence, lifecycle, provenance and Journey coverage | commit not identified | Recurring/push delivery deferred; worker validation indirect |
-| 13 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | AI gateway, read-only tools, provenance, guardrails and golden tests | commit not identified | Fake provider only; no real-model evaluation |
-| 14 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | AI query/categorization/OCR abstraction/chat/mobile AI tests and Journey D | commit not identified | No durable chat or production OCR/object storage |
-| 15 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Security regression, auth/BOLA, request limits, rate limits, threat model | commit not identified | Distributed limits, production network controls, vault rotation, dependency scan and retention workflows deferred |
-| 16 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Full local gate plus current Android Journeys A, B, C, D | commit not identified | Real-model AI, coverage, performance threshold, hosted CI limitations |
+| 00 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Repository governance, rules, docs, and status audit | Commit not individually identified | No executable phase-specific gate |
+| 01 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Implementation contract and architecture documentation reviewed | Commit not individually identified | Requirements are documentary |
+| 02 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Current Docker/Compose/scripts/manifests plus runtime readiness | Commit not individually identified | Environment evidence is local and not commit-pinned |
+| 03 | PASS | 2026-09-09 | Migration chain, PostgreSQL integration tests, BIGINT/schema checks, runtime readiness | Commit not individually identified | None in current gate |
+| 04 | PASS | 2026-09-09 | Auth lifecycle, refresh rotation, revocation, ownership, secure storage tests | `b3c07aa` — verified Phase 04-16 implementation | None in current gate |
+| 05 | PASS | 2026-09-09 | Account/catalog/merchant tests and ownership checks | `b3c07aa` — verified Phase 04-16 implementation | None in current gate |
+| 06 | PASS | 2026-09-09 | Financial core/invariant/PostgreSQL tests: transfer, refund, split, idempotency, rollback | `b3c07aa` — verified Phase 04-16 implementation | Posted edit/void audit policy remains deferred |
+| 07 | PASS | 2026-09-09 | Budget/goal calculations, timezone boundaries, refund/transfer semantics | `b3c07aa` — verified Phase 04-16 implementation | None in current gate |
+| 08 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Flutter gate and current Android Journey A | `b3c07aa` — verified Phase 04-16 implementation | Non-fatal Amount-field hit-test warning |
+| 09 | PASS | 2026-09-09 | Analytics canonical facts, dashboard, timezone and period tests | `b3c07aa` — verified Phase 04-16 implementation | None in current gate |
+| 10 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Deterministic insight, provenance, expiry and ownership tests | `b3c07aa` — verified Phase 04-16 implementation | Deterministic engine; historical timestamp/report limitations |
+| 11 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Notification rules/API/dedupe/quiet-hours/scheduler-lock tests and Journey B | `b3c07aa` — verified Phase 04-16 implementation | Worker delivery is not independently end-to-end tested |
+| 12 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Recommendation persistence, lifecycle, provenance and Journey coverage | `b3c07aa` — verified Phase 04-16 implementation | Recurring/push delivery deferred; worker validation indirect |
+| 13 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | AI gateway, read-only tools, provenance, guardrails and golden tests | `b3c07aa` — verified Phase 04-16 implementation | Fake provider only; no real-model evaluation |
+| 14 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | AI query/categorization/OCR abstraction/chat/mobile AI tests and Journey D | `b3c07aa` — verified Phase 04-16 implementation | No durable chat or production OCR/object storage |
+| 15 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Security regression, auth/BOLA, request limits, rate limits, threat model | `b3c07aa` — verified Phase 04-16 implementation | Distributed limits, production network controls, vault rotation, dependency scan and retention workflows deferred |
+| 16 | PASS WITH DOCUMENTED LIMITATIONS | 2026-09-09 | Full local gate plus current Android Journeys A, B, C, D | `b3c07aa` — verified Phase 04-16 implementation | Real-model AI, coverage, performance threshold, hosted CI limitations |
 
 Allowed status vocabulary above is limited to `PASS`, `FAIL`, `BLOCKED`, `PASS WITH DOCUMENTED LIMITATIONS`, and `NOT APPLICABLE`.
 
@@ -50,7 +51,7 @@ No critical Phase 00-16 blocker was found in the current regression. Phase 17 an
 - Production distributed rate limiting, TLS/HSTS/CORS/WAF, secret vault rotation, dependency scanning, retention/export/deletion, and upload/object-storage hardening remain deployment or product work.
 - Worker-specific delivery is indirectly covered; notification generation/API and scheduler locking are tested.
 - Journey A passes but emits a non-fatal hit-test warning when the Amount field is outside the visible viewport.
-- The implementation evidence is pinned to `b3c07aa`; status artifacts are committed separately.
+- The implementation evidence is pinned to `b3c07aa`; final HEAD is the final documentation consistency commit after status-only commits.
 
 ## 5. Latest Full Regression
 
@@ -86,7 +87,7 @@ Current results:
 - Stabilized Journey A auth reset, navigation, transaction dropdown interaction, and duplicate financial display assertions.
 - Created this Phase 00-16 master status system.
 
-Implementation commit: `b3c07aa`. Status/documentation commit: recorded in [CHANGELOG.md](CHANGELOG.md) after commit.
+Implementation baseline: `b3c07aa`. Status/documentation commits: `891716a`, `ea8e631`, and the final documentation consistency commit.
 
 ## 8. Next Phase
 

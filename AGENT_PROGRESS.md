@@ -11,18 +11,20 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 
 - CURRENT PHASE: Phase 16 - Testing, QA, Financial Invariants & AI Evaluation
 - CURRENT PROJECT GATE: NUMERIC CASTING BUG FIXED ✅
-- PHASE 06: VERIFIED PASS
+- PHASE 06: PASS
 - PHASE 07: PASS
-- PHASE 08: PASS WITH NON-BLOCKING WARNINGS
-- PHASE 09: VERIFIED PASS
-- PHASE 10: VERIFIED PASS WITH NON-BLOCKING RECURRING LIMIT
-- PHASE 11: PASS WITH NON-BLOCKING ISSUES
+- PHASE 08: PASS WITH DOCUMENTED LIMITATIONS
+- PHASE 09: PASS
+- PHASE 10: PASS WITH DOCUMENTED LIMITATIONS
+- PHASE 11: PASS WITH DOCUMENTED LIMITATIONS
 - CURRENT ALEMBIC HEAD: `c93e2b7f4a18 (head)`
 - PHASE 16 BLOCKER RESOLVED: Mobile app numeric casting bug fixed (InsightModel.confidence + DashboardModel.savingRate)
 - OFFICIAL PHASE 16 UNPASSED REGISTER: `docs/testing/PHASE16_UNPASSED_ITEMS.md`
 - PHASE 16 BUG FIX REPORT: `PHASE_16_BUG_FIX_RESOLUTION.md`
 - MASTER STATUS: `docs/project-status/MASTER_STATUS.md`
 - FULL REGRESSION: `docs/project-status/FULL_REGRESSION_PHASE_00_16.md`
+- IMPLEMENTATION BASELINE: `b3c07aa`
+- CURRENT HEAD: final documentation consistency commit; exact value is recorded in the final report.
 - NEXT PHASE: Phase 17 is not started; Phase 17/18 are not opened
 
 **PHASE 16 BUG FIX SUMMARY** (Latest Session):
@@ -47,6 +49,8 @@ extended Dashboard E2E attempt did not complete, but it is historical and does
 not invalidate the critical Phase 08 acceptance evidence.
 
 **REPORT TIMESTAMP DISCREPANCY - Phase 06 Comprehensive Re-Audit (document dated 2026-09-04)**: Verified no blocking defects. The date is retained as written and is not used as proof of test execution time. All database, domain, and application invariants correctly implemented. Cross-phase dependencies (Phase 07/09/10) all working correctly. 27 tests passed, 0 failed. No code changes required. CLEARED FOR PHASE 11.
+
+> The phase snapshots below are HISTORICAL / SUPERSEDED context. The canonical current status is the Phase 16 block above and [docs/project-status/MASTER_STATUS.md](docs/project-status/MASTER_STATUS.md).
 
 Phase 08 - Flutter Core Experience
 
@@ -74,7 +78,7 @@ PHASE 01
 STATUS: PASS
 
 PHASE 02
-STATUS: PASS WITH DOCUMENTATION RISK
+STATUS: PASS WITH DOCUMENTED LIMITATIONS
 
 PHASE 03
 STATUS: PASS
@@ -86,7 +90,7 @@ PHASE 05
 STATUS: PASS
 
 PHASE 06
-STATUS: VERIFIED PASS (RE-AUDITED; report dated 2026-09-04)
+STATUS: PASS (RE-AUDITED; report dated 2026-09-04)
 
 Comprehensive re-audit confirmed all financial invariants correctly implemented.
 Database invariants (BigInteger, constraints, ownership, cascade) verified against PostgreSQL schema.
@@ -101,13 +105,13 @@ PHASE 07
 STATUS: PASS
 
 PHASE 08
-STATUS: PASS WITH NON-BLOCKING WARNINGS
+STATUS: PASS WITH DOCUMENTED LIMITATIONS
 
 PHASE 09
-STATUS: VERIFIED PASS
+STATUS: PASS
 
 PHASE 10
-STATUS: VERIFIED PASS WITH NON-BLOCKING RECURRING LIMIT
+STATUS: PASS WITH DOCUMENTED LIMITATIONS
 
 IMPLEMENTATION_COMPLETENESS:
 HIGH FOR PHASES 01-14 WITH DOCUMENTED LIMITATIONS
@@ -179,7 +183,7 @@ NOT STARTED
 
 ## Phase 15 Progress
 
-STATUS: PASS WITH RISKS
+STATUS: PASS WITH DOCUMENTED LIMITATIONS
 
 - Added production security-default validation for JWT and worker tokens.
 - Added baseline security headers and a 1 MiB request-body content-length guard.

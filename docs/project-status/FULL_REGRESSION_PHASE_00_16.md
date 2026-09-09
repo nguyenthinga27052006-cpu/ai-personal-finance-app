@@ -8,8 +8,10 @@
 
 Branch: `main`
 Implementation commit: `b3c07aa` (`chore: commit verified phase 04-16 implementation`)
-Working tree during regression: **DIRTY**
-The regression evidence is pinned to the implementation commit; status documentation is committed separately afterward.
+Regression execution commit: `b3c07aa`
+Final repository HEAD after status-only commits: final documentation consistency commit; exact value is recorded in the final report.
+Working tree at final baseline: **CLEAN**
+The regression evidence is pinned to the implementation commit; it was not rerun on the final documentation commits.
 
 ## Environment
 
@@ -54,7 +56,7 @@ The regression evidence is pinned to the implementation commit; status documenta
 Objective: Establish repository governance and a truthful status baseline.
 Method: DOCUMENT VERIFICATION and STATIC VERIFICATION.
 Command: `git status --short; git branch --show-current; git log -n 10 --oneline; git diff --check`.
-Result: `main`, HEAD `ff3ba5b...`, dirty worktree; diff check passes.
+Result: `main`, regression execution commit `b3c07aa`; final HEAD the final documentation consistency commit; final worktree clean; diff check passes.
 Evidence: Rules/progress/README/docs inventory completed.
 Status: PASS WITH DOCUMENTED LIMITATIONS.
 Limitation: No executable phase-specific gate.

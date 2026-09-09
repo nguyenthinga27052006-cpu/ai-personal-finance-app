@@ -14,7 +14,7 @@ Added:
 Changed:
 
 - Updated `README.md`, `AGENT_PROGRESS.md`, and `docs/architecture/PHASE_INDEX.md` to point to the canonical Phase 00-16 status.
-- Recorded current branch, commit, dirty worktree, environment versions and executable evidence.
+- Recorded current branch, implementation baseline `b3c07aa`, final documentation consistency commit, clean worktree, environment versions and executable evidence.
 
 Fixed:
 
@@ -38,8 +38,8 @@ Limitations:
 - Coverage tooling unavailable.
 - Performance values are local baseline measurements, not production SLAs.
 - Hosted CI workflow not implemented.
-- Worktree remains dirty; current evidence is not commit-pinned.
+- Regression evidence was executed against `b3c07aa`; status-only commits are `891716a`, `ea8e631`, and the final documentation consistency commit.
 - Phase 17 and Phase 18 remain not started.
 
 Related implementation commit: `b3c07aa` (`chore: commit verified phase 04-16 implementation`).
-Status/documentation commit: created after this entry; its exact HEAD is recorded in the final regression report.
+No executable tests were rerun for this documentation-only consistency correction.

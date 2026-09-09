@@ -138,7 +138,7 @@ PASS
 Evidence is local and the worktree is not commit-pinned.
 
 ### Related Commit
-Commit not identified for the accumulated foundation changes.
+Commit not individually identified for the accumulated foundation changes.
 
 ### Next Action
 None.
@@ -185,7 +185,7 @@ PASS
 No fresh destructive database reset was performed during this audit.
 
 ### Related Commit
-Commit not identified for uncommitted migration chain.
+Commit not individually identified for the migration chain.
 
 ### Next Action
 None.
@@ -232,7 +232,7 @@ PASS
 Production secret management and distributed session operations remain deployment concerns.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 None.
@@ -279,7 +279,7 @@ PASS
 System seed is environment-dependent outside the tested local setup.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 None.
@@ -326,7 +326,7 @@ PASS
 Posted-record edit/void/reversal audit policy remains deferred by project scope.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 None.
@@ -373,7 +373,7 @@ PASS
 None blocking current gate.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 None.
@@ -420,7 +420,7 @@ PASS
 The warning should be cleaned up in a later focused test-quality task; it does not block this baseline.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 None for Phase 16 closure.
@@ -467,7 +467,7 @@ PASS
 None blocking current gate.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 None.
@@ -514,7 +514,7 @@ PASS
 No external probabilistic model is involved; historical report timestamp discrepancies remain documentary.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 None.
@@ -561,7 +561,7 @@ PASS
 Worker delivery is indirectly tested; push delivery is outside current scope.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 None.
@@ -608,7 +608,7 @@ PASS
 Recurring recommendations and push delivery are deferred; worker validation is indirect.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 None.
@@ -655,7 +655,7 @@ PASS
 Only `FakeProvider` is configured; real-model semantic quality is not verified.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 Evaluate with a real provider only as a separate task.
@@ -702,7 +702,7 @@ PASS
 Chat is in-memory/session-scoped; OCR is an abstraction without production object storage.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 None for current baseline.
@@ -749,7 +749,7 @@ PASS
 Distributed rate limits, production TLS/HSTS/CORS/WAF, secret vault rotation, dependency scan, network segmentation and retention/export/deletion remain unverified or deferred.
 
 ### Related Commit
-Commit not identified.
+b3c07aa — verified Phase 04-16 implementation.
 
 ### Next Action
 Deployment/security hardening is a separate task.
