@@ -81,7 +81,7 @@ Backend financial invariant coverage passed within the 119-test suite. Journey D
 
 **NO-GO.** Current post-commit Journey A #1, Journey B, and Journey D failed. Journey A #2/#3 and C passed. Web runtime/E2E also remain unverified.
 
-Blocking issues: **FH-004**, **FH-005**, and **FH-006** in [docs/qa/FAILURE_HISTORY.md](../qa/FAILURE_HISTORY.md).
+Blocking issues: **FH-004**, **FH-005**, **FH-006**, and **FH-011** in [docs/qa/FAILURE_HISTORY.md](../qa/FAILURE_HISTORY.md).
 
 ## Remediation Changes
 

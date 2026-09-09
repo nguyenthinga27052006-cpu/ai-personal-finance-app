@@ -18,6 +18,8 @@ All timestamps are local workspace time on 2026-09-09 or 2026-09-10. Evidence is
 | FH-008 | MEDIUM | BLOCKED_BY_ENVIRONMENT | Web runtime | Playwright Chromium executable unavailable | 2026-09-10 |
 | FH-009 | LOW | BLOCKED_BY_ENVIRONMENT | Security | Requested scanners unavailable | 2026-09-10 |
 | FH-010 | LOW | BLOCKED_BY_ENVIRONMENT | Database tooling | API image does not contain verify_postgres.py | 2026-09-10 |
+| FH-011 | HIGH | OPEN | Journey A / auth navigation | Home was not visible after login within bounded state wait | 2026-09-10 |
+| FH-012 | LOW | VERIFIED | QA validation | Runner static check falsely rejected intentional cleanup wait | 2026-09-10 |
 
 ## FH-001: Account Creation State Observation
 
@@ -124,15 +126,15 @@ All timestamps are local workspace time on 2026-09-09 or 2026-09-10. Evidence is
 - Status: OPEN
 - Journey / Phase / Area: Journey B / notifications and worker evaluation
 - Test or command: `flutter test integration_test/phase16_journeys_test.dart -d emulator-5554 --dart-define=API_BASE_URL=http://10.0.2.2:8000 --dart-define=NOTIFICATION_WORKER_TOKEN=development-worker-token --name "Phase 16 Journey B: budget expense alert" --timeout 2m`
-- Exact observed error: `Expected: at least one matching candidate; Actual: Found 0 widgets with text "Budget alert: Phase 16 Budget"` at `phase16_journeys_test.dart:78`; exit code 1.
+- Exact observed error: Prior run: `Expected: at least one matching candidate; Actual: Found 0 widgets with text "Budget alert: Phase 16 Budget"` at `phase16_journeys_test.dart:78`; latest diagnostic run stalled before `B01 EVALUATION` and was killed after the test did not complete.
 - Expected behavior: After worker evaluation, the Notifications screen displays the generated budget alert.
 - Actual behavior: The API/fixture flow reached the UI, but the expected notification title was absent.
-- Reproduction frequency: Unknown; one fresh post-commit run failed.
+- Reproduction frequency: Intermittent/unknown; one fresh run failed at UI notification assertion and one diagnostic run stalled before evaluation evidence.
 - Reproduction steps: Create budget and account, create 9000 VND expense, call internal notification evaluation with the worker token, reload Notifications, assert the alert title.
 - Suspected root cause: Worker evaluation, notification persistence, or notification refresh timing/ownership filtering.
 - Confirmed root cause: Not yet confirmed.
 - Fix attempted: None in this verification-only pass; assertions and business logic were not changed.
-- Fix result: Unresolved.
+- Fix result: Unresolved; latest diagnostic run did not produce evaluation/API/UI markers.
 - Verification result: OPEN; current V1 evidence remains NO-GO.
 - Related commits: `134984706fdc7ca52f105a35c66d5a02e10c737b`
 - Related test files: `apps/mobile/integration_test/phase16_journeys_test.dart`
@@ -148,20 +150,20 @@ All timestamps are local workspace time on 2026-09-09 or 2026-09-10. Evidence is
 - Status: INVESTIGATING
 - Journey / Phase / Area: Journey D / AI screen navigation and response state
 - Test or command: Exact test name `Phase 16 Journey D: AI query tool answer` on `emulator-5554`.
-- Exact observed error: Earlier run: `Found 0 widgets with text "SUCCESS"` after D06; latest run: `Found 0 widgets with text "Ask your finances"` at `phase16_journeys_test.dart:148`; exit code 1.
+- Exact observed error: Earlier run: `Found 0 widgets with text "SUCCESS"` after D06; latest runs: `Found 0 widgets with text "Ask your finances"` after `D03 AUTH COMPLETE`, including after changing to `NavigationDestination.at(8)`; exit code 1.
 - Expected behavior: The AI destination opens, the query succeeds, and the UI renders `SUCCESS`, the answer, and source.
-- Actual behavior: One isolated run reached `D07 SUCCESS VISIBLE`, but the latest fresh run failed before the AI screen marker. The focused `ai_screen_test.dart` passed.
+- Actual behavior: One isolated run reached `D07 SUCCESS VISIBLE`, later runs failed before the AI screen marker, and a diagnostic run stalled after `D03 AUTH COMPLETE`. API logs show successful AI requests in the runtime, while the failing UI runs do not prove that the AI route mounted. The focused `ai_screen_test.dart` passed.
 - Reproduction frequency: Intermittent; observed both PASS and FAIL under the same committed code.
 - Reproduction steps: Run the exact Journey D command with API and worker-token defines on `emulator-5554`.
 - Suspected root cause: Live emulator navigation/load timing, stale route state, or runtime request/UI lifecycle interaction.
 - Confirmed root cause: Not yet confirmed. API response contract is confirmed as `status=SUCCESS`; `AIScreen.ask` awaits and sets the result correctly in focused tests.
-- Fix attempted: Added bounded diagnostic markers and focused AI widget regression; no arbitrary delays or assertion weakening.
-- Fix result: Focused regression passes; live D remains intermittent and latest post-commit run failed.
+- Fix attempted: Added bounded diagnostic markers and focused AI widget regression; changed the test navigation selector from broad `find.text('AI').last` to `NavigationDestination.at(8)`; no arbitrary delays or assertion weakening.
+- Fix result: Focused regression passes; selector change did not resolve live D, which remains intermittent and latest focused run failed before AI screen visibility.
 - Verification result: INVESTIGATING; current V1 evidence remains NO-GO.
 - Related commits: `134984706fdc7ca52f105a35c66d5a02e10c737b`
 - Related test files: `apps/mobile/integration_test/phase16_journeys_test.dart`, `apps/mobile/test/ai_screen_test.dart`
 - Related source files: `apps/mobile/lib/ai/ai_screen.dart`, `apps/mobile/lib/ai/models.dart`, `apps/mobile/lib/auth/api_client.dart`
-- Notes / next investigation direction: Capture the selected tab, widget tree, and API request/error state immediately after tapping AI; compare with the passing D run.
+- Notes / next investigation direction: Capture the selected tab, widget tree, and API request/error state immediately after tapping AI; compare with the passing D run. The structural selector attempt did not yet produce conclusive post-tap evidence.
 
 ## FH-007: Flutter Analyze Informational Findings
 
@@ -259,6 +261,54 @@ All timestamps are local workspace time on 2026-09-09 or 2026-09-10. Evidence is
 - Related source files: `apps/api/Dockerfile`
 - Notes / next investigation direction: Decide whether the verifier belongs in the image or should remain a host-side QA command.
 
+## FH-011: Journey A Home Missing After Login
+
+- Issue ID: FH-011
+- First detected date/time: 2026-09-10
+- Last observed date/time: 2026-09-10
+- Severity: HIGH
+- Status: OPEN
+- Journey / Phase / Area: Journey A / authentication-to-home navigation
+- Test or command: `flutter test integration_test/critical_journey_test.dart -d emulator-5554 --dart-define=API_BASE_URL=http://10.0.2.2:8000 --timeout 2m`
+- Exact observed error: `Expected authoritative state: Home; Found 0 widgets with text "Home"` at `_waitForText`, after marker `A06 LOGIN SUBMITTED`; exit code 1.
+- Expected behavior: Successful login transitions to the authenticated FinanceHome screen and exposes `Home`.
+- Actual behavior: The bounded state wait expired before `Home` became visible.
+- Reproduction frequency: Unknown; one focused run failed, prior runs passed this point.
+- Reproduction steps: Run Journey A on `emulator-5554`, register, log out, submit login, wait for `Home`.
+- Suspected root cause: Intermittent authentication restore/login completion, API response delay, or AuthApp state transition race.
+- Confirmed root cause: Not yet confirmed.
+- Fix attempted: None; no timeout increase or arbitrary delay added.
+- Fix result: Unresolved.
+- Verification result: OPEN; current V1 evidence remains NO-GO.
+- Related commits: `6e03c4ae81c921c7463a675ea6046e97c44fd2ca`
+- Related test files: `apps/mobile/integration_test/critical_journey_test.dart`
+- Related source files: `apps/mobile/lib/auth/auth_app.dart`, `apps/mobile/lib/auth/auth_controller.dart`
+- Notes / next investigation direction: Capture AuthController status/error and protected-home mount state immediately after login without logging credentials or tokens.
+
+## FH-012: Runner Validation Probe False Positive
+
+- Issue ID: FH-012
+- First detected date/time: 2026-09-10
+- Last observed date/time: 2026-09-10
+- Severity: LOW
+- Status: VERIFIED
+- Journey / Phase / Area: QA runner validation
+- Test or command: PowerShell static validation of `test-journey-a.ps1`.
+- Exact observed error: The first validation command reported `Stale text or unbounded WaitForExit remains` because it matched the intentional no-argument `WaitForExit()` cleanup call after process termination.
+- Expected behavior: Static validation distinguishes bounded primary waiting from cleanup waiting.
+- Actual behavior: The validation probe was over-broad and exited 1.
+- Reproduction frequency: Always for that exact probe expression.
+- Reproduction steps: Search the runner raw text for any `WaitForExit()` after the runner was correctly changed.
+- Suspected root cause: Incorrect validation predicate, not a runner defect.
+- Confirmed root cause: The no-argument wait is used only after `$proc.Kill($true)` to reap the terminated process.
+- Fix attempted: Corrected the probe to require bounded `WaitForExit($timeoutSeconds * 1000)` and separately check process-tree kill.
+- Fix result: `RUNNER_STATIC_VALIDATION=PASS`.
+- Verification result: VERIFIED.
+- Related commits: Working-tree runner audit; commit pending with this stabilization batch.
+- Related test files: `test-journey-a.ps1`
+- Related source files: None.
+- Notes / next investigation direction: Keep runner validation predicates lifecycle-aware.
+
 ## Relationship To Final V1 Report
 
 The canonical final report is [V1_FINAL_COMPLETION_REPORT.md](../project-status/V1_FINAL_COMPLETION_REPORT.md). Open issues are tracked here. The current V1 decision is **NO-GO** because FH-004, FH-005, and FH-006 are current critical E2E issues. FH-007 through FH-010 are environment/tooling limitations and do not become PASS merely because they are unverified.
@@ -272,3 +322,4 @@ The canonical final report is [V1_FINAL_COMPLETION_REPORT.md](../project-status/
 - FH-008: Web browser runtime tooling missing (BLOCKED_BY_ENVIRONMENT)
 - FH-009: Security scanners unavailable (BLOCKED_BY_ENVIRONMENT)
 - FH-010: Database verifier not included in API image (BLOCKED_BY_ENVIRONMENT)
+- FH-011: Journey A Home missing after login (OPEN)

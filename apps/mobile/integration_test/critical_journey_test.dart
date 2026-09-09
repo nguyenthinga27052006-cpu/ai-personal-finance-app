@@ -69,7 +69,15 @@ void main() {
     await tester.tap(find.byType(NavigationDestination).at(2));
     await _settle(tester, 'Transactions');
     _mark('A14 TRANSACTIONS SCREEN');
-    await tester.tap(find.byTooltip('Add transaction'));
+    final addTransaction = find.byTooltip('Add transaction');
+    final addTransactionRect = tester.getRect(addTransaction);
+    _mark(
+      'A14 FAB count=${addTransaction.evaluate().length} '
+      'rect=$addTransactionRect '
+      'view=${tester.binding.platformDispatcher.views.first.physicalSize}',
+    );
+    await tester.ensureVisible(addTransaction);
+    await tester.tap(addTransaction);
     await tester.pumpAndSettle();
     await tester.tap(find.text('EXPENSE').first);
     await tester.pumpAndSettle();

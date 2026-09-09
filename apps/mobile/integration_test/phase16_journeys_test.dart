@@ -59,10 +59,15 @@ void main() {
       Uri.parse('${fixture.baseUrl}/api/v1/internal/notifications/evaluate'),
       headers: {'X-Worker-Token': workerToken},
     );
+    print('B01 EVALUATION status=${evaluation.statusCode} body=${evaluation.body}');
     expect(evaluation.statusCode, 200);
     expect(int.parse(evaluation.body), greaterThan(0));
 
     final notifications = await fixture.api.notifications();
+    print(
+      'B02 API notifications count=${notifications.length} '
+      'types=${notifications.map((item) => item.type).toList()}',
+    );
     expect(notifications, isNotEmpty);
     expect(
       notifications.any((item) => item.type == 'BUDGET_THRESHOLD'),
@@ -75,6 +80,9 @@ void main() {
     await _waitForText(tester, 'Home');
     await tester.tap(find.text('Notifications').last);
     await _waitForText(tester, 'Notifications');
+    print(
+      'B03 UI notification titles=${find.byType(Text).evaluate().map((element) => (element.widget as Text).data).whereType<String>().toList()}',
+    );
     expect(find.text(notifications.first.title), findsWidgets);
   });
 
@@ -144,7 +152,11 @@ void main() {
     await _pumpAuthenticatedApp(tester, fixture.api);
     await _waitForText(tester, 'Home');
     _markD('D03 AUTH COMPLETE');
-    await tester.tap(find.text('AI').last);
+    await tester.tap(find.byType(NavigationDestination).at(8));
+    _markD(
+      'D04 AI TAP COMPLETE appBar=${find.widgetWithText(AppBar, 'AI Assistant').evaluate().length} '
+      'home=${find.text('Home').evaluate().length} ai=${find.text('AI').evaluate().length}',
+    );
     await _waitForText(tester, 'Ask your finances');
     _markD('D04 AI SCREEN OPEN');
     final question = find.widgetWithText(TextField, 'Ask a financial question');
