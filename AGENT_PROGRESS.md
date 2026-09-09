@@ -3,13 +3,13 @@
 
 ## Current Phase
 
-Phase 16 - Testing, QA, Financial Invariants & AI Evaluation
+Phase 17 - Production Infrastructure and Operational Controls
 
 STATUS: PASS WITH DOCUMENTED LIMITATIONS
 
 ## CURRENT STATE
 
-- CURRENT PHASE: Phase 16 - Testing, QA, Financial Invariants & AI Evaluation
+- CURRENT PHASE: Phase 17 - Production Infrastructure and Operational Controls
 - CURRENT PROJECT GATE: NUMERIC CASTING BUG FIXED ✅
 - PHASE 06: PASS
 - PHASE 07: PASS
@@ -25,7 +25,21 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 - FULL REGRESSION: `docs/project-status/FULL_REGRESSION_PHASE_00_16.md`
 - IMPLEMENTATION BASELINE: `b3c07aa`
 - CURRENT HEAD: final documentation consistency commit; exact value is recorded in the final report.
-- NEXT PHASE: Phase 17 is not started; Phase 17/18 are not opened
+- PHASE 17: COMPLETE WITH DOCUMENTED LIMITATIONS
+- PHASE 18: NOT STARTED
+
+Phase 17 implementation summary:
+- Structured JSON logging, request/trace correlation, and local Prometheus metrics
+- Per-user/per-feature AI daily budgets with hard-stop enforcement
+- GitHub Actions workflow, Docker hardening, staging/production templates
+- Backup/restore procedures, rollback guidance, and nine operational runbooks
+
+Phase 17 verification summary:
+- Two focused operability tests are present for observability and AI budgets.
+- Latest recorded Phase 16 gate passed 112 backend tests, Ruff, and compileall.
+- API and worker Docker images were built locally.
+- Hosted CI, staging, production, restore execution, external monitoring, and security scan results are not verified.
+- Status documents are being synchronized under the canonical Phase 17 evidence set.
 
 **PHASE 16 BUG FIX SUMMARY** (Latest Session):
 - **Bug**: Mobile app crashes on loadCore due to unsafe JSON numeric type casting

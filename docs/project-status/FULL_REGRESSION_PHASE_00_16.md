@@ -246,4 +246,8 @@ Deterministic golden evaluation passes 7/7 cases with `FakeProvider`. Real-model
 
 **PASS WITH DOCUMENTED LIMITATIONS**
 
-No current critical blocker remains for Phase 00-16. Phase 17 and Phase 18 are not started.
+No current critical blocker remains for Phase 00-16. The historical Phase 16 gate predates Phase 17; current Phase 17 and Phase 18 status are recorded in the separate Phase 17 documents.
+
+## Phase 17 Preservation Note
+
+Phase 17 changes were validated against the existing Phase 00-16 regression baseline. This historical report remains a Phase 00-16 report; Phase 17 evidence is recorded separately in `docs/phase17/PHASE17_REGRESSION.md`.

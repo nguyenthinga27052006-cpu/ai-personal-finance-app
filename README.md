@@ -80,4 +80,16 @@ Xem [docs/README.md](docs/README.md) và [docs/IMPLEMENTATION_CONTRACT.md](docs/
 
 ## Current Status
 
-The current master baseline covers Phase 00 through Phase 16 and is **PASS WITH DOCUMENTED LIMITATIONS**. The full local regression gate, runtime health/readiness, and current Android Journeys A-D are verified on 2026-09-09. This does not claim production readiness. See [docs/project-status/MASTER_STATUS.md](docs/project-status/MASTER_STATUS.md) for the canonical status and [AGENT_PROGRESS.md](AGENT_PROGRESS.md) for the agent work log.
+The current master baseline covers Phase 00 through Phase 17 and is **PASS WITH DOCUMENTED LIMITATIONS**. Phase 18 is **NOT STARTED**. This does not claim staging or production verification.
+
+### Phase 17 local checks
+
+```powershell
+./.venv/Scripts/python.exe -m pytest apps/api/tests/test_phase17_operability.py
+docker build -t finance-assistant-api:test apps/api
+docker build -t finance-assistant-worker:test apps/worker
+```
+
+When the API is running locally, Prometheus-style metrics are available at `http://localhost:8000/metrics`. The backup/restore entry point is `./scripts/backup-restore-drill.ps1`; actual restore execution remains unverified.
+
+Phase 17 documentation: [docs/phase17/README.md](docs/phase17/README.md), [MASTER_STATUS.md](docs/project-status/MASTER_STATUS.md), [PHASE_STATUS.md](docs/project-status/PHASE_STATUS.md), [PRODUCTION_READINESS_MATRIX.md](docs/phase17/PRODUCTION_READINESS_MATRIX.md), [PHASE17_REGRESSION.md](docs/phase17/PHASE17_REGRESSION.md), [PHASE17_ACCEPTANCE_MATRIX.md](docs/phase17/PHASE17_ACCEPTANCE_MATRIX.md), and [PHASE17_FILE_INVENTORY.md](docs/phase17/PHASE17_FILE_INVENTORY.md).

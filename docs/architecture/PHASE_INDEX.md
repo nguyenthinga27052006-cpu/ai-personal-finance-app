@@ -19,7 +19,7 @@
 | 14 | PASS WITH DOCUMENTED LIMITATIONS | `docs/architecture/PHASE_14_FINAL_ACCEPTANCE_REPORT.md` | - | - | 15 |
 | 15 | PASS WITH DOCUMENTED LIMITATIONS | `docs/security/PHASE_15_SECURITY_REVIEW_REPORT.md` | `docs/architecture/PHASE_15_CHANGELOG.md` | `docs/architecture/PHASE_15_FINAL_CHECKPOINT.md` | 16 |
 | 16 | PASS WITH DOCUMENTED LIMITATIONS | `docs/project-status/MASTER_STATUS.md` and `docs/project-status/FULL_REGRESSION_PHASE_00_16.md` | `docs/architecture/PHASE_16_CHANGELOG.md` | `docs/architecture/PHASE_16_CLOSURE_REPORT.md` | 17 |
-| 17 | NOT STARTED | - | - | - | - |
+| 17 | PASS WITH DOCUMENTED LIMITATIONS | `docs/phase17/PHASE17_ACCEPTANCE_MATRIX.md` | `docs/project-status/CHANGELOG.md` | `docs/phase17/PHASE17_REGRESSION.md` | 18 |
 | 18 | NOT STARTED | - | - | - | - |
 
 Phase 16 critical E2E and local regression gates are currently passing. The remaining limitations are tracked in `docs/project-status/MASTER_STATUS.md` and `docs/testing/PHASE16_UNPASSED_ITEMS.md`. Phase 17 and Phase 18 are not opened.

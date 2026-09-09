@@ -1,6 +1,6 @@
 # PROJECT STATUS CHANGELOG
 
-## 2026-09-09 — Phase 17 Continuation Checkpoint
+## 2026-09-09 — Phase 17 Final Documentation Synchronization
 
 ### Phase 17
 
@@ -14,6 +14,9 @@ Added:
 - `infra/docker/docker-compose.staging.yml` — Staging container orchestration template
 - `infra/environments/` — Environment-specific configuration templates (dev, staging, production)
 - `scripts/backup-restore-drill.ps1` — Backup and restore verification procedure
+- `docs/phase17/PHASE17_REGRESSION.md` — Evidence-based Phase 17 regression report
+- `docs/phase17/PHASE17_ACCEPTANCE_MATRIX.md` — Acceptance criteria matrix
+- `docs/phase17/PHASE17_FILE_INVENTORY.md` — Phase 17 maintainability inventory
 
 Changed:
 
@@ -27,12 +30,13 @@ Changed:
 
 Tests:
 
-- Phase 16 regression gate: 112 backend tests PASS ✓, Ruff PASS ✓, Compileall PASS ✓
+- Phase 16 baseline: 110 backend tests; latest recorded Phase 16 gate: 112 backend tests PASS, Ruff PASS, Compileall PASS
+- Phase 17 additions: 2 focused tests in `test_phase17_operability.py`
 - Flutter analyze: 33 print warnings (pre-existing Phase 16 style issues, not Phase 17 regression)
 - Observability verification: Metrics collection, correlation IDs, JSON logging all functional ✓
 - AI cost control verification: Budget enforcement, per-user/per-feature tracking, hard-stop limit all functional ✓
 - Docker builds: API image 312 MB with non-root user, worker image successful ✓
-- Backup/restore procedure: pg_dump/pg_restore script verified functional ✓
+- Backup/restore procedure: documented and reviewed; actual backup artifact and restore execution NOT VERIFIED
 - CI/CD workflow: Syntax verified, job structure correct, dependencies proper
 
 Limitations:
@@ -44,11 +48,11 @@ Limitations:
 - Cloud backup/restore unavailable (script verified, full drill deferred)
 - Real-model AI evaluation deferred (inherited from Phase 13-14; uses FakeProvider)
 
-Verification Status: **PASS WITH DOCUMENTED LIMITATIONS** — All Phase 17 implementation complete and locally verified. Known limitations are expected distributed-system and cloud-resource constraints.
+Verification Status: **PASS WITH DOCUMENTED LIMITATIONS** — Phase 17 implementation is complete and local evidence is recorded. Hosted CI, staging, production, restore execution, external observability, and security scan outputs remain unverified.
 
-Next Action: Create 6 logical commits, update CHANGELOG.md Phase 17 entry, generate Phase 17 Final Result Report.
+Next Action: Phase 18 NOT STARTED. External verification remains future work.
 
-Related implementation commits pending.
+Related implementation commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`.
 
 ---
 

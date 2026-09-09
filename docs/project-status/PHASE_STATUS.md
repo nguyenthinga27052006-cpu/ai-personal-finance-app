@@ -807,7 +807,7 @@ Stop at Phase 16. Phase 17/18 remain not started.
 PASS WITH DOCUMENTED LIMITATIONS
 
 ### Objective
-Establish production operations, observability, and cost controls.
+Production-operable CI/CD, infrastructure, observability, backup/restore and cost controls.
 
 ### Scope
 CI/CD pipeline, container orchestration, structured logging, metrics, tracing, AI cost/usage limits, rate limiting, alerting, backup/restore, RPO/RTO, runbooks, production readiness.
@@ -820,58 +820,61 @@ CI/CD pipeline, container orchestration, structured logging, metrics, tracing, A
 - Backup/Restore: pg_dump/pg_restore procedure with post-restore validation
 - Documentation: 24 files covering operations (CI/CD, observability, rate limiting, alerting, deployment, runbooks, etc.)
 - Runbooks: 8 operational runbooks (API, Database, Queue, AI Provider, Backup, Rollback, Secret Compromise, Container, Cost Spike)
-- Production Readiness Matrix: 12 capabilities with verification status and documented limitations
+- Production Readiness Matrix: capability-by-capability implementation and verification status
 
 ### Files Changed
 `.github/workflows/ci.yml`, `apps/api/Dockerfile`, `apps/worker/Dockerfile`, `apps/api/app/observability.py`, `apps/api/app/main.py`, `apps/api/app/ai/usage.py`, `apps/api/app/ai/routes.py`, `apps/api/core/config.py`, `scripts/backup-restore-drill.ps1`, `infra/docker/docker-compose.staging.yml`, `infra/environments/*`, `docs/phase17/*` (24 files), `apps/api/tests/test_phase17_operability.py`.
 
 ### Verification Method
-COMBINATION: STATIC VERIFICATION (CI/CD, Docker syntax), EXECUTABLE TESTS (observability, AI controls, backup procedure), and DOCUMENT VERIFICATION (runbooks, production readiness matrix).
+COMBINATION: EXECUTABLE TEST (2 focused Phase 17 operability tests), BUILD VERIFICATION (API and worker Docker images), STATIC VERIFICATION (workflow and configuration review), RUNTIME VERIFICATION (local observability endpoint and correlation headers), and DOCUMENT VERIFICATION (runbooks and readiness matrix).
 
 ### Commands
 - Git audit: `git status --short`, `git log -10 --oneline`, `git diff --check`
-- Phase 16 regression: `scripts/phase16-gate.ps1` (112 API tests PASS, ruff PASS, compileall PASS)
-- Observability test: `python test_phase17_features.py` (metrics, correlation IDs, budget enforcement)
+- Phase 16 regression evidence: `scripts/phase16-gate.ps1` (latest recorded result: 112 API tests PASS, ruff PASS, compileall PASS)
+- Phase 17 focused tests: `apps/api/.venv/Scripts/python.exe -m pytest apps/api/tests/test_phase17_operability.py` (2 tests; source inventory verified)
+- Phase 17 test inventory: Phase 16 baseline 110 backend tests; Phase 17 additions 2; current full-suite total not independently rerun in this documentation pass
 - Docker builds: `docker build -t finance-assistant-api:test apps/api`, `docker build -t finance-assistant-worker:test apps/worker`
 - CI validation: Workflow syntax check (`yq` or visual review), job structure verification
 
 ### Test Result
-PASS
+Phase 16 baseline: 110 backend tests (historical baseline stated by project directive).
+Phase 16 latest recorded gate: 112 backend tests passed, with Ruff and compileall passing.
+Phase 17 additions: 2 focused tests in `test_phase17_operability.py`.
+Current full backend total: NOT VERIFIED in this documentation pass; no new full-suite total is claimed.
 
 ### Evidence
 - Phase 16 regression gate: All checks passing (112 API tests, Python linting, compilation)
 - Observability: Metrics collection, correlation IDs, structured logging verified locally
 - AI cost controls: Per-user and per-feature budget enforcement verified with hard-stop at limit
 - Docker builds: Both API (312 MB) and worker images build successfully with security hardening
-- Backup procedure: pg_dump/pg_restore scripts verified functional
+- Backup procedure: script structure and error handling reviewed; backup artifact and actual restore execution are NOT VERIFIED
 - CI/CD workflow: GitHub Actions jobs configured with proper dependencies and artifact handling
 - Documentation: Production Readiness Matrix covers 12 capabilities with honest risk assessment
 
 ### Root Causes
-None found. Phase 17 implementation is complete and locally verified.
+None found in the locally verified Phase 17 implementation.
 
 ### Fixes
-No fixes needed. Implementation is correct and complete.
+Implemented observability, AI budget enforcement, CI workflow, container hardening, environment templates, backup/restore procedure, and operational documentation.
 
 ### Regression
 PASS — Phase 16 regression gate shows no financial logic regression. Flutter linting warnings (33 print issues) are pre-existing style issues from Phase 16, not Phase 17 regressions.
 
 ### Limitations
-- Hosted GitHub Actions CI unavailable (no live workflow execution on development machine)
-- Distributed rate limiting deferred (requires shared storage; local in-memory budget implemented)
-- OpenTelemetry exporters not configured (local Prometheus metrics only, no distributed tracing)
-- Monitoring backend absent (alerting rules documented, no firing mechanism available locally)
-- Cloud backup/restore unavailable (script verified, full DR drill deferred without cloud resources)
-- Real-model AI evaluation deferred (inherited from Phase 13-14; uses FakeProvider)
+- Hosted GitHub Actions execution is NOT VERIFIED.
+- Staging and production deployments are NOT VERIFIED; only templates and procedures exist.
+- Backup artifact creation, actual restore execution, financial restore integrity, and DR drill are NOT VERIFIED.
+- RPO and RTO are documented targets, not measured achievements.
+- Distributed rate limiting and shared usage accounting are deferred; local in-memory controls are verified.
+- OpenTelemetry exporters, external tracing, error tracking, monitoring backend, and external alert routing are NOT VERIFIED.
+- Dependency scan, container scan, SBOM generation, and production security scanning are NOT VERIFIED locally.
+- Real-model AI evaluation and production model routing are deferred; tests use local/deterministic providers.
 
 ### Related Commit
-Phase 17 implementation pending logical commits. Phase 16 regression baseline: `b3c07aa`.
+Implementation baseline: `b3c07aa`. Phase 17 commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b`.
 
 ### Next Action
-1. Create 6 logical commits for Phase 17 implementation
-2. Update CHANGELOG.md with Phase 17 summary
-3. Generate Phase 17 Final Result Report
-4. Mark Phase 17 complete in project status
+Phase 18 NOT STARTED. Future work is limited to external staging/production verification and the documented limitations above.
 
 ---
 
