@@ -82,7 +82,7 @@ Establish production operations infrastructure including CI/CD pipeline, observa
 - **Verification**: Script syntax/static review only; no backup artifact was created or validated.
 
 #### 7. **Operational Runbooks** ✅
-Eight comprehensive operational runbooks (documented in `docs/phase17/RUNBOOK_*.md`):
+Nine comprehensive operational runbooks (documented in `docs/phase17/RUNBOOK_*.md`):
 1. **RUNBOOK_API_DOWN.md** — API health diagnosis, log analysis, restart, failover
 2. **RUNBOOK_DATABASE.md** — Connection pooling, query performance, backup integrity
 3. **RUNBOOK_QUEUE.md** — Worker health, message backlog, poison message handling
@@ -108,7 +108,7 @@ Eight comprehensive operational runbooks (documented in `docs/phase17/RUNBOOK_*.
 9. RPO/RTO: Targets documented, production measurement deferred
 10. AI usage/rate limits: ✅ Implemented and verified locally
 11. Security supply chain: Workflow configured, hosted scanning deferred
-12. Runbooks: ✅ All 8 complete, incident exercises pending
+12. Runbooks: ✅ All 9 complete, incident exercises pending
 
 ---
 
@@ -192,7 +192,7 @@ Eight comprehensive operational runbooks (documented in `docs/phase17/RUNBOOK_*.
    - 3 files changed, 265 insertions
 
 **Current final HEAD**: recorded by the final `git rev-parse HEAD` command.
-**Working Tree**: DIRTY; source/report files remain untracked and are listed by final `git status --short`.
+**Working Tree**: Final state is reported by the required `git status --short` command; CLEAN is claimed only if that command is empty.
 
 ---
 
@@ -223,7 +223,7 @@ Eight comprehensive operational runbooks (documented in `docs/phase17/RUNBOOK_*.
 - ✅ Deployment infrastructure (compose, environments)
 - ✅ Backup/restore procedures (pg_dump/pg_restore)
 - ✅ 24 comprehensive documentation files
-- ✅ 8+ operational runbooks
+- ✅ 9 operational runbooks
 - ✅ Production readiness matrix with honest risk assessment
 - ✅ Phase 16 regression gate validation (119 backend tests PASS)
 - ✅ Local verification of all Phase 17 features

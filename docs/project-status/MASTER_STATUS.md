@@ -10,7 +10,7 @@ Current Branch: `main`
 Current HEAD: final documentation reconciliation commit, recorded by `git rev-parse HEAD`.
 Implementation baseline commit: `b3c07aa` (`chore: commit verified phase 04-16 implementation`)
 Phase 17 Implementation Commits: `b017e4f`, `691009d`, `7bd23da`, `8d2dd0d`, `f2105d5`, `b3b555b` (6 logical commits with observability, CI/CD, containers, backup/restore, runbooks, documentation)
-Working Tree: **DIRTY during documentation synchronization** (3 pre-existing untracked test/report artifacts are intentionally not part of the docs commit).
+Working Tree: **DIRTY during final consistency work** while source observability files are being committed.
 Editor-local `.vscode/settings.json` is preserved outside the baseline.
 
 Canonical evidence is recorded in [FULL_REGRESSION_PHASE_00_16.md](FULL_REGRESSION_PHASE_00_16.md). Historical reports remain historical and are not treated as current execution proof unless this baseline records a current command.
@@ -54,7 +54,7 @@ No critical Phase 00-16 blocker was found in the current regression.
 - Restore: NOT VERIFIED; no restore was executed
 - Financial restore integrity: NOT VERIFIED; no restored database was checked
 - RPO/RTO: DOCUMENTED / NOT VERIFIED; targets were not measured
-- Runbooks and documentation: ✅ Complete (8 operational runbooks, 24 docs, 12-capability production readiness matrix)
+- Runbooks and documentation: ✅ Complete (9 operational runbooks, 24 docs, 12-capability production readiness matrix)
 - Git commits: ✅ Complete (6 logical commits with proper messages and evidence)
 
 **Phase 16:** CLOSED.
@@ -151,7 +151,7 @@ Implementation baseline: `b3c07aa`. Status/documentation commits: `891716a`, `ea
 7. **Documentation:** 24 files covering all operations
    - CI/CD, Observability, Rate Limiting, AI Cost Control, Alerting
    - Backup/Restore/DR, Deployment, Rollback, Security Pipeline
-   - 8 operational runbooks, Production Readiness Matrix
+   - 9 operational runbooks, Production Readiness Matrix
    - Honest risk assessment of local vs. distributed limitations
 
 ### Known Limitations (Expected):

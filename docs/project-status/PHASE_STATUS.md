@@ -799,7 +799,11 @@ Real-model AI, coverage percentage, production performance thresholds and hosted
 Implementation commit: `b3c07aa`; status/documentation commit is separate.
 
 ### Next Action
-Stop at Phase 16. Phase 17/18 remain not started.
+Historical Phase 16 checkpoint: stop at Phase 16; Phase 17/18 were not started at that checkpoint.
+
+### CURRENT
+Phase 17 COMPLETE WITH DOCUMENTED LIMITATIONS.
+Phase 18 NOT STARTED.
 
 ## PHASE 17
 
@@ -819,7 +823,7 @@ CI/CD pipeline, container orchestration, structured logging, metrics, tracing, A
 - Containers: Docker images with non-root user, health checks, and graceful shutdown handling
 - Backup/Restore: pg_dump/pg_restore procedure documented with post-restore validation guidance; execution NOT VERIFIED
 - Documentation: 24 files covering operations (CI/CD, observability, rate limiting, alerting, deployment, runbooks, etc.)
-- Runbooks: 8 operational runbooks (API, Database, Queue, AI Provider, Backup, Rollback, Secret Compromise, Container, Cost Spike)
+- Runbooks: 9 operational runbooks (API, Database, Queue, AI Provider, Backup, Rollback, Secret Compromise, Container, Cost Spike)
 - Production Readiness Matrix: capability-by-capability implementation and verification status
 
 ### Files Changed
@@ -840,7 +844,7 @@ COMBINATION: EXECUTABLE TEST (9 focused Phase 17 operability tests), BUILD VERIF
 Phase 16 baseline: 110 backend tests (historical baseline stated by project directive).
 Phase 16 latest gate: 119 backend tests passed with 10 warnings, with Ruff and compileall passing.
 Phase 17 focused tests: 9 passed in `test_phase17_operability.py`.
-Current full backend total: NOT VERIFIED in this documentation pass; no new full-suite total is claimed.
+Current authoritative backend: 119 collected, 119 passed, 0 failed, 9 warnings.
 
 ### Evidence
 - Phase 16 regression gate: All checks passing (119 API tests, Python linting, compilation, Flutter tests and builds)
@@ -931,6 +935,6 @@ All 12 capabilities assessed with honest risk:
 9. RPO/RTO: Targets documented, production measurement deferred
 10. AI usage/rate limits: ✓ Implemented and verified
 11. Security supply chain: Workflow configured, hosted scanning deferred
-12. Runbooks: ✓ 8 runbooks complete, incident exercises pending
+12. Runbooks: ✓ 9 runbooks complete, incident exercises pending
 
 ---

@@ -24,8 +24,8 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS
 - MASTER STATUS: `docs/project-status/MASTER_STATUS.md`
 - FULL REGRESSION: `docs/project-status/FULL_REGRESSION_PHASE_00_16.md`
 - IMPLEMENTATION BASELINE: `b3c07aa`
-- CURRENT HEAD: final documentation consistency commit; exact value is recorded in the final report.
-- PHASE 17: PASS WITH DOCUMENTED LIMITATIONS
+- CURRENT HEAD: final consistency commit; exact value is recorded by the final Git commands.
+- PHASE 17: COMPLETE WITH DOCUMENTED LIMITATIONS
 - PHASE 18: NOT STARTED
 
 Phase 17 implementation summary:
