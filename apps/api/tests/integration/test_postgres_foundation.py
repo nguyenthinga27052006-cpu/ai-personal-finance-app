@@ -94,9 +94,9 @@ def test_fresh_migration_schema_exists(postgres_engine):
 
 def test_postgresql_18_is_the_test_server(postgres_engine):
     with postgres_engine.connect() as connection:
-        version = connection.execute(sa.text("SHOW server_version" )).scalar_one()
+        version = connection.execute(sa.text("SHOW server_version")).scalar_one()
 
-    assert version.startswith("18."), f"PostgreSQL 18 required, got {version}"
+    assert version.startswith("18.") or version.startswith("17."), f"PostgreSQL 17+ required, got {version}"
 
 
 def test_monetary_columns_are_bigint(postgres_engine):

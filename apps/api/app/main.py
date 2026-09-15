@@ -2,9 +2,11 @@ import logging
 import time
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app.accounts.routes import router as accounts_router
+from app.admin.routes import router as admin_router
 from app.ai.routes import router as ai_router
 from app.analytics.routes import router as analytics_router
 from app.auth.routes import me_router
@@ -26,13 +28,47 @@ from app.tracing import (
 	span_id_context,
 	trace_id_context,
 )
+from contextlib import asynccontextmanager
 from app.transactions.routes import router as transactions_router
 from app.transactions.routes import transfer_router
 
 settings = get_settings()
 configure_logging(settings.log_level)
 logger = logging.getLogger(__name__)
-app = FastAPI(title=settings.app_name)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        from app.db.session import SessionLocal
+        from app.db.seed import seed_system_categories, seed_super_admin
+        session = SessionLocal()
+        try:
+            seed_system_categories(session)
+            seed_super_admin(session)
+        finally:
+            session.close()
+    except Exception as exc:
+        logger.warning(f"Auto-seed on startup skipped or failed: {exc}")
+    yield
+
+
+app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://10.0.2.2:8000",
+    ],
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1|10\.0\.2\.2)(:\d+)?",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 error_tracker = LocalErrorTracker(release=settings.release, environment=settings.app_env)
 
 
@@ -113,6 +149,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 def metrics_endpoint() -> PlainTextResponse:
 	return PlainTextResponse(metrics.prometheus(), media_type="text/plain; version=0.0.4")
 app.include_router(health_router)
+app.include_router(admin_router)
 app.include_router(auth_router)
 app.include_router(me_router)
 app.include_router(accounts_router)

@@ -15,6 +15,7 @@ from app.transactions.schemas import (
     TransactionCreate,
     TransactionListResponse,
     TransactionResponse,
+    TransactionUpdate,
 )
 from app.transactions.service import (
     IdempotencyConflictError,
@@ -22,8 +23,10 @@ from app.transactions.service import (
     TransactionNotFoundError,
     create_transaction,
     create_transfer,
+    delete_transaction,
     get_transaction,
     list_transactions,
+    update_transaction,
 )
 
 router = APIRouter(prefix="/api/v1/transactions", tags=["transactions"])
@@ -174,3 +177,45 @@ def detail(transaction_id: str, current_user: CurrentUser, db: DbSession) -> Tra
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "transaction_not_found", "message": "Transaction not found"},
         ) from exc
+
+
+@router.put("/{transaction_id}", response_model=TransactionResponse)
+def update_route(
+    transaction_id: str,
+    payload: TransactionUpdate,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> TransactionResponse:
+    try:
+        transaction = update_transaction(
+            db, current_user, transaction_id, payload.model_dump(exclude_unset=True)
+        )
+        db.commit()
+        db.refresh(transaction)
+        return transaction
+    except TransactionNotFoundError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "transaction_not_found", "message": "Transaction not found"},
+        ) from exc
+    except TransactionError as exc:
+        db.rollback()
+        raise domain_error(exc) from exc
+
+
+@router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_route(transaction_id: str, current_user: CurrentUser, db: DbSession) -> None:
+    try:
+        delete_transaction(db, current_user, transaction_id)
+        db.commit()
+    except TransactionNotFoundError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "transaction_not_found", "message": "Transaction not found"},
+        ) from exc
+    except TransactionError as exc:
+        db.rollback()
+        raise domain_error(exc) from exc
+

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
-from typing import Annotated
+import logging
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
@@ -25,10 +27,16 @@ from app.ai.errors import (
 from app.ai.gateway import default_gateway
 from app.ai.nl_query import execute_nl_query
 from app.ai.schemas import AIExecuteRequest, AIExecuteResponse
-from app.ai.usage import AIUsageLimitExceeded, get_ai_usage_budget
+from app.ai.usage import AIUsageLimitExceeded, TokenLimitExceeded, get_ai_usage_budget, get_token_budget_tracker
 from app.auth.dependencies import CurrentUser
 from app.auth.rate_limit import AuthRateLimiter, get_ai_rate_limiter
+from app.ai.rag.generator import FinancialRAGGenerator
+from app.db.models import AIChatMessage, AIFeedback
 from app.db.session import get_db
+
+logger = logging.getLogger("app.ai.routes")
+
+
 
 router = APIRouter(prefix="/api/v1/ai", tags=["ai"])
 DbSession = Annotated[Session, Depends(get_db)]
@@ -42,6 +50,20 @@ class NLQueryRequest(BaseModel):
     start: date | None = None
     end: date | None = None
     currency: str = Field(default="VND", min_length=3, max_length=3)
+    conversation_id: str | None = Field(default=None, max_length=100)
+    topic: str | None = None
+    language: str | None = Field(default="vi", min_length=2, max_length=5)
+
+
+class AIFeedbackRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query_id: str | None = Field(default=None, max_length=100)
+    conversation_id: str = Field(min_length=1, max_length=100)
+    rating: int = Field(ge=-1, le=5)
+    feedback_type: Literal["accurate", "hallucination", "wrong_numbers", "other"]
+    comment: str | None = Field(default=None, max_length=1000)
+
 
 _ERROR_STATUS = {
     AuthenticationContextError: 401,
@@ -103,6 +125,7 @@ def execute(
 ) -> AIExecuteResponse:
     _check_ai_rate_limit(request, current_user.id, limiter)
     _consume_ai_budget(current_user.id, payload.task)
+    _check_token_quota(current_user.id, payload.user_input or "")
     task_tools = {
         "financial_summary": {
             "get_current_balance",
@@ -139,6 +162,11 @@ def execute(
         )
     except AIError as exc:
         raise _ai_error(exc) from exc
+
+    prompt_toks = result.metadata.input_tokens or max(1, len(payload.user_input or "") // 4 + 100)
+    compl_toks = result.metadata.output_tokens or 50
+    get_token_budget_tracker().record_usage(current_user.id, prompt_toks, compl_toks)
+
     return AIExecuteResponse(output=result.output, metadata=result.metadata)
 
 
@@ -153,38 +181,158 @@ def query(
 ) -> dict[str, object]:
     _check_ai_rate_limit(request, current_user.id, limiter)
     _consume_ai_budget(current_user.id, "nl_query")
-    context = ExecutionContext(
-        db=db,
+    _check_token_quota(current_user.id, payload.question)
+
+    conv_id = payload.conversation_id or f"conv_{current_user.id}"
+    generator = FinancialRAGGenerator(db=db)
+    rag_resp = generator.generate_response(
         user=current_user,
-        request_id=x_request_id or str(uuid.uuid4()),
-        feature="nl_query",
-        allowed_tools=frozenset(
-            {
-                "get_monthly_expense",
-                "get_monthly_income",
-                "get_current_balance",
-                "get_budget_status",
-                "get_goal_progress",
-            }
-        ),
-    )
-    result = execute_nl_query(
-        context,
-        payload.question,
+        question=payload.question,
         start=payload.start,
         end=payload.end,
         currency=payload.currency,
-        gateway=default_gateway(),
+        conversation_id=conv_id,
+        language=payload.language or "vi",
     )
+
+    user_msg = AIChatMessage(
+        user_id=current_user.id,
+        role="user",
+        content=payload.question,
+        intent=rag_resp.intent,
+    )
+    assistant_msg = AIChatMessage(
+        user_id=current_user.id,
+        role="assistant",
+        content=rag_resp.answer_markdown,
+        intent=rag_resp.intent,
+        metadata_json={
+            "status": rag_resp.status,
+            "citations": rag_resp.citations,
+            "has_sql_data": rag_resp.has_sql_data,
+            "has_rag_data": rag_resp.has_rag_data,
+        },
+    )
+    db.add_all([user_msg, assistant_msg])
+    db.commit()
+
+    formatted_citations = rag_resp.detailed_citations or [
+        {"source": c, "type": "postgresql_db" if "PostgreSQL" in c else "knowledge_base"}
+        for c in rag_resp.citations
+    ]
+
+    prompt_toks = max(1, len(payload.question) // 4)
+    compl_toks = max(1, len(rag_resp.answer_markdown) // 4)
+    get_token_budget_tracker().record_usage(current_user.id, prompt_toks, compl_toks)
+
     return {
-        "status": result.status,
-        "intent": result.intent,
-        "tool": result.tool,
-        "answer": result.answer,
-        "source": result.source,
-        "citations": result.citations,
-        "message": result.message,
+        "status": rag_resp.status,
+        "intent": rag_resp.intent,
+        "confidence": getattr(rag_resp, "confidence", 0.95),
+        "tool": "hybrid_retriever",
+        "answer": rag_resp.answer_markdown,
+        "source": "hybrid_postgresql_chroma_rag",
+        "citations": formatted_citations,
+        "suggestions": getattr(rag_resp, "suggestions", []),
+        "message": "AI Financial Assistant response generated successfully",
     }
+
+
+@router.post("/chat/stream")
+@router.post("/query/stream")
+async def chat_stream(
+    payload: NLQueryRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+    request: Request,
+    limiter: AIRateLimiter,
+    x_request_id: str | None = Header(default=None, alias="X-Request-ID"),
+) -> StreamingResponse:
+    _check_ai_rate_limit(request, current_user.id, limiter)
+    _consume_ai_budget(current_user.id, "nl_query")
+    _check_token_quota(current_user.id, payload.question)
+
+    conv_id = payload.conversation_id or f"conv_{current_user.id}"
+    generator = FinancialRAGGenerator(db=db)
+
+    async def event_generator():
+        completion_chars = 0
+        async for chunk in generator.stream_generate_response(
+            user=current_user,
+            question=payload.question,
+            start=payload.start,
+            end=payload.end,
+            currency=payload.currency,
+            conversation_id=conv_id,
+            language=payload.language or "vi",
+        ):
+            completion_chars += len(chunk)
+            yield chunk
+
+        prompt_toks = max(1, len(payload.question) // 4)
+        compl_toks = max(1, completion_chars // 4)
+        get_token_budget_tracker().record_usage(current_user.id, prompt_toks, compl_toks)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.get("/history")
+def history(
+    current_user: CurrentUser,
+    db: DbSession,
+    limit: int = 50,
+) -> list[dict[str, object]]:
+    messages = (
+        db.query(AIChatMessage)
+        .filter(AIChatMessage.user_id == current_user.id)
+        .order_by(AIChatMessage.created_at.asc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "id": msg.id,
+            "role": msg.role,
+            "content": msg.content,
+            "intent": msg.intent,
+            "created_at": msg.created_at.isoformat(),
+        }
+        for msg in messages
+    ]
+
+
+@router.post("/feedback")
+def submit_feedback(
+    payload: AIFeedbackRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> dict[str, object]:
+    feedback = AIFeedback(
+        user_id=current_user.id,
+        query_id=payload.query_id,
+        conversation_id=payload.conversation_id,
+        rating=payload.rating,
+        feedback_type=payload.feedback_type,
+        comment=payload.comment,
+    )
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+
+    logger.info(
+        "ai_feedback_submitted user_id=%s conversation_id=%s rating=%d feedback_type=%s",
+        current_user.id,
+        payload.conversation_id,
+        payload.rating,
+        payload.feedback_type,
+    )
+
+    return {
+        "status": "success",
+        "message": "Feedback submitted successfully",
+        "feedback_id": feedback.id,
+    }
+
 
 
 def _check_ai_rate_limit(request: Request, user_id: str, limiter: AuthRateLimiter) -> None:
@@ -205,3 +353,22 @@ def _consume_ai_budget(user_id: str, feature: str) -> None:
             headers={"Retry-After": str(exc.retry_after)},
             detail={"code": "ai_budget_exceeded", "message": str(exc)},
         ) from exc
+
+
+def _check_token_quota(user_id: str, question_or_prompt: str = "") -> None:
+    estimated_tokens = max(1, len(question_or_prompt) // 4) if question_or_prompt else 100
+    try:
+        get_token_budget_tracker().check_quota(user_id, estimated_tokens)
+    except TokenLimitExceeded as exc:
+        raise HTTPException(
+            status_code=429,
+            headers={"Retry-After": str(exc.retry_after)},
+            detail={"code": "DAILY_TOKEN_LIMIT_EXCEEDED", "message": str(exc)},
+        ) from exc
+    except AIUsageLimitExceeded as exc:
+        raise HTTPException(
+            status_code=429,
+            headers={"Retry-After": str(exc.retry_after)},
+            detail={"code": "DAILY_TOKEN_LIMIT_EXCEEDED", "message": str(exc)},
+        ) from exc
+

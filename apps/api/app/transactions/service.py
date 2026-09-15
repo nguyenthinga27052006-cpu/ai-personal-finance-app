@@ -312,3 +312,70 @@ def get_transaction(db: Session, user: User, transaction_id: str) -> Transaction
     if transaction is None:
         raise TransactionNotFoundError
     return transaction
+
+
+def update_transaction(
+    db: Session, user: User, transaction_id: str, payload: dict
+) -> Transaction:
+    transaction = get_transaction(db, user, transaction_id)
+    if transaction.status != TransactionStatus.POSTED.value:
+        raise TransactionError("Only posted transactions can be updated")
+
+    if "category_id" in payload and payload["category_id"] is not None:
+        tx_type = TransactionType(transaction.type)
+        _category_allowed(db, user, payload["category_id"], tx_type)
+        transaction.category_id = payload["category_id"]
+
+    if "merchant_id" in payload and payload["merchant_id"] is not None:
+        _merchant(db, payload["merchant_id"])
+        transaction.merchant_id = payload["merchant_id"]
+
+    if "description" in payload:
+        transaction.description = payload["description"]
+
+    if "transaction_date" in payload and payload["transaction_date"] is not None:
+        transaction.transaction_date = payload["transaction_date"]
+
+    if "amount" in payload and payload["amount"] is not None and payload["amount"] != transaction.amount:
+        new_amount = payload["amount"]
+        if new_amount <= 0:
+            raise TransactionError("Amount must be greater than 0")
+
+        if transaction.account_id:
+            account = _owned_account(db, user, transaction.account_id)
+            entry = next((e for e in transaction.entries if e.account_id == account.id), None)
+            if entry:
+                entry_type = entry.entry_type
+                old_signed = transaction.amount if entry_type == EntryType.CREDIT.value or entry_type == EntryType.CREDIT else -transaction.amount
+                new_signed = new_amount if entry_type == EntryType.CREDIT.value or entry_type == EntryType.CREDIT else -new_amount
+                delta = new_signed - old_signed
+
+                if account.current_balance + delta < 0:
+                    raise TransactionError("Insufficient account balance for this update")
+
+                account.current_balance += delta
+                entry.amount = new_signed
+
+        transaction.amount = new_amount
+
+    db.flush()
+    return transaction
+
+
+def delete_transaction(db: Session, user: User, transaction_id: str) -> None:
+    transaction = get_transaction(db, user, transaction_id)
+    if transaction.account_id:
+        account = db.scalar(
+            select(Account)
+            .where(Account.id == transaction.account_id, Account.user_id == user.id)
+            .with_for_update()
+        )
+        if account:
+            for entry in transaction.entries:
+                if entry.account_id == account.id:
+                    # Reverse the entry's effect on account balance
+                    account.current_balance -= entry.amount
+
+    db.delete(transaction)
+    db.flush()
+

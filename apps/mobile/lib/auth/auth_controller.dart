@@ -27,6 +27,7 @@ class AuthController extends ChangeNotifier {
         status = AuthStatus.unauthenticated;
       }
     }
+    debugPrint('STARTUP_06_AUTH_RESTORE_COMPLETE status=$status');
     notifyListeners();
   }
 

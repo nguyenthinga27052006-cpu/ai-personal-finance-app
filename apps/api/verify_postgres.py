@@ -20,6 +20,7 @@ EXPECTED_TABLES = {
     "goal_contributions",
     "user_preferences",
     "user_settings",
+    "ai_chat_messages",
 }
 MONEY_COLUMNS = {
     "accounts.opening_balance",

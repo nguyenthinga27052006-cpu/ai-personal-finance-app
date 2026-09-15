@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 from time import monotonic
 from typing import Any
@@ -108,7 +109,9 @@ class AIGateway:
             feature=task,
             model="foundation-simple",
             instructions=(
-                "Return only the documented structured output. Do not invent financial facts."
+                "Return ONLY a valid JSON object matching this schema: "
+                '{"status": "OK"|"INSUFFICIENT_DATA"|"LOW_CONFIDENCE", "answer": "string", "citations": [], "suggested_actions": []}. '
+                "Do not include extra fields outside this schema. Do not invent financial facts."
             ),
             context={
                 "financial_context": financial_context.facts,
@@ -145,20 +148,48 @@ class AIGateway:
     def _validate_provider_output(
         content: str, output_model: type[BaseModel] = AIOutput
     ) -> BaseModel:
+        cleaned = content.strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+            cleaned = re.sub(r"\s*```$", "", cleaned).strip()
         try:
-            value = json.loads(content)
+            value = json.loads(cleaned)
         except (TypeError, ValueError) as exc:
+            logger.error("Provider returned malformed JSON: %s (content: %r)", exc, content)
             raise StructuredOutputError("Provider returned malformed JSON") from exc
         try:
             return output_model.model_validate(value)
         except ValueError as exc:
-            raise StructuredOutputError("Provider output failed structured validation") from exc
+            logger.error("Provider output failed structured validation: %s (value: %r)", exc, value)
+            raise StructuredOutputError(f"Provider output failed structured validation: {exc}") from exc
+
+
 
 
 def default_gateway() -> AIGateway:
-    from app.ai.providers import FakeProvider
+    from app.ai.providers import FakeProvider, GeminiLLMProvider, OpenAIProvider
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    if settings.ai_provider == "gemini" and settings.gemini_api_key:
+        primary = GeminiLLMProvider(api_key=settings.gemini_api_key, default_model=settings.ai_model)
+        fallback = FakeProvider()
+    elif settings.ai_provider == "openai" and settings.openai_api_key:
+        primary = OpenAIProvider(api_key=settings.openai_api_key, default_model=settings.ai_model)
+        fallback = FakeProvider()
+    elif settings.gemini_api_key:
+        primary = GeminiLLMProvider(api_key=settings.gemini_api_key, default_model=settings.ai_model)
+        fallback = FakeProvider()
+    elif settings.openai_api_key:
+        primary = OpenAIProvider(api_key=settings.openai_api_key, default_model=settings.ai_model)
+        fallback = FakeProvider()
+    else:
+        primary = FakeProvider()
+        fallback = FakeProvider()
 
     return AIGateway(
-        ModelRouter(FakeProvider(), FakeProvider()),
+        ModelRouter(primary, fallback),
         build_read_only_registry(),
     )
+
+

@@ -13,7 +13,20 @@ class FinanceRepository {
   Future<TransactionModel> transaction(String id) => gateway.transaction(id);
   Future<List<CategoryModel>> categories() => gateway.categories();
   Future<List<BudgetModel>> budgets() => gateway.budgets();
+  Future<BudgetModel> createBudget(Map<String, dynamic> values) =>
+      gateway.createBudget(values);
+  Future<BudgetModel> updateBudget(String id, Map<String, dynamic> values) =>
+      gateway.updateBudget(id, values);
+  Future<void> deleteBudget(String id) => gateway.deleteBudget(id);
   Future<List<GoalModel>> goals() => gateway.goals();
+  Future<GoalModel> createGoal(Map<String, dynamic> values) =>
+      gateway.createGoal(values);
+  Future<GoalModel> updateGoal(String id, Map<String, dynamic> values) =>
+      gateway.updateGoal(id, values);
+  Future<void> deleteGoal(String id) => gateway.deleteGoal(id);
+  Future<void> createGoalContribution(
+          String goalId, Map<String, dynamic> values) =>
+      gateway.createGoalContribution(goalId, values);
   Future<List<InsightModel>> insights() => gateway.insights();
   Future<List<NotificationModel>> notifications() => gateway.notifications();
   Future<NotificationModel> markNotificationRead(String id) =>
@@ -40,4 +53,9 @@ class FinanceRepository {
   }) async {
     await gateway.createTransfer(values, idempotencyKey: idempotencyKey);
   }
+
+  Future<TransactionModel> updateTransaction(String id, Map<String, dynamic> values) =>
+      gateway.updateTransaction(id, values);
+
+  Future<void> deleteTransaction(String id) => gateway.deleteTransaction(id);
 }

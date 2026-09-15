@@ -1,0 +1,6 @@
+# Android Release Keystore Configuration Template
+# Copy this file to `key.properties` and fill in your production keystore details:
+# keyPassword=<YOUR_KEY_PASSWORD>
+# storePassword=<YOUR_STORE_PASSWORD>
+# keyAlias=<YOUR_KEY_ALIAS>
+# storeFile=<PATH_TO_YOUR_KEYSTORE_FILE>

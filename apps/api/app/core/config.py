@@ -34,10 +34,14 @@ class Settings(BaseSettings):
     ai_model: str = "foundation-simple"
     ai_fallback_model: str = "foundation-fallback"
     ai_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    gemini_api_key: str | None = None
+    openai_api_key: str | None = None
     ai_enabled: bool = False
     ai_daily_budget_units: int = Field(default=100, ge=1)
+    daily_user_token_limit: int = Field(default=50000, ge=1)
     ai_max_retries: int = Field(default=2, ge=0, le=5)
     release: str = "local"
+
 
     model_config = SettingsConfigDict(
         env_file=REPOSITORY_ROOT / ".env",

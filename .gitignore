@@ -43,6 +43,9 @@ redis_data/
 *.key
 *.crt
 
-# Temporary
+# Temporary & Scratch
 tmp/
 temp/
+scratch_*.txt
+*.scratch
+docs/qa/Untitled-*

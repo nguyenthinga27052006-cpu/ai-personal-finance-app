@@ -118,7 +118,7 @@ void main() {
     );
     expect(find.text('1,750,000 VND'), findsOneWidget);
     expect(find.text('35% · SAFE'), findsOneWidget);
-    expect(find.text('Remaining: 3250000 VND'), findsOneWidget);
+    expect(find.text('Còn lại: 3,250,000 VND'), findsOneWidget);
   });
 
   testWidgets('renders backend goal progress and remaining amount', (

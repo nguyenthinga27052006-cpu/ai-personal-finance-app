@@ -116,6 +116,36 @@ class FinanceViewModel extends ChangeNotifier {
     }
   }
 
+  Future<String?> editTransaction({
+    required String id,
+    int? amount,
+    String? categoryId,
+    String? description,
+  }) async {
+    try {
+      final values = <String, dynamic>{
+        if (amount != null && amount > 0) 'amount': amount,
+        if (categoryId != null && categoryId.isNotEmpty) 'category_id': categoryId,
+        if (description != null) 'description': description.trim(),
+      };
+      await repository.updateTransaction(id, values);
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> deleteTransaction(String id) async {
+    try {
+      await repository.deleteTransaction(id);
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
   Future<String?> createAccount({
     required String name,
     required String type,
@@ -151,6 +181,154 @@ class FinanceViewModel extends ChangeNotifier {
   Future<String?> archiveAccount(String id) async {
     try {
       await repository.gateway.updateAccount(id, {'is_archived': true});
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> createBudget({
+    required String name,
+    required String categoryId,
+    required int limitAmount,
+    String currency = 'VND',
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final today = DateTime.now();
+      final defaultStart = '${today.year}-${today.month.toString().padLeft(2, '0')}-01';
+      final defaultEnd = '${today.year}-${today.month.toString().padLeft(2, '0')}-28';
+      final values = {
+        'name': name.trim(),
+        'period_type': 'MONTHLY',
+        'start_date': startDate ?? defaultStart,
+        'end_date': endDate ?? defaultEnd,
+        'currency': currency,
+        'categories': [
+          {
+            'category_id': categoryId,
+            'limit_amount': limitAmount,
+          }
+        ],
+      };
+      await repository.createBudget(values);
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> editBudget({
+    required String id,
+    required String name,
+  }) async {
+    try {
+      await repository.updateBudget(id, {'name': name.trim()});
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> deleteBudget(String id) async {
+    try {
+      await repository.deleteBudget(id);
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> editGoal({
+    required String id,
+    String? name,
+    int? targetAmount,
+    String? targetDate,
+    String? description,
+  }) async {
+    try {
+      final values = <String, dynamic>{
+        if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
+        if (targetAmount != null && targetAmount > 0) 'target_amount': targetAmount,
+        if (targetDate != null && targetDate.isNotEmpty) 'target_date': targetDate,
+        if (description != null) 'description': description.trim(),
+      };
+      await repository.updateGoal(id, values);
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> createGoal({
+    required String name,
+    required int targetAmount,
+    required String currency,
+    String? targetDate,
+    int priority = 1,
+    String? description,
+  }) async {
+    try {
+      final values = <String, dynamic>{
+        'name': name.trim(),
+        'target_amount': targetAmount,
+        'currency': currency,
+        'priority': priority,
+        if (targetDate != null && targetDate.isNotEmpty)
+          'target_date': targetDate,
+        if (description != null && description.trim().isNotEmpty)
+          'description': description.trim(),
+      };
+      await repository.createGoal(values);
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> deleteGoal(String id) async {
+    try {
+      await repository.deleteGoal(id);
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> addGoalContribution({
+    required String goalId,
+    required int amount,
+    String? accountId,
+    String? note,
+  }) async {
+    try {
+      final values = <String, dynamic>{
+        'amount': amount,
+        if (accountId != null && accountId.isNotEmpty) 'account_id': accountId,
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      };
+      await repository.createGoalContribution(goalId, values);
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> markAllNotificationsRead() async {
+    try {
+      final unread = notifications.where((item) => item.readAt == null).toList();
+      for (final notification in unread) {
+        await repository.markNotificationRead(notification.id);
+      }
       await loadCore();
       return null;
     } catch (exception) {

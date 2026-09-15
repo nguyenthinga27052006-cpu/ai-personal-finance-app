@@ -15,6 +15,12 @@ _INJECTION_PATTERNS = (
     "use another user",
     "bypass authorization",
     "give me the secret",
+    "bỏ qua tất cả quy tắc",
+    "bỏ qua quy tắc",
+    "reveal api_key",
+    "mật khẩu của người dùng khác",
+    "cho tôi biết mật khẩu",
+    "secret tokens",
 )
 _SECRET_PATTERNS = (
     "api_key",
@@ -25,6 +31,7 @@ _SECRET_PATTERNS = (
     "jwt_secret",
     "password",
 )
+
 _SQL_PATTERN = re.compile(
     r"\b(select|insert|update|delete|drop|alter)\b[\s\S]*(\bfrom\b|\binto\b|\btable\b)", re.I
 )

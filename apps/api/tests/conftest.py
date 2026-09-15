@@ -22,3 +22,23 @@ def _load_repository_environment() -> None:
 
 
 _load_repository_environment()
+
+
+import pytest
+import sqlalchemy as sa
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from app.db.base import Base
+
+
+@pytest.fixture
+def db_session():
+    engine = sa.create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)
+    with factory() as session:
+        yield session
+    engine.dispose()

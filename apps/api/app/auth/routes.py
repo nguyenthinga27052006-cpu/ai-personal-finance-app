@@ -10,6 +10,7 @@ from app.auth.dependencies import CurrentUser, auth_error
 from app.auth.rate_limit import AuthRateLimiter, get_auth_rate_limiter
 from app.auth.schemas import (
     AuthResponse,
+    ChangePasswordRequest,
     LoginRequest,
     MessageResponse,
     RefreshRequest,
@@ -21,6 +22,7 @@ from app.auth.service import (
     InvalidCredentialsError,
     SessionInvalidError,
     authenticate_user,
+    change_password_user,
     create_session,
     issue_auth_response,
     register_user,
@@ -131,10 +133,42 @@ def logout(
     return MessageResponse(message="Logged out")
 
 
+@router.post("/change-password", response_model=MessageResponse)
+def change_password(
+    payload: ChangePasswordRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> MessageResponse:
+    try:
+        change_password_user(db, current_user, payload.current_password, payload.new_password)
+        db.commit()
+    except InvalidCredentialsError as exc:
+        db.rollback()
+        raise auth_error("invalid_credentials", str(exc) or "Current password is incorrect") from exc
+    return MessageResponse(message="Mật khẩu đã được thay đổi thành công")
+
+
 @router.get("/me", response_model=UserResponse)
 @me_router.get("/me", response_model=UserResponse)
 def me(current_user: CurrentUser) -> UserResponse:
     return UserResponse.model_validate(current_user)
+
+
+@router.delete("/me", response_model=MessageResponse)
+@me_router.delete("/me", response_model=MessageResponse)
+def delete_my_account(
+    current_user: CurrentUser,
+    db: DbSession,
+) -> MessageResponse:
+    if current_user.role == "ADMIN" or current_user.email == "admin@finance.app":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tài khoản Admin hệ thống không thể tự xóa từ mục Cài đặt.",
+        )
+    from app.auth.service import delete_user_and_purge_all_data
+
+    delete_user_and_purge_all_data(db, current_user)
+    return MessageResponse(message="Tài khoản đã được xóa thành công")
 
 
 @router.get("/session", response_model=UserResponse)

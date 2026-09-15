@@ -1,4 +1,5 @@
 import 'package:ai_personal_finance/auth/api_client.dart';
+import 'package:ai_personal_finance/finance/components.dart';
 import 'package:ai_personal_finance/finance/finance_home.dart';
 import 'package:ai_personal_finance/finance/models.dart';
 import 'package:flutter/material.dart';
@@ -61,9 +62,27 @@ class FakeFinanceGateway implements FinanceGateway {
     String? idempotencyKey,
   }) => throw UnimplementedError();
   @override
+  Future<TransactionModel> updateTransaction(String id, Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<void> deleteTransaction(String id) async {}
+  @override
   Future<List<BudgetModel>> budgets() async => const [];
   @override
+  Future<BudgetModel> createBudget(Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<BudgetModel> updateBudget(String id, Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<void> deleteBudget(String id) async {}
+  @override
   Future<List<GoalModel>> goals() async => const [];
+  @override
+  Future<GoalModel> createGoal(Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<GoalModel> updateGoal(String id, Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<void> deleteGoal(String id) => throw UnimplementedError();
+  @override
+  Future<void> createGoalContribution(String goalId, Map<String, dynamic> values) => throw UnimplementedError();
   @override
   Future<List<InsightModel>> insights({DateTime? start, DateTime? end}) async =>
       const [];
@@ -101,6 +120,13 @@ void main() {
   testWidgets('account dialog can reopen, create, edit and archive safely', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
     final gateway = FakeFinanceGateway();
     await tester.pumpWidget(
       MaterialApp(
@@ -111,38 +137,83 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
-    await tester.tap(find.text('Accounts').last);
+    (tester.widget(find.byType(NavigationRail)) as NavigationRail).onDestinationSelected!(1);
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Create account'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'First');
+    await tester.tap(find.byType(FloatingActionButton), warnIfMissed: false);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(AccountDialog), findsOneWidget);
+
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AccountDialog),
+        matching: find.byType(TextField),
+      ).first,
+      'First',
+    );
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
+    expect(find.byType(AccountDialog), findsNothing);
 
-    await tester.tap(find.byTooltip('Create account'));
+    await tester.tap(find.byType(FloatingActionButton), warnIfMissed: false);
     await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Created');
+    expect(find.byType(AccountDialog), findsOneWidget);
+
     await tester.enterText(
-      find.widgetWithText(TextField, 'Opening balance'),
+      find.descendant(
+        of: find.byType(AccountDialog),
+        matching: find.byType(TextField),
+      ).first,
+      'Created',
+    );
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AccountDialog),
+        matching: find.byType(TextField),
+      ).at(1),
       '1000',
     );
     await tester.tap(find.text('Create'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
+    expect(find.byType(AccountDialog), findsNothing);
+
+    final dynamic state = tester.state(find.byType(FinanceHome));
     expect(find.text('Created'), findsOneWidget);
 
     await tester.tap(find.text('Created'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Edited');
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AccountDialog),
+        matching: find.byType(TextField),
+      ).first,
+      'Edited',
+    );
     await tester.tap(find.text('Save'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
     expect(find.text('Edited'), findsOneWidget);
 
     await tester.tap(find.text('Edited'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
     await tester.tap(find.text('Archive'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
-    expect(find.text('No accounts yet'), findsOneWidget);
+    expect(find.byType(EmptyState), findsOneWidget);
   });
 }

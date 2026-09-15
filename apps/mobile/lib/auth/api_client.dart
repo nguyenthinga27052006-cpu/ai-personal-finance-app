@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'auth_models.dart';
@@ -21,6 +22,10 @@ abstract interface class AuthGateway {
   Future<AuthUser> me();
 
   Future<void> logout();
+
+  Future<void> changePassword(String currentPassword, String newPassword);
+
+  Future<void> deleteAccount();
 }
 
 abstract interface class FinanceGateway {
@@ -46,9 +51,27 @@ abstract interface class FinanceGateway {
     String? idempotencyKey,
   });
 
+  Future<TransactionModel> updateTransaction(String id, Map<String, dynamic> values);
+
+  Future<void> deleteTransaction(String id);
+
   Future<List<BudgetModel>> budgets();
 
+  Future<BudgetModel> createBudget(Map<String, dynamic> values);
+
+  Future<BudgetModel> updateBudget(String id, Map<String, dynamic> values);
+
+  Future<void> deleteBudget(String id);
+
   Future<List<GoalModel>> goals();
+
+  Future<GoalModel> createGoal(Map<String, dynamic> values);
+
+  Future<GoalModel> updateGoal(String id, Map<String, dynamic> values);
+
+  Future<void> deleteGoal(String id);
+
+  Future<void> createGoalContribution(String goalId, Map<String, dynamic> values);
 
   Future<List<InsightModel>> insights({DateTime? start, DateTime? end});
 
@@ -68,7 +91,7 @@ abstract interface class FinanceGateway {
 }
 
 abstract interface class AIGateway {
-  Future<AIQueryResult> query(String question);
+  Future<AIQueryResult> query(String question, {String? language});
 }
 
 class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
@@ -106,17 +129,35 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
     String password, {
     String? displayName,
   }) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl$path'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-        if (displayName != null && displayName.isNotEmpty)
-          'display_name': displayName,
-      }),
-    );
-    return _parseAuth(response);
+    final fullUrl = '$baseUrl$path';
+    debugPrint('API_AUTH_REQUEST start url=$fullUrl email=$email');
+    try {
+      final response = await _client
+          .post(
+            Uri.parse(fullUrl),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': email,
+              'password': password,
+              if (displayName != null && displayName.isNotEmpty)
+                'display_name': displayName,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+      debugPrint(
+        'API_AUTH_REQUEST response code=${response.statusCode} body=${response.body}',
+      );
+      return await _parseAuth(response);
+    } catch (e, stack) {
+      debugPrint('API_AUTH_REQUEST error=$e stack=$stack');
+      if (e is ApiException || e is AuthException) rethrow;
+      throw ApiException(
+        statusCode: 0,
+        code: 'connection_error',
+        message:
+            'Không thể kết nối máy chủ ($baseUrl). Vui lòng thử lại. ($e)',
+      );
+    }
   }
 
   @override
@@ -162,6 +203,18 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
     } finally {
       await _storage.clear();
     }
+  }
+
+  @override
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await request(
+      'POST',
+      '/api/v1/auth/change-password',
+      body: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      },
+    );
   }
 
   @override
@@ -247,6 +300,17 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
   }
 
   @override
+  Future<TransactionModel> updateTransaction(String id, Map<String, dynamic> values) async {
+    final response = await request('PUT', '/api/v1/transactions/$id', body: values);
+    return TransactionModel.fromJson(_decodeSuccess(response));
+  }
+
+  @override
+  Future<void> deleteTransaction(String id) async {
+    await request('DELETE', '/api/v1/transactions/$id');
+  }
+
+  @override
   Future<List<BudgetModel>> budgets() async {
     final json = _decodeListSuccess(await request('GET', '/api/v1/budgets'));
     return json
@@ -255,11 +319,53 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
   }
 
   @override
+  Future<BudgetModel> createBudget(Map<String, dynamic> values) async {
+    final response = await request('POST', '/api/v1/budgets', body: values);
+    return BudgetModel.fromJson(_decodeSuccess(response));
+  }
+
+  @override
+  Future<BudgetModel> updateBudget(String id, Map<String, dynamic> values) async {
+    final response = await request('PATCH', '/api/v1/budgets/$id', body: values);
+    return BudgetModel.fromJson(_decodeSuccess(response));
+  }
+
+  @override
+  Future<void> deleteBudget(String id) async {
+    await request('DELETE', '/api/v1/budgets/$id');
+  }
+
+  @override
   Future<List<GoalModel>> goals() async {
     final json = _decodeListSuccess(await request('GET', '/api/v1/goals'));
     return json
         .map((item) => GoalModel.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  @override
+  Future<GoalModel> createGoal(Map<String, dynamic> values) async {
+    final response = await request('POST', '/api/v1/goals', body: values);
+    return GoalModel.fromJson(_decodeSuccess(response));
+  }
+
+  @override
+  Future<GoalModel> updateGoal(String id, Map<String, dynamic> values) async {
+    final response = await request('PATCH', '/api/v1/goals/$id', body: values);
+    return GoalModel.fromJson(_decodeSuccess(response));
+  }
+
+  @override
+  Future<void> deleteGoal(String id) async {
+    await request('DELETE', '/api/v1/goals/$id');
+  }
+
+  @override
+  Future<void> createGoalContribution(
+    String goalId,
+    Map<String, dynamic> values,
+  ) async {
+    await request('POST', '/api/v1/goals/$goalId/contributions', body: values);
   }
 
   @override
@@ -341,12 +447,16 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
   }
 
   @override
-  Future<AIQueryResult> query(String question) async {
+  Future<AIQueryResult> query(String question, {String? language}) async {
     final json = _decodeSuccess(
       await request(
         'POST',
         '/api/v1/ai/query',
-        body: {'question': question, 'currency': 'VND'},
+        body: {
+          'question': question,
+          'currency': 'VND',
+          if (language != null) 'language': language,
+        },
       ),
     );
     return AIQueryResult.fromJson(json);
@@ -409,6 +519,7 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
       'POST' => _client.post(uri, headers: headers, body: encodedBody),
       'GET' => _client.get(uri, headers: headers),
       'PATCH' => _client.patch(uri, headers: headers, body: encodedBody),
+      'DELETE' => _client.delete(uri, headers: headers),
       _ => throw ArgumentError('Unsupported HTTP method'),
     };
     final response = await responseFuture;
@@ -446,6 +557,69 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
     return _storeAndReturn(result);
   }
 
+  Future<Map<String, dynamic>> getAdminStats() async {
+    final response = await request('GET', '/api/v1/admin/stats');
+    return _decodeSuccess(response);
+  }
+
+  Future<Map<String, dynamic>> getAdminUsers({String? query}) async {
+    final path = query != null && query.isNotEmpty
+        ? '/api/v1/admin/users?q=${Uri.encodeComponent(query)}'
+        : '/api/v1/admin/users';
+    final response = await request('GET', path);
+    return _decodeSuccess(response);
+  }
+
+  Future<Map<String, dynamic>> getAdminUserDetail(String userId) async {
+    final response = await request('GET', '/api/v1/admin/users/$userId');
+    return _decodeSuccess(response);
+  }
+
+  Future<void> updateAdminUserStatus(String userId, String status) async {
+    await request('PATCH', '/api/v1/admin/users/$userId/status', body: {'status': status});
+  }
+
+  Future<void> updateAdminUserRole(String userId, String role) async {
+    await request('PATCH', '/api/v1/admin/users/$userId/role', body: {'role': role});
+  }
+
+  Future<void> resetAdminUserPassword(String userId, String newPassword) async {
+    await request('POST', '/api/v1/admin/users/$userId/reset-password', body: {'new_password': newPassword});
+  }
+
+  Future<void> deleteAdminUser(String userId) async {
+    await request('DELETE', '/api/v1/admin/users/$userId');
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    await request('DELETE', '/api/v1/auth/me');
+    await _storage.clear();
+  }
+
+  Future<Map<String, dynamic>> getAIConfig() async {
+    final response = await request('GET', '/api/v1/admin/ai/config');
+    return _decodeSuccess(response);
+  }
+
+  Future<void> updateAIConfig({
+    required String provider,
+    required String modelName,
+    required String apiKey,
+    required int rpd,
+    required int rpm,
+    required int tpm,
+  }) async {
+    await request('PUT', '/api/v1/admin/ai/config', body: {
+      'provider': provider,
+      'model_name': modelName,
+      'api_key': apiKey,
+      'rpd': rpd,
+      'rpm': rpm,
+      'tpm': tpm,
+    });
+  }
+
   Future<AuthResult> _storeAndReturn(AuthResult result) async {
     await _storage.write(
       accessToken: result.tokens.accessToken,
@@ -476,6 +650,23 @@ class ApiException implements Exception {
   final String message;
 
   factory ApiException.fromResponse(http.Response response, Object? detail) {
+    if (detail is String && detail.isNotEmpty) {
+      return ApiException(
+        statusCode: response.statusCode,
+        code: 'request_failed',
+        message: detail,
+      );
+    }
+    if (detail is List && detail.isNotEmpty) {
+      final first = detail.first;
+      if (first is Map && first.containsKey('msg')) {
+        return ApiException(
+          statusCode: response.statusCode,
+          code: 'validation_error',
+          message: first['msg'].toString(),
+        );
+      }
+    }
     final map = detail is Map ? detail : const <String, dynamic>{};
     return ApiException(
       statusCode: response.statusCode,

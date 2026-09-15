@@ -18,13 +18,19 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, IdMixin, TimestampMixin
+from app.db.base import Base, IdMixin, TimestampMixin, utcnow
+
+
+class UserRole(str, Enum):
+    USER = "USER"
+    ADMIN = "ADMIN"
 
 
 class UserStatus(str, Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
     ARCHIVED = "ARCHIVED"
+
 
 
 class AccountType(str, Enum):
@@ -105,7 +111,9 @@ class User(IdMixin, TimestampMixin, Base):
     default_currency: Mapped[str] = mapped_column(String(3), nullable=False, default="VND")
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="UTC")
     locale: Mapped[str] = mapped_column(String(16), nullable=False, default="vi-VN")
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default=UserRole.USER.value)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default=UserStatus.ACTIVE.value)
+
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     accounts: Mapped[list["Account"]] = relationship(
@@ -619,7 +627,7 @@ class GoalContribution(IdMixin, TimestampMixin, Base):
     )
     amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
     contribution_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=datetime.utcnow
+        DateTime(timezone=True), nullable=False, default=utcnow
     )
     note: Mapped[str | None] = mapped_column(String, nullable=True)
 
@@ -633,7 +641,49 @@ class GoalContribution(IdMixin, TimestampMixin, Base):
     )
 
 
+class AIChatMessage(IdMixin, TimestampMixin, Base):
+    __tablename__ = "ai_chat_messages"
+
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    content: Mapped[str] = mapped_column(String, nullable=False)
+    intent: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    metadata_json: Mapped[dict[str, object]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+
+    user: Mapped[User] = relationship()
+
+    __table_args__ = (
+        Index("ix_ai_chat_messages_user_id", "user_id"),
+        Index("ix_ai_chat_messages_created_at", "created_at"),
+    )
+
+
+class AIFeedback(IdMixin, TimestampMixin, Base):
+    __tablename__ = "ai_feedback"
+
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    query_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    conversation_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    feedback_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    comment: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+
+    user: Mapped[User] = relationship()
+
+    __table_args__ = (
+        Index("ix_ai_feedback_user_id", "user_id"),
+        Index("ix_ai_feedback_conversation_id", "conversation_id"),
+    )
+
+
 def seed_system_categories(session) -> None:
+
     system_definitions = [
         ("Food", CategoryType.EXPENSE, "expense"),
         ("Housing", CategoryType.EXPENSE, "expense"),
@@ -677,3 +727,13 @@ def seed_system_categories(session) -> None:
         )
 
     session.flush()
+
+
+class SystemSetting(Base, IdMixin, TimestampMixin):
+    __tablename__ = "system_settings"
+
+    key: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    value: Mapped[str] = mapped_column(String(2000), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    updated_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
+

@@ -52,4 +52,16 @@ def get_current_user(
     return user
 
 
+def get_current_admin_user(current_user: CurrentUser) -> User:
+    from app.db.models import UserRole
+    if getattr(current_user, "role", None) != UserRole.ADMIN.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "admin_required", "message": "Admin privileges required"},
+        )
+    return current_user
+
+
 CurrentUser = Annotated[User, Depends(get_current_user)]
+CurrentAdminUser = Annotated[User, Depends(get_current_admin_user)]
+

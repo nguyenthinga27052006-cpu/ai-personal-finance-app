@@ -53,6 +53,16 @@ class TransactionCreate(BaseModel):
         return self
 
 
+class TransactionUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    amount: int | None = Field(default=None, gt=0)
+    category_id: str | None = None
+    merchant_id: str | None = None
+    description: str | None = None
+    transaction_date: datetime | None = None
+
+
 class RefundCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

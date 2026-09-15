@@ -1,97 +1,248 @@
-# AI Personal Finance Assistant
+# 🤖 AI Personal Finance Assistant (Trợ lý Tài chính Cá nhân AI)
 
-Ứng dụng quản lý tài chính cá nhân tích hợp AI.
+Ứng dụng quản lý tài chính cá nhân thông minh tích hợp **Trợ lý AI RAG (Retrieval-Augmented Generation)**, cho phép theo dõi giao dịch, lập ngân sách, phân tích chi tiêu và trò chuyện bằng ngôn ngữ tự nhiên với AI tư vấn tài chính.
 
-## Setup in <10 minutes
+---
 
-### Prerequisites
+## 🌟 Tính Năng Nổi Bật (Key Features)
 
-- Docker Desktop với Docker Compose v2 đang chạy.
-- Python 3.12 hoặc 3.13 cho test/lint local.
-- Git.
+- 🔐 **Hệ thống Xác thực (Authentication & AuthZ)**: Đăng ký, đăng nhập JWT, làm mới token (Refresh Token), phân quyền người dùng (`user` và `admin`).
+- 💰 **Quản lý Tài chính Cốt lõi (Core Finance)**:
+  - Quản lý tài khoản (Ví điện tử, Ngân hàng, Tiền mặt).
+  - Quản lý danh mục thu/chi (Categories).
+  - Ghi nhận & truy vấn giao dịch (Transactions).
+  - Lập ngân sách & mục tiêu tiết kiệm (Budgets & Goals).
+- 📊 **Phân tích & Báo cáo (Analytics & Insights)**: Thống kê tổng thu/chi theo tháng, tỷ lệ tiết kiệm, cảnh báo vượt ngân sách, biểu đồ phân bổ chi tiêu.
+- 🧠 **Trợ lý AI & RAG Chatbot (AI Financial Advisor)**:
+  - Hỏi đáp tài chính bằng tiếng Việt tự nhiên.
+  - Tự động truy xuất ngữ cảnh giao dịch & tài liệu tri thức (RAG - Hybrid Retriever + Vector/Dense Search).
+  - Hỗ trợ đa mô hình AI (Google Gemini, OpenAI GPT, Fallback Local Mode).
+- 🛡️ **Bảng Quản trị (Admin Dashboard)**: Cho phép Admin xem thống kê hệ thống, quản lý người dùng, theo dõi tần suất gọi AI và chi phí token.
+- 📱 **Ứng dụng Mobile/Web Đa nền tảng**: Xây dựng bằng Flutter (Hỗ trợ Android, iOS, Web & Desktop).
 
-### Start local services
+---
 
-```powershell
-Copy-Item .env.example .env
-docker compose --env-file .env -f infra/docker/docker-compose.dev.yml up --build -d
+## 🏗️ Kiến Trúc Hệ Thống (Architecture Overview)
+
+```
+                       +-----------------------------------+
+                       |    Flutter App (Mobile / Web)     |
+                       +-----------------+-----------------+
+                                         | HTTP / REST API
+                                         v
+                       +-----------------+-----------------+
+                       |       FastAPI Backend (API)       |
+                       +--------+----------------+---------+
+                                |                |
+             +------------------+                +------------------+
+             | PostgreSQL 18                     | Redis Cache &    |
+             | (Database & Vector Store)         | Celery Worker    |
+             +------------------+                +------------------+
+                                |
+                                v
+                       +-----------------+
+                       | AI Engine (RAG) |  ---> Google Gemini API / OpenAI API
+                       +-----------------+
 ```
 
-Hoặc dùng script:
+### Công nghệ sử dụng (Tech Stack)
+- **Backend**: Python 3.12+, FastAPI, SQLAlchemy, Alembic, Celery, Pytest.
+- **Database & Cache**: PostgreSQL 18, Redis 7.
+- **AI & RAG**: Google Gemini API (`google-genai`), Hybrid Dense/BM25 Retrieval, Prompt Engineering.
+- **Mobile Client**: Flutter 3.x, Dart, Provider (State Management), Dynamic Themes.
+- **Infrastructure**: Docker & Docker Compose.
 
+---
+
+## 🚀 Hướng Dẫn Cài Đặt & Chạy Hệ Thống (Quick Start Guide)
+
+### 📋 Yêu cầu tiên quyết (Prerequisites)
+- [Git](https://git-scm.com/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Docker Compose v2 đang chạy)
+- [Python 3.12+](https://www.python.org/) (Cho test/migration local nếu không dùng Docker)
+- [Flutter SDK 3.x](https://flutter.dev/) (Nếu muốn chạy ứng dụng Mobile client)
+
+---
+
+### 1️⃣ Bước 1: Clone Repository
+```bash
+git clone https://github.com/<your-username>/<your-repo-name>.git
+cd ai-personal-finance-app
+```
+
+---
+
+### 2️⃣ Bước 2: Cấu hình Môi trường (Environment Setup)
+Tạo file `.env` từ file mẫu `.env.example`:
+
+**Trên Windows (PowerShell):**
+```powershell
+Copy-Item .env.example .env
+```
+**Trên Linux / macOS:**
+```bash
+cp .env.example .env
+```
+
+Mở file `.env` và điền **API Key AI** của bạn (ví dụ Google Gemini API Key):
+```env
+AI_PROVIDER=gemini
+AI_MODEL=gemini-3.1-flash-lite
+GEMINI_API_KEY=dán-api-key-gemini-của-bạn-vào-đây
+```
+*(Nếu chưa có API Key, bạn có thể để `AI_PROVIDER=fake` để ứng dụng hoạt động với dữ liệu giả lập AI)*.
+
+---
+
+### 3️⃣ Bước 3: Khởi chạy Backend Services bằng Docker
+
+**Sử dụng PowerShell Script (Windows):**
 ```powershell
 ./scripts/dev-up.ps1
 ```
 
-PostgreSQL 18 sử dụng volume local `finance-assistant_postgres_data` được mount tại `/var/lib/postgresql`. Host mapping là `localhost:5433 -> postgres:5432`; API và worker trong Docker luôn dùng `postgres:5432`.
-
-Kiểm tra API:
-
-```powershell
-Invoke-WebRequest http://localhost:8000/health
-Invoke-WebRequest http://localhost:8000/ready
+**Hoặc lệnh Docker Compose trực tiếp (Mọi hệ điều hành):**
+```bash
+docker compose --env-file .env -f infra/docker/docker-compose.dev.yml up --build -d
 ```
 
-Swagger/OpenAPI: http://localhost:8000/docs
+Hệ thống Docker sẽ tự động khởi tạo:
+- **API Server** tại `http://localhost:8000`
+- **PostgreSQL 18** tại `localhost:5433`
+- **Redis Cache & Queue** tại `localhost:6379`
+- **Background Worker**
 
-### Run checks
+---
 
+### 4️⃣ Bước 4: Chạy Migration & Seed Dữ Liệu Mẫu
+
+Tạo bảng trong Database và nạp dữ liệu mẫu ban đầu (Categories, Demo User, Admin, Sample Transactions):
+
+**Sử dụng PowerShell Script:**
 ```powershell
-./scripts/test.ps1
-./scripts/lint.ps1
 ./scripts/migrate.ps1
 ./scripts/seed.ps1
 ```
 
-Migration và seed vẫn là các lệnh foundation của Phase 03; business APIs hiện đã bao gồm auth, accounts, catalog, transactions, budgets/goals, analytics và insights theo progress checkpoint.
-
-### Stop local services
-
-```powershell
-./scripts/dev-down.ps1
+**Hoặc chạy qua Python / Docker:**
+```bash
+docker exec -it finance-assistant-api python app/db/seed.py
 ```
 
-Thêm `-v` vào lệnh `docker compose down` nếu cần xóa dữ liệu local và tạo lại database từ đầu.
+---
 
-## Troubleshooting
+### 5️⃣ Bước 5: Kiểm tra Backend & API Documentation
 
-- `docker` không được nhận diện: cài và khởi động Docker Desktop, sau đó mở terminal mới.
-- Port `5433`, `6379` hoặc `8000` đã được dùng: chỉnh port tương ứng trong `.env` và kiểm tra lại URL kết nối. Không đổi `postgres:5432` trong `DATABASE_URL` của Docker.
-- `/health` trả lỗi: kiểm tra `docker compose ... ps` và `docker compose ... logs api`.
-- `/ready` trả `503`: chờ PostgreSQL/Redis healthy, rồi xem `docker compose ... ps` và logs của dependency.
-- Không muốn giữ dữ liệu local: chạy `docker compose --env-file .env -f infra/docker/docker-compose.dev.yml down -v`.
+- **Health Check**: Truy cập `http://localhost:8000/health` (Trả về `{"status": "ok"}`)
+- **Ready Check**: Truy cập `http://localhost:8000/ready` (Trả về status của Database & Redis)
+- **OpenAPI / Swagger UI**: Truy cập `http://localhost:8000/docs` để xem và tương tác trực tiếp với toàn bộ RESTful APIs.
 
-Nếu volume PostgreSQL cũ được tạo theo layout trước đây và PostgreSQL 18 không khởi động, dùng reset có xác nhận:
+---
 
-```powershell
-./scripts/reset-dev-db.ps1
+### 6️⃣ Bước 6: Khởi chạy Ứng dụng Mobile Client (Flutter)
+
+Mở terminal mới và chuyển đến thư mục client:
+```bash
+cd apps/mobile
+flutter pub get
 ```
 
-Script chỉ xóa volume local `finance-assistant_postgres_data` (hoặc tên có prefix `COMPOSE_PROJECT_NAME` trong `.env`), không tham chiếu staging/production. Dữ liệu trong volume sẽ mất vĩnh viễn; chỉ nhập `RESET-LOCAL-POSTGRES` khi đã xác nhận đó là dữ liệu development.
+Khởi chạy ứng dụng:
+- **Chạy trên Trình duyệt Web (Nhanh nhất):**
+  ```bash
+  flutter run -d chrome
+  ```
+- **Chạy trên Thiết bị Android / iOS / Emulator:**
+  ```bash
+  flutter run
+  ```
 
-## Documentation
+---
 
-Xem [docs/README.md](docs/README.md) và [docs/IMPLEMENTATION_CONTRACT.md](docs/IMPLEMENTATION_CONTRACT.md).
+## 🔑 Tài Khoản Mẫu Để Đăng Nhập (Demo Accounts)
 
-## Agent Rules and Progress
+Sau khi chạy script `seed.ps1`, bạn có thể đăng nhập bằng các tài khoản sau:
 
-- [AGENT_RULES.md](AGENT_RULES.md)
-- [AGENT_PROGRESS.md](AGENT_PROGRESS.md)
+| Vai trò (Role) | Email | Mật khẩu (Password) | Quyền hạn |
+| :--- | :--- | :--- | :--- |
+| **User (Người dùng)** | `user@example.com` | `User123456!` | Quản lý tài chính cá nhân, dùng AI Chatbot |
+| **Admin (Quản trị)** | `admin@example.com` | `Admin123456!` | Xem Dashboard Admin, Quản lý User, Thống kê AI |
 
-## Current Status
+---
 
-The current master baseline covers Phase 00 through Phase 18 and is **FAIL** at final V1 regression because current Journey A failed. Phase 16 is **CLOSED**, Phase 17 is **PASS WITH DOCUMENTED LIMITATIONS**, and Phase 18 is the final V1 phase with a **NO-GO** decision pending Journey A remediation. This does not claim staging, production or store verification.
+## 📁 Cấu Trúc Thư Mục Dự Án (Project Structure)
 
-### Phase 17 local checks
-
-```powershell
-./.venv/Scripts/python.exe -m pytest apps/api/tests/test_phase17_operability.py
-docker build -t finance-assistant-api:test apps/api
-docker build -t finance-assistant-worker:test apps/worker
+```
+ai-personal-finance-app/
+├── apps/
+│   ├── api/                    # FastAPI Backend Source Code
+│   │   ├── app/
+│   │   │   ├── admin/          # Admin Dashboard APIs
+│   │   │   ├── ai/             # AI Gateway, RAG Engine, Retrievers
+│   │   │   ├── auth/           # Authentication & User Management
+│   │   │   ├── core/           # Config, Security, JWT Tokens
+│   │   │   ├── db/             # Database Models, Seeds, Alembic
+│   │   │   └── transactions/   # Transactions, Accounts, Budgets APIs
+│   │   └── tests/              # Pytest Unit & Integration Test Suites
+│   │
+│   └── mobile/                 # Flutter Multi-platform Application
+│       ├── lib/
+│       │   ├── admin/          # Admin UI Screens
+│       │   ├── ai/             # AI Assistant & Chatbot UI
+│       │   ├── auth/           # Login, Register & Auth Controllers
+│       │   ├── finance/        # Accounts, Transactions & Budget Screens
+│       │   └── settings/       # App Settings UI
+│       └── test/               # Flutter Widget & Unit Tests
+│
+├── docs/                       # Tài liệu thiết kế & Chi tiết kỹ thuật
+├── infra/                      # Docker & Deployment configurations
+│   └── docker/
+│       └── docker-compose.dev.yml
+└── scripts/                    # Các script PowerShell tiện ích (Dev up, Migrate, Seed, Test)
 ```
 
-When the API is running locally, Prometheus-style metrics are available at `http://localhost:8000/metrics`. The backup/restore entry point is `./scripts/backup-restore-drill.ps1`; actual restore execution remains unverified.
+---
 
-Current evidence: `python -m pytest apps/api/tests -q` collected 119 tests, with 119 passed, 0 failed, and 9 warnings. The Phase 17 focused suite has 9 passing tests. Backup artifacts, restore execution, financial restore integrity, RPO/RTO measurement, external tracing/error tracking, production-scale metrics, and fired alerts remain NOT VERIFIED.
+## 🧪 Chạy Automated Tests (Kiểm thử hệ thống)
 
-Phase 17 documentation: [docs/phase17/README.md](docs/phase17/README.md), [MASTER_STATUS.md](docs/project-status/MASTER_STATUS.md), [PHASE_STATUS.md](docs/project-status/PHASE_STATUS.md), [PRODUCTION_READINESS_MATRIX.md](docs/phase17/PRODUCTION_READINESS_MATRIX.md), [PHASE17_REGRESSION.md](docs/phase17/PHASE17_REGRESSION.md), [PHASE17_ACCEPTANCE_MATRIX.md](docs/phase17/PHASE17_ACCEPTANCE_MATRIX.md), and [PHASE17_FILE_INVENTORY.md](docs/phase17/PHASE17_FILE_INVENTORY.md). Final V1 report: [FINAL_V1_FULL_REGRESSION_00_18.md](docs/project-status/FINAL_V1_FULL_REGRESSION_00_18.md).
+Dự án đi kèm bộ test kiểm thử tự động toàn diện:
+
+### Backend Tests (Pytest)
+```powershell
+./scripts/test.ps1
+```
+Hoặc:
+```bash
+cd apps/api
+pytest tests/
+```
+
+### Mobile Tests (Flutter)
+```bash
+cd apps/mobile
+flutter test
+```
+
+---
+
+## 🛠️ Hướng Dẫn Sửa Lỗi Thường Gặp (Troubleshooting)
+
+- **Lỗi Port đã bị chiếm dụng (`5433`, `6379` hoặc `8000`)**:
+  Kiểm tra xem ứng dụng khác có đang dùng các port này không, hoặc chỉnh sửa port trong file `.env`.
+- **Reset lại Database từ đầu**:
+  Nếu muốn xóa sạch dữ liệu dev local để tạo lại:
+  ```powershell
+  ./scripts/reset-dev-db.ps1
+  ```
+- **Lỗi Docker không khởi động**:
+  Đảm bảo Docker Desktop đã được mở và chạy thành công trước khi gõ lệnh `dev-up.ps1`.
+- **Tắt toàn bộ hệ thống Docker**:
+  ```powershell
+  ./scripts/dev-down.ps1
+  ```
+
+---
+
+## 📄 License & Đóng Góp (Contribution)
+
+Dự án được xây dựng phục vụ mục đích học tập, nghiên cứu và quản lý tài chính cá nhân ứng dụng AI. Mọi đóng góp (Pull Request / Issue) đều được hoan nghênh!

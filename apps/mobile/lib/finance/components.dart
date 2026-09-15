@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../settings/settings_controller.dart';
 import 'models.dart';
 
 class Loading extends StatelessWidget {
@@ -43,53 +44,141 @@ class MoneyText extends StatelessWidget {
   final TextStyle? style;
 
   @override
-  Widget build(BuildContext context) => Text(
-        '${_group(amount)} $currency',
-        style: style,
-        semanticsLabel: '${_group(amount)} $currency',
-      );
-
-  String _group(int value) {
-    final sign = value < 0 ? '-' : '';
-    final digits = value.abs().toString();
-    final buffer = StringBuffer(sign);
-    for (var index = 0; index < digits.length; index++) {
-      if (index > 0 && (digits.length - index) % 3 == 0) buffer.write(',');
-      buffer.write(digits[index]);
-    }
-    return buffer.toString();
+  Widget build(BuildContext context) {
+    final settings = InheritedSettings.of(context);
+    final formatted = settings.formatAmount(amount);
+    return Text(
+      formatted,
+      style: style,
+      semanticsLabel: formatted,
+    );
   }
 }
 
 class BalanceCard extends StatelessWidget {
-  const BalanceCard({super.key, required this.account});
+  const BalanceCard({
+    super.key,
+    required this.account,
+    this.onTap,
+    this.onEdit,
+    this.onArchive,
+  });
 
   final AccountModel account;
+  final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onArchive;
 
   @override
   Widget build(BuildContext context) => Card(
         child: ListTile(
-          leading: const Icon(Icons.account_balance_wallet),
-          title: Text(account.name),
+          onTap: onTap ?? onEdit,
+          leading: const Icon(Icons.account_balance_wallet, color: Colors.teal),
+          title: Text(account.name, style: const TextStyle(fontWeight: FontWeight.bold)),
           subtitle: Text(account.type),
-          trailing: MoneyText(account.currentBalance, currency: account.currency),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MoneyText(account.currentBalance, currency: account.currency),
+              if (onEdit != null || onArchive != null)
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  onSelected: (value) {
+                    if (value == 'edit') onEdit?.call();
+                    if (value == 'archive') onArchive?.call();
+                  },
+                  itemBuilder: (context) => [
+                    if (onEdit != null)
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 18),
+                            SizedBox(width: 8),
+                            Text('Sửa tài khoản'),
+                          ],
+                        ),
+                      ),
+                    if (onArchive != null)
+                      const PopupMenuItem(
+                        value: 'archive',
+                        child: Row(
+                          children: [
+                            Icon(Icons.archive_outlined, color: Colors.orange, size: 18),
+                            SizedBox(width: 8),
+                            Text('Lưu trữ', style: TextStyle(color: Colors.orange)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+            ],
+          ),
         ),
       );
 }
 
 class TransactionTile extends StatelessWidget {
-  const TransactionTile({super.key, required this.transaction, required this.onTap});
+  const TransactionTile({
+    super.key,
+    required this.transaction,
+    required this.onTap,
+    this.onEdit,
+    this.onDelete,
+  });
 
   final TransactionModel transaction;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) => ListTile(
         onTap: onTap,
-        leading: Icon(transaction.type == 'INCOME' ? Icons.arrow_downward : Icons.arrow_upward),
+        leading: Icon(
+          transaction.type == 'INCOME' ? Icons.arrow_downward : Icons.arrow_upward,
+          color: transaction.type == 'INCOME' ? Colors.green : Colors.red,
+        ),
         title: Text(transaction.description?.isNotEmpty == true ? transaction.description! : transaction.type),
         subtitle: Text(_date(context, transaction.transactionDate)),
-        trailing: MoneyText(transaction.amount, currency: transaction.currency),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            MoneyText(transaction.amount, currency: transaction.currency),
+            if (onEdit != null || onDelete != null)
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, size: 20),
+                onSelected: (value) {
+                  if (value == 'edit') onEdit?.call();
+                  if (value == 'delete') onDelete?.call();
+                },
+                itemBuilder: (context) => [
+                  if (onEdit != null)
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 18),
+                          SizedBox(width: 8),
+                          Text('Sửa giao dịch'),
+                        ],
+                      ),
+                    ),
+                  if (onDelete != null)
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.red, size: 18),
+                          SizedBox(width: 8),
+                          Text('Xóa giao dịch', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+          ],
+        ),
       );
 
   String _date(BuildContext context, DateTime value) =>
@@ -97,25 +186,79 @@ class TransactionTile extends StatelessWidget {
 }
 
 class BudgetProgress extends StatelessWidget {
-  const BudgetProgress({super.key, required this.budget});
+  const BudgetProgress({
+    super.key,
+    required this.budget,
+    this.onEdit,
+    this.onDelete,
+  });
 
   final BudgetModel budget;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(budget.name, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(value: budget.utilization.clamp(0, 1)),
-            const SizedBox(height: 8),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              MoneyText(budget.spent, currency: budget.currency),
-              Text('${(budget.utilization * 100).toStringAsFixed(0)}% · ${budget.risk}'),
-            ]),
-            Text('Remaining: ${budget.remaining} ${budget.currency}'),
+  Widget build(BuildContext context) {
+    final settings = InheritedSettings.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  budget.name,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+              if (onEdit != null || onDelete != null)
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  onSelected: (value) {
+                    if (value == 'edit') onEdit?.call();
+                    if (value == 'delete') onDelete?.call();
+                  },
+                  itemBuilder: (context) => [
+                    if (onEdit != null)
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 18),
+                            SizedBox(width: 8),
+                            Text('Sửa hạn mức'),
+                          ],
+                        ),
+                      ),
+                    if (onDelete != null)
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, color: Colors.red, size: 18),
+                            SizedBox(width: 8),
+                            Text('Xóa ngân sách', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(value: budget.utilization.clamp(0, 1)),
+          const SizedBox(height: 8),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            MoneyText(budget.spent, currency: budget.currency),
+            Text('${(budget.utilization * 100).toStringAsFixed(0)}% · ${budget.risk}'),
           ]),
-        ),
-      );
+          Text('Còn lại: ${settings.formatAmount(budget.remaining)}'),
+        ]),
+      ),
+    );
+  }
 }

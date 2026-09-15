@@ -258,3 +258,54 @@ def test_invalid_category_currency_and_timezone_date_are_rejected_or_preserved(c
     )
     assert valid.status_code == 201
     assert valid.json()["transaction_date"].startswith("2026-08-27T12:30:00")
+
+
+def test_update_and_delete_transaction_updates_balance(client):
+    test_client, _ = client
+    auth = register(test_client)
+    acc = account(test_client, auth, "Update Delete Account", opening=100000)
+
+    # 1. Create Expense
+    tx = test_client.post(
+        "/api/v1/transactions",
+        headers=headers(auth),
+        json={
+            "type": "EXPENSE",
+            "account_id": acc["id"],
+            "amount": 20000,
+            "currency": "VND",
+            "description": "Lunch",
+        },
+    )
+    assert tx.status_code == 201
+    tx_id = tx.json()["id"]
+
+    # Balance should now be 100000 - 20000 = 80000
+    acc_check = test_client.get(f"/api/v1/accounts/{acc['id']}", headers=headers(auth)).json()
+    assert acc_check["current_balance"] == 80000
+
+    # 2. Update transaction amount to 30000
+    updated = test_client.put(
+        f"/api/v1/transactions/{tx_id}",
+        headers=headers(auth),
+        json={"amount": 30000, "description": "Updated Lunch"},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["amount"] == 30000
+    assert updated.json()["description"] == "Updated Lunch"
+
+    # Balance should now be 100000 - 30000 = 70000
+    acc_check = test_client.get(f"/api/v1/accounts/{acc['id']}", headers=headers(auth)).json()
+    assert acc_check["current_balance"] == 70000
+
+    # 3. Delete transaction
+    deleted = test_client.delete(f"/api/v1/transactions/{tx_id}", headers=headers(auth))
+    assert deleted.status_code == 204
+
+    # Balance should be restored to opening 100000
+    acc_check = test_client.get(f"/api/v1/accounts/{acc['id']}", headers=headers(auth)).json()
+    assert acc_check["current_balance"] == 100000
+
+    # Getting deleted transaction returns 404
+    assert test_client.get(f"/api/v1/transactions/{tx_id}", headers=headers(auth)).status_code == 404
+

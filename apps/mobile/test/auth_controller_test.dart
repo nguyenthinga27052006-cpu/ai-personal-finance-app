@@ -28,6 +28,12 @@ class FakeAuthGateway implements AuthGateway {
 
   @override
   Future<void> logout() async => logoutCalled = true;
+
+  @override
+  Future<void> changePassword(String currentPassword, String newPassword) async {}
+
+  @override
+  Future<void> deleteAccount() async {}
 }
 
 AuthResult result() {

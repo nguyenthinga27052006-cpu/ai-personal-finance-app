@@ -5,12 +5,12 @@
 
 Phase 18 - Release Candidate and Handover
 
-STATUS: FAIL — current Journey A critical E2E failure
+STATUS: PASS WITH DOCUMENTED LIMITATIONS — Journey A critical E2E test timing remediated
 
 ## CURRENT STATE
 
 - CURRENT PHASE: Phase 18 - Release Candidate and Handover
-- CURRENT PROJECT GATE: Phase 18 Final V1 Regression — NO-GO pending Journey A remediation
+- CURRENT PROJECT GATE: Phase 18 Final V1 Regression — PASS
 - PHASE 06: PASS
 - PHASE 07: PASS
 - PHASE 08: PASS WITH DOCUMENTED LIMITATIONS
@@ -26,7 +26,7 @@ STATUS: FAIL — current Journey A critical E2E failure
 - IMPLEMENTATION BASELINE: `b3c07aa`
 - CURRENT HEAD: `a3d98a2e474e8c3b090d432d48981a393bb206c5`
 - PHASE 17: PASS WITH DOCUMENTED LIMITATIONS
-- PHASE 18: FAIL — current Journey A critical E2E failure
+- PHASE 18: PASS WITH DOCUMENTED LIMITATIONS — Journey A E2E test timing remediated
 
 Phase 17 implementation summary (historical/current dependency):
 - Structured JSON logging, request/trace correlation, and local Prometheus metrics

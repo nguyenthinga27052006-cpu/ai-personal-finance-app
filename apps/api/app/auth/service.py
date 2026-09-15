@@ -47,9 +47,9 @@ def create_session(
         family_id=family_id or str(uuid.uuid4()),
         refresh_token_hash=hash_refresh_token(refresh_token),
         expires_at=datetime.now(timezone.utc) + timedelta(days=settings.refresh_session_ttl_days),
-        device_name=device_name,
-        ip_address=ip_address,
-        user_agent=user_agent,
+        device_name=device_name[:120] if device_name else None,
+        ip_address=ip_address[:45] if ip_address else None,
+        user_agent=user_agent[:512] if user_agent else None,
     )
     db.add(session)
     db.flush()
@@ -101,6 +101,13 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     return user
 
 
+def change_password_user(db: Session, user: User, current_password: str, new_password: str) -> None:
+    if not verify_password(current_password, user.password_hash):
+        raise InvalidCredentialsError("Mật khẩu hiện tại không chính xác")
+    user.password_hash = hash_password(new_password)
+    db.add(user)
+
+
 def rotate_session(
     db: Session,
     refresh_token: str,
@@ -142,3 +149,54 @@ def rotate_session(
         user_agent=metadata.get("user_agent") or session.user_agent,
     )
     return user, replacement, new_refresh_token
+
+
+def delete_user_and_purge_all_data(db: Session, target_user: User) -> None:
+    from app.db.models import (
+        Account,
+        AIChatMessage,
+        AIFeedback,
+        Budget,
+        BudgetCategory,
+        DeviceSession,
+        FinancialGoal,
+        GoalContribution,
+        Notification,
+        Recommendation,
+        Transaction,
+        TransactionEntry,
+        TransactionItem,
+        UserPreference,
+        UserSetting,
+    )
+
+    user_id = target_user.id
+
+    db.query(DeviceSession).filter(DeviceSession.user_id == user_id).delete(synchronize_session=False)
+    db.query(AIChatMessage).filter(AIChatMessage.user_id == user_id).delete(synchronize_session=False)
+    db.query(AIFeedback).filter(AIFeedback.user_id == user_id).delete(synchronize_session=False)
+    db.query(Notification).filter(Notification.user_id == user_id).delete(synchronize_session=False)
+    db.query(Recommendation).filter(Recommendation.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserPreference).filter(UserPreference.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserSetting).filter(UserSetting.user_id == user_id).delete(synchronize_session=False)
+
+    goals = db.query(FinancialGoal).filter(FinancialGoal.user_id == user_id).all()
+    for g in goals:
+        db.query(GoalContribution).filter(GoalContribution.goal_id == g.id).delete(synchronize_session=False)
+    db.query(FinancialGoal).filter(FinancialGoal.user_id == user_id).delete(synchronize_session=False)
+
+    budgets = db.query(Budget).filter(Budget.user_id == user_id).all()
+    for b in budgets:
+        db.query(BudgetCategory).filter(BudgetCategory.budget_id == b.id).delete(synchronize_session=False)
+    db.query(Budget).filter(Budget.user_id == user_id).delete(synchronize_session=False)
+
+    transactions = db.query(Transaction).filter(Transaction.user_id == user_id).all()
+    for t in transactions:
+        db.query(TransactionEntry).filter(TransactionEntry.transaction_id == t.id).delete(synchronize_session=False)
+        db.query(TransactionItem).filter(TransactionItem.transaction_id == t.id).delete(synchronize_session=False)
+    db.query(Transaction).filter(Transaction.user_id == user_id).delete(synchronize_session=False)
+
+    db.query(Account).filter(Account.user_id == user_id).delete(synchronize_session=False)
+
+    db.delete(target_user)
+    db.commit()

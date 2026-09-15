@@ -56,6 +56,28 @@ Journey D retains the expected `SUCCESS` assertion and now includes non-sensitiv
 | C | PASS | Exited 0 with all assertions passing |
 | D | FAIL | Failed waiting for `Ask your finances` after selecting AI |
 
+## Android Black-Screen Investigation
+
+The Android startup-rendering investigation did not produce an application fix. On
+`emulator-5554` (Android 16/API 36, `sdk_gphone64_x86_64`, 1080x2424), a controlled
+minimal Flutter root and the current application both reached Dart `main()`, the
+Flutter first-frame callback, and a valid 1080x2424 viewport. WindowManager then
+reported the Activity as `HAS_DRAWN` with a valid frame while its surface remained
+`shown=false`, `mShownAlpha=0.0`, and `surface=[0,0][0,0]`. SurfaceFlinger reported
+the Activity parent and Flutter `SurfaceView` as hidden by their parent/layer flag,
+despite a valid 1080x2424 HWC buffer. No application exception, auth/API failure,
+or Flutter root constraint failure was found.
+
+Three independent cold launches on the cleaned debug APK produced valid PNG files,
+but none displayed Flutter application content: **0/3 visible-content passes**.
+APK build and the focused Flutter suite passed. A temporary controlled rendering
+probe, Android logging, explicit non-translucent theme override, and emulator
+animation-scale experiment were removed or reverted; no renderer, auth, backend,
+or Journey A/B/D change was made. This is recorded as environment blocker **FH-013**
+in [docs/qa/FAILURE_HISTORY.md](../qa/FAILURE_HISTORY.md). V1 remains NO-GO and
+the Android visible-content acceptance criterion remains unverified pending a
+second emulator/device or a repaired Android 16 emulator compositor.
+
 ## Automated Regression
 
 - Backend: **PASS**, 119 tests passed with 9 warnings.
@@ -81,7 +103,7 @@ Backend financial invariant coverage passed within the 119-test suite. Journey D
 
 **NO-GO.** Current post-commit Journey A #1, Journey B, and Journey D failed. Journey A #2/#3 and C passed. Web runtime/E2E also remain unverified.
 
-Blocking issues: **FH-004**, **FH-005**, **FH-006**, and **FH-011** in [docs/qa/FAILURE_HISTORY.md](../qa/FAILURE_HISTORY.md).
+Blocking issues: **FH-004**, **FH-005**, **FH-006**, and **FH-011** in [docs/qa/FAILURE_HISTORY.md](../qa/FAILURE_HISTORY.md). Android startup rendering is separately blocked by environment issue **FH-013**.
 
 ## Remediation Changes
 

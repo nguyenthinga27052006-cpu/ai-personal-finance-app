@@ -2,6 +2,8 @@ from app.db.models.finance import (
     Account,
     AccountStatus,
     AccountType,
+    AIChatMessage,
+    AIFeedback,
     Budget,
     BudgetCategory,
     BudgetPeriodType,
@@ -27,14 +29,18 @@ from app.db.models.finance import (
     TransactionType,
     User,
     UserPreference,
+    UserRole,
     UserSetting,
     UserStatus,
+    SystemSetting,
 )
 
 __all__ = [
     "Account",
     "AccountStatus",
     "AccountType",
+    "AIChatMessage",
+    "AIFeedback",
     "Budget",
     "BudgetCategory",
     "BudgetPeriodType",
@@ -60,6 +66,9 @@ __all__ = [
     "TransactionType",
     "User",
     "UserPreference",
+    "UserRole",
     "UserStatus",
     "UserSetting",
 ]
+
+

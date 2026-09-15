@@ -19,17 +19,24 @@ class AuthTokens {
 }
 
 class AuthUser {
-  const AuthUser({required this.id, required this.email, this.displayName});
+  const AuthUser({
+    required this.id,
+    required this.email,
+    this.displayName,
+    this.role = 'USER',
+  });
 
   final String id;
   final String email;
   final String? displayName;
+  final String role;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
       id: json['id'] as String,
       email: json['email'] as String,
       displayName: json['display_name'] as String?,
+      role: json['role'] as String? ?? 'USER',
     );
   }
 }

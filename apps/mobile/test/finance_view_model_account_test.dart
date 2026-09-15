@@ -52,10 +52,30 @@ class _AccountGateway implements FinanceGateway {
   }) => throw UnimplementedError();
 
   @override
+  Future<TransactionModel> updateTransaction(String id, Map<String, dynamic> values) => throw UnimplementedError();
+
+  @override
+  Future<void> deleteTransaction(String id) async {}
+
+  @override
   Future<List<BudgetModel>> budgets() async => const [];
+  @override
+  Future<BudgetModel> createBudget(Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<BudgetModel> updateBudget(String id, Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<void> deleteBudget(String id) async {}
 
   @override
   Future<List<GoalModel>> goals() async => const [];
+  @override
+  Future<GoalModel> createGoal(Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<GoalModel> updateGoal(String id, Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<void> deleteGoal(String id) => throw UnimplementedError();
+  @override
+  Future<void> createGoalContribution(String goalId, Map<String, dynamic> values) => throw UnimplementedError();
 
   @override
   Future<List<InsightModel>> insights({DateTime? start, DateTime? end}) async =>

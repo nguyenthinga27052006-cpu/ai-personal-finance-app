@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeAIGateway implements AIGateway {
   @override
-  Future<AIQueryResult> query(String question) async => const AIQueryResult(
+  Future<AIQueryResult> query(String question, {String? language}) async => const AIQueryResult(
     status: 'SUCCESS',
     answer: 'This month you spent 5000 VND.',
     source: 'analytics.service',
@@ -21,13 +21,13 @@ void main() {
       MaterialApp(home: Scaffold(body: AIScreen(gateway: _FakeAIGateway()))),
     );
 
-    final question = find.widgetWithText(TextField, 'Ask a financial question');
+    final question = find.widgetWithText(TextField, 'Hỏi trợ lý tài chính AI...');
     await tester.enterText(question, 'How much did I spend this month?');
-    await tester.tap(find.byTooltip('Ask'));
+    await tester.tap(find.byTooltip('Gửi'));
     await tester.pumpAndSettle();
 
     expect(find.text('SUCCESS'), findsOneWidget);
     expect(find.text('This month you spent 5000 VND.'), findsOneWidget);
-    expect(find.text('Source: analytics.service'), findsOneWidget);
+    expect(find.text('Nguồn: analytics.service'), findsOneWidget);
   });
 }

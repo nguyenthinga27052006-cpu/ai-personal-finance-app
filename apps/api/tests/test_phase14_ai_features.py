@@ -291,3 +291,25 @@ def test_spending_and_recommendation_gateway_paths_preserve_grounding(client):
         assert explanation["status"] == "SUCCESS"
         assert "ESTIMATE" in explanation["answer"]
         assert recommendation_provider.calls
+
+
+def test_ai_query_persists_messages_and_history_endpoint(client):
+    test_client, _ = client
+    auth = __import__("test_financial_core", fromlist=["register"]).register(test_client)
+    headers = {"Authorization": f"Bearer {auth['access_token']}"}
+
+    query_res = test_client.post(
+        "/api/v1/ai/query",
+        json={"question": "What is my current balance?"},
+        headers=headers,
+    )
+    assert query_res.status_code == 200
+
+    history_res = test_client.get("/api/v1/ai/history", headers=headers)
+    assert history_res.status_code == 200
+    history = history_res.json()
+    assert len(history) >= 2
+    roles = [item["role"] for item in history]
+    assert "user" in roles
+    assert "assistant" in roles
+

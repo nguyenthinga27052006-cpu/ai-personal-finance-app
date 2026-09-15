@@ -46,6 +46,7 @@ class UserResponse(BaseModel):
     id: str
     email: str
     display_name: str | None
+    role: str = "USER"
     default_currency: str
     timezone: str
     locale: str
@@ -63,3 +64,14 @@ class AuthResponse(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1)
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password_value(cls, value: str) -> str:
+        return validate_password(value)
+

@@ -356,3 +356,216 @@ def test_rate_limiter_enforces_burst_isolates_keys_and_resets():
     assert limiter.allow("ai:other-user:ip") is True
     current_time[0] = 161.0
     assert limiter.allow("ai:user:ip") is True
+
+
+@pytest.mark.anyio
+async def test_fake_provider_stream_generate():
+    provider = FakeProvider(response="Streaming test output")
+    request = ProviderRequest(
+        feature="nl_query",
+        model="foundation-simple",
+        instructions="test",
+        context={},
+        tools=(),
+    )
+    chunks = [chunk async for chunk in provider.stream_generate(request)]
+    assert "".join(chunks) == "Streaming test output"
+
+
+@pytest.mark.anyio
+async def test_provider_stream_fallback():
+    primary = FakeProvider(failure=TimeoutError())
+    fallback = FakeProvider(response="Fallback stream content")
+    router = ModelRouter(primary, fallback)
+    request = ProviderRequest(
+        feature="nl_query",
+        model="foundation-simple",
+        instructions="test",
+        context={},
+        tools=(),
+    )
+    chunks = [chunk async for chunk in router.stream_generate(request)]
+    assert "".join(chunks) == "Fallback stream content"
+
+
+def test_gemini_provider_unconfigured():
+    from app.ai.errors import ProviderUnavailableError
+    from app.ai.providers import GeminiLLMProvider
+
+    provider = GeminiLLMProvider(api_key=None)
+    request = ProviderRequest(
+        feature="nl_query",
+        model="gemini-1.5-flash",
+        instructions="test",
+        context={},
+        tools=(),
+    )
+    with pytest.raises(ProviderUnavailableError):
+        provider.generate(request)
+
+
+def test_openai_provider_unconfigured():
+    from app.ai.errors import ProviderUnavailableError
+    from app.ai.providers import OpenAIProvider
+
+    provider = OpenAIProvider(api_key=None)
+    request = ProviderRequest(
+        feature="nl_query",
+        model="gpt-4o-mini",
+        instructions="test",
+        context={},
+        tools=(),
+    )
+    with pytest.raises(ProviderUnavailableError):
+        provider.generate(request)
+
+
+def test_ai_chat_stream_endpoint(client):
+    test_client, _ = client
+    auth = register(test_client)
+    app.dependency_overrides[get_ai_rate_limiter] = lambda: InMemoryAuthRateLimiter(
+        max_attempts=10, window_seconds=60
+    )
+    payload = {"question": "Hello AI assistant!", "currency": "VND"}
+
+    response = test_client.post(
+        "/api/v1/ai/chat/stream",
+        headers=headers(auth),
+        json=payload,
+    )
+    assert response.status_code == 200
+    assert "text/event-stream" in response.headers["content-type"]
+    lines = response.text.strip().split("\n\n")
+    assert len(lines) > 0
+    assert "data: " in lines[0]
+    assert "token" in response.text or "metadata" in response.text
+
+
+def test_token_budget_tracker_quota_and_audit_logging(caplog):
+    import logging
+    from app.ai.usage import TokenBudgetTracker, TokenLimitExceeded
+
+    caplog.set_level(logging.INFO)
+    tracker = TokenBudgetTracker(daily_limit=1000)
+    user_id = "test_user_quota_01"
+
+    # Record 600 tokens
+    tracker.record_usage(user_id, prompt_tokens=400, completion_tokens=200)
+    assert tracker.get_user_usage(user_id) == 600
+    assert "token_budget_audit" in caplog.text
+
+    # Requesting 300 more tokens (total 900 <= 1000) should pass
+    tracker.check_quota(user_id, estimated_tokens=300)
+
+    # Requesting 500 more tokens (total 1100 > 1000) should raise TokenLimitExceeded
+    with pytest.raises(TokenLimitExceeded) as exc_info:
+        tracker.check_quota(user_id, estimated_tokens=500)
+
+    assert exc_info.value.code == "DAILY_TOKEN_LIMIT_EXCEEDED"
+
+
+def test_token_limit_exceeded_returns_429_http_response(client):
+    from app.ai.usage import get_token_budget_tracker
+
+    test_client, _ = client
+    auth = register(test_client)
+    app.dependency_overrides[get_ai_rate_limiter] = lambda: InMemoryAuthRateLimiter(
+        max_attempts=10, window_seconds=60
+    )
+
+    tracker = get_token_budget_tracker()
+    tracker.reset()
+    # Consume 49,990 tokens out of 50,000 daily limit for current user
+    tracker.record_usage(auth["user"]["id"], prompt_tokens=25000, completion_tokens=24990)
+
+    # Send a prompt of ~100 characters (~25 estimated tokens), pushing over limit
+    payload = {"question": "A" * 100, "currency": "VND"}
+    response = test_client.post("/api/v1/ai/query", headers=headers(auth), json=payload)
+
+    assert response.status_code == 429
+    assert response.json()["detail"]["code"] == "DAILY_TOKEN_LIMIT_EXCEEDED"
+
+    # Cleanup
+    tracker.reset()
+
+
+def test_legal_disclaimer_injection():
+    from app.ai.rag.generator import FINANCIAL_LEGAL_DISCLAIMER
+    from app.ai.retrievers.hybrid_retriever import HybridContext
+    from app.ai.retrievers.sql_retriever import SQLUserDataContext
+    from decimal import Decimal
+
+    sql_ctx = SQLUserDataContext(
+        user_id="u1",
+        period_start=date(2026, 8, 1),
+        period_end=date(2026, 8, 31),
+        currency="VND",
+        total_income=Decimal("10000"),
+        total_expense=Decimal("5000"),
+        net_savings=Decimal("5000"),
+        accounts=[],
+        total_balance=Decimal("5000"),
+        top_categories=[],
+        recent_transactions=[],
+        budgets=[],
+        goals=[],
+        notifications=[],
+        transaction_count=1,
+        has_data=True,
+    )
+    hybrid_context = HybridContext(
+        intent="saving_advice",
+        sql_context=sql_ctx,
+        vector_chunks=[],
+        has_sql_data=True,
+        has_rag_data=False,
+    )
+
+    from app.ai.rag.generator import FinancialRAGGenerator
+    gen = FinancialRAGGenerator(db=None)  # type: ignore[arg-type]
+    formatted = gen._format_markdown_response("", hybrid_context, citations=[])
+    assert FINANCIAL_LEGAL_DISCLAIMER.strip() in formatted
+
+    # Greeting intent should NOT append legal disclaimer
+    greeting_context = HybridContext(
+        intent="greeting",
+        sql_context=sql_ctx,
+        vector_chunks=[],
+        has_sql_data=False,
+        has_rag_data=False,
+    )
+    greeting_formatted = gen._format_markdown_response("", greeting_context, citations=[])
+    assert FINANCIAL_LEGAL_DISCLAIMER.strip() not in greeting_formatted
+
+
+def test_ai_feedback_endpoint(client):
+    test_client, factory = client
+    payload = {
+        "query_id": "q123",
+        "conversation_id": "conv_456",
+        "rating": 5,
+        "feedback_type": "accurate",
+        "comment": "RAG response was very helpful and precise!",
+    }
+    # Unauthorized request should return 401
+    assert test_client.post("/api/v1/ai/feedback", json=payload).status_code == 401
+
+    # Authorized feedback submission
+    auth = register(test_client)
+    res = test_client.post("/api/v1/ai/feedback", headers=headers(auth), json=payload)
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["status"] == "success"
+    assert "feedback_id" in body
+
+    # Verify persistence in database
+    with factory() as db:
+        from app.db.models import AIFeedback
+        fb = db.get(AIFeedback, body["feedback_id"])
+        assert fb is not None
+        assert fb.user_id == auth["user"]["id"]
+        assert fb.rating == 5
+        assert fb.feedback_type == "accurate"
+
+
+

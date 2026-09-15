@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -58,6 +60,7 @@ void main() {
     await _enter(tester, 'Name', accountName);
     await _enter(tester, 'Opening balance', '100000');
     await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
     _mark('A10 ACCOUNT CREATE SUBMITTED');
     await _waitForText(tester, accountName);
     _mark('A11 ACCOUNT CREATE RESPONSE');

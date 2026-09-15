@@ -20,6 +20,7 @@ All timestamps are local workspace time on 2026-09-09 or 2026-09-10. Evidence is
 | FH-010 | LOW | BLOCKED_BY_ENVIRONMENT | Database tooling | API image does not contain verify_postgres.py | 2026-09-10 |
 | FH-011 | HIGH | OPEN | Journey A / auth navigation | Home was not visible after login within bounded state wait | 2026-09-10 |
 | FH-012 | LOW | VERIFIED | QA validation | Runner static check falsely rejected intentional cleanup wait | 2026-09-10 |
+| FH-013 | HIGH | BLOCKED_BY_ENVIRONMENT | Android emulator / Flutter startup rendering | Android task transition hides a drawn Flutter window and produces black screenshots | 2026-09-10 |
 
 ## FH-001: Account Creation State Observation
 
@@ -309,6 +310,28 @@ All timestamps are local workspace time on 2026-09-09 or 2026-09-10. Evidence is
 - Related source files: None.
 - Notes / next investigation direction: Keep runner validation predicates lifecycle-aware.
 
+## FH-013: Android Task Transition Hides Drawn Flutter Window
+
+- Issue ID: FH-013
+- First detected date/time: 2026-09-10
+- Last observed date/time: 2026-09-10
+- Severity: HIGH
+- Status: BLOCKED_BY_ENVIRONMENT
+- Journey / Phase / Area: Android emulator startup rendering / Phase 18 V1 evidence
+- Device: `emulator-5554`, Android 16 API 36, `sdk_gphone64_x86_64`, 1080x2424 at density 420
+- Commit under test: `ae3eba30158e4e7385a0d6ffc70682b2540e77e9`
+- Test or command: `flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:8000`; clean APK install; `adb -s emulator-5554 shell am start -W -n com.example.ai_personal_finance/.MainActivity`; binary-safe `adb exec-out screencap -p`; `dumpsys window` and `dumpsys SurfaceFlinger --layers`.
+- Exact observed evidence: Flutter reached `STARTUP_08_FIRST_FRAME`; Dart viewport progressed from `Size(0.0, 0.0)` to `Size(1080.0, 2424.0)`; Activity WindowManager state had `mHasSurface=true`, `HAS_DRAWN`, and a 1080x2424 frame, but `Surface: shown=false`, `mShownAlpha=0.0`, and `surface=[0,0][0,0]`. SurfaceFlinger reported both the Activity parent and Flutter `SurfaceView` as `invisible reason=hidden by parent or layer flag`; the HWC layer still had a 1080x2424 buffer. Screenshots existed and had PNG signature `89 50 4E 47 0D 0A 1A 0A`, but showed black/dark content.
+- First meaningful error: `FlutterRenderer: Width is zero. 0,0` during the initial 0x0 window phase; this was followed by a valid viewport and first frame, so it is not the confirmed root cause.
+- Reproduction frequency: 3/3 cold launches reproduced the hidden-window/black-screen state. The controlled minimal Flutter root reproduced it without API, auth, database, or navigation.
+- Root-cause hypothesis: Android 16 emulator WindowManager/SurfaceFlinger task transition or parent transition leash remained hidden after Flutter produced a valid buffer.
+- Confirmed root cause: Environment-level compositor/window visibility failure is confirmed for this device run by the SurfaceFlinger `hidden by parent or layer flag` state. No application exception, auth failure, API failure, or Flutter root constraint failure was found.
+- Fix attempted: Explicit `windowIsTranslucent=false` in light/night themes and emulator animation scales set to zero. Neither changed the hidden surface state; both were removed. Impeller was not disabled and no permanent renderer change was made.
+- Verification result: Application fix **not attempted** because evidence does not implicate application code. APK build/install/launch passed; visible Flutter content did not pass. Acceptance remains unverified because 3/3 cold launches failed visibility.
+- Screenshot status: All captures were binary-safe, nonempty PNGs with the required signature; upload/capture encoding was not the failure.
+- Related source files: `apps/mobile/android/app/src/main/AndroidManifest.xml`, Flutter-generated launch/normal themes, `apps/mobile/android/app/src/main/kotlin/com/example/ai_personal_finance/MainActivity.kt`.
+- Notes / next investigation direction: Repeat on a second emulator/device or after recreating/updating the Android 16 emulator. Do not create an application code fix or alter Journey A/B/D based on this environment evidence.
+
 ## Relationship To Final V1 Report
 
 The canonical final report is [V1_FINAL_COMPLETION_REPORT.md](../project-status/V1_FINAL_COMPLETION_REPORT.md). Open issues are tracked here. The current V1 decision is **NO-GO** because FH-004, FH-005, and FH-006 are current critical E2E issues. FH-007 through FH-010 are environment/tooling limitations and do not become PASS merely because they are unverified.
@@ -323,3 +346,4 @@ The canonical final report is [V1_FINAL_COMPLETION_REPORT.md](../project-status/
 - FH-009: Security scanners unavailable (BLOCKED_BY_ENVIRONMENT)
 - FH-010: Database verifier not included in API image (BLOCKED_BY_ENVIRONMENT)
 - FH-011: Journey A Home missing after login (OPEN)
+- FH-013: Android task transition hides drawn Flutter window (BLOCKED_BY_ENVIRONMENT)
