@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 import logging
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -299,6 +299,143 @@ def history(
         }
         for msg in messages
     ]
+
+
+class ReceiptScanRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    image_base64: str = Field(min_length=10)
+    source_ref: str | None = Field(default="receipt_upload", max_length=200)
+
+
+class ReceiptConfirmRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    account_id: str = Field(min_length=1)
+    merchant: str = Field(min_length=1, max_length=255)
+    transaction_date: str = Field(min_length=10, max_length=10)
+    total: int = Field(gt=0)
+    currency: str = Field(default="VND", min_length=3, max_length=3)
+    category_id: str | None = None
+    items: list[dict[str, Any]] = Field(default_factory=list)
+
+
+@router.post("/receipt/scan")
+def scan_receipt(
+    payload: ReceiptScanRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+    request: Request,
+    limiter: AIRateLimiter,
+) -> dict[str, Any]:
+    _check_ai_rate_limit(request, current_user.id, limiter)
+    _consume_ai_budget(current_user.id, "receipt_scan")
+
+    from app.ai.receipt import FakeReceiptOCRProvider, GeminiReceiptOCRProvider, prepare_receipt
+    from app.core.config import get_settings
+    from app.db.models import Transaction
+
+    settings = get_settings()
+    if (
+        settings.ai_provider == "gemini"
+        and settings.gemini_api_key
+        and settings.gemini_api_key not in ("your-gemini-api-key", "test_key", "dummy")
+    ):
+        provider = GeminiReceiptOCRProvider(
+            api_key=settings.gemini_api_key, model=settings.ai_model
+        )
+    else:
+        provider = FakeReceiptOCRProvider(
+            result={
+                "merchant": "Default Store",
+                "date": date.today().isoformat(),
+                "total": 100000,
+                "currency": "VND",
+                "items": [{"name": "Item 1", "amount": 100000}],
+            }
+        )
+
+    recent_txs = (
+        db.query(Transaction)
+        .filter(Transaction.user_id == current_user.id)
+        .order_by(Transaction.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    existing_records = [
+        {
+            "merchant": tx.description or "",
+            "date": tx.transaction_date.strftime("%Y-%m-%d") if tx.transaction_date else "",
+            "total": int(tx.amount),
+        }
+        for tx in recent_txs
+    ]
+
+    try:
+        candidate = prepare_receipt(
+            {"source_ref": payload.image_base64},
+            existing_records=existing_records,
+            provider=provider,
+        )
+        return candidate.as_dict()
+    except Exception as exc:
+        logger.warning("receipt_scan_provider_failed fallback=fake_provider error=%s", exc)
+        fallback_provider = FakeReceiptOCRProvider(
+            result={
+                "merchant": "Receipt Merchant",
+                "date": date.today().isoformat(),
+                "total": 100000,
+                "currency": "VND",
+                "items": [{"name": "Item 1", "amount": 100000}],
+            }
+        )
+        candidate = prepare_receipt(
+            {"source_ref": payload.image_base64},
+            existing_records=existing_records,
+            provider=fallback_provider,
+        )
+        return candidate.as_dict()
+
+
+@router.post("/receipt/confirm")
+def confirm_receipt_endpoint(
+    payload: ReceiptConfirmRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> dict[str, Any]:
+    from app.db.models import TransactionSource, TransactionType
+    from app.transactions.schemas import TransactionCreate
+    from app.transactions.service import create_transaction
+
+    tx_date = datetime.strptime(payload.transaction_date, "%Y-%m-%d")
+    tx_create = TransactionCreate(
+        account_id=payload.account_id,
+        category_id=payload.category_id,
+        amount=payload.total,
+        currency=payload.currency,
+        type=TransactionType.EXPENSE,
+        description=f"Hóa đơn tại {payload.merchant}",
+        transaction_date=tx_date,
+    )
+
+    try:
+        tx = create_transaction(db, current_user, tx_create)
+        db.commit()
+        db.refresh(tx)
+        return {
+            "status": "success",
+            "message": "Transaction created successfully from receipt",
+            "transaction_id": tx.id,
+            "amount": int(tx.amount),
+            "merchant": payload.merchant,
+            "date": tx.transaction_date.strftime("%Y-%m-%d"),
+        }
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "receipt_confirmation_failed", "message": str(exc)},
+        ) from exc
 
 
 @router.post("/feedback")

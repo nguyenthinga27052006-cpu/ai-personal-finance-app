@@ -163,8 +163,9 @@ def list_route(
     page_size: int = Query(default=50, ge=1, le=100),
     account_id: str | None = None,
     type: TransactionType | None = None,
+    search: str | None = Query(default=None, max_length=100),
 ) -> TransactionListResponse:
-    items, total = list_transactions(db, current_user, page, page_size, account_id, type)
+    items, total = list_transactions(db, current_user, page, page_size, account_id, type, search)
     return TransactionListResponse(items=items, total=total, page=page, page_size=page_size)
 
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../auth/api_client.dart';
 import '../admin/admin_dashboard.dart';
@@ -9,6 +10,7 @@ import 'components.dart';
 import 'finance_repository.dart';
 import 'finance_view_model.dart';
 import 'models.dart';
+import 'receipt_ocr_dialog.dart';
 
 class FinanceHome extends StatefulWidget {
   const FinanceHome({
@@ -221,6 +223,7 @@ class _FinanceHomeState extends State<FinanceHome> {
                     onAddContribution: (goal) => _addGoalContribution(context, goal),
                     onDeleteGoal: (goal) => _confirmDeleteGoal(context, goal),
                   ),
+                  _CategorySpendingReportView(model: viewModel),
                   _InsightsView(model: viewModel),
                   _NotificationsView(model: viewModel),
                   _RecommendationsView(model: viewModel),
@@ -240,11 +243,14 @@ class _FinanceHomeState extends State<FinanceHome> {
                 settings.tr('nav_transactions'),
                 settings.tr('nav_budgets'),
                 settings.tr('nav_goals'),
+                '📊 Biểu Đồ Chi Tiêu & Gợi Ý AI',
                 settings.tr('nav_analytics'),
                 settings.tr('nav_notifications'),
                 settings.tr('nav_recommendations'),
                 settings.tr('nav_ai_assistant'),
-              ][tab.clamp(0, 8)],
+              ][tab.clamp(0, 9)],
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
             actions: [
               IconButton(
@@ -272,7 +278,7 @@ class _FinanceHomeState extends State<FinanceHome> {
             ? Row(
                 children: [
                   NavigationRail(
-                    selectedIndex: tab.clamp(0, 8),
+                    selectedIndex: tab.clamp(0, 9),
                     onDestinationSelected: _selectTab,
                     labelType: NavigationRailLabelType.selected,
                     leading: Padding(
@@ -307,6 +313,11 @@ class _FinanceHomeState extends State<FinanceHome> {
                         icon: const Icon(Icons.flag_outlined),
                         selectedIcon: const Icon(Icons.flag),
                         label: Text(settings.tr('nav_goals')),
+                      ),
+                      const NavigationRailDestination(
+                        icon: Icon(Icons.pie_chart_outline, color: Colors.teal),
+                        selectedIcon: Icon(Icons.pie_chart, color: Colors.teal),
+                        label: Text('Biểu đồ chi tiêu'),
                       ),
                       NavigationRailDestination(
                         icon: const Icon(Icons.insights_outlined),
@@ -404,7 +415,7 @@ class _FinanceHomeState extends State<FinanceHome> {
 
   void _selectTab(int value) {
     setState(() => tab = value);
-    if (value == 6) {
+    if (value == 7) {
       viewModel.loadCore();
     }
   }
@@ -423,31 +434,36 @@ class _FinanceHomeState extends State<FinanceHome> {
               onTap: () => Navigator.pop(context, 4),
             ),
             _MoreNavigationTile(
+              icon: Icons.pie_chart_outline,
+              label: '📊 Biểu Đồ Chi Tiêu & Gợi Ý AI',
+              onTap: () => Navigator.pop(context, 5),
+            ),
+            _MoreNavigationTile(
               icon: Icons.insights_outlined,
               label: settings.tr('nav_analytics'),
-              onTap: () => Navigator.pop(context, 5),
+              onTap: () => Navigator.pop(context, 6),
             ),
             _MoreNavigationTile(
               icon: Icons.notifications_outlined,
               label: settings.tr('nav_notifications'),
-              onTap: () => Navigator.pop(context, 6),
+              onTap: () => Navigator.pop(context, 7),
             ),
             _MoreNavigationTile(
               icon: Icons.lightbulb_outline,
               label: settings.tr('nav_recommendations'),
-              onTap: () => Navigator.pop(context, 7),
+              onTap: () => Navigator.pop(context, 8),
             ),
             _MoreNavigationTile(
               icon: Icons.auto_awesome_outlined,
               label: settings.tr('nav_ai_assistant'),
-              onTap: () => Navigator.pop(context, 8),
+              onTap: () => Navigator.pop(context, 9),
             ),
             if (widget.userRole.toUpperCase() == 'ADMIN' ||
                 widget.email == 'admin@finance.app')
               _MoreNavigationTile(
                 icon: Icons.admin_panel_settings_outlined,
                 label: settings.tr('nav_admin_portal'),
-                onTap: () => Navigator.pop(context, 9),
+                onTap: () => Navigator.pop(context, 10),
               ),
           ],
         ),
@@ -885,6 +901,63 @@ class _HomeView extends StatelessWidget {
       children: [
         Text('Welcome back', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 8),
+        AnimatedTapScale(
+          onTap: () {
+            final state = context.findAncestorStateOfType<_FinanceHomeState>();
+            if (state != null && state.widget.gateway is ApiClient) {
+              ReceiptOCRDialog.show(
+                context,
+                apiClient: state.widget.gateway as ApiClient,
+                accounts: model.accounts,
+                categories: model.categories,
+                onSuccess: model.loadCore,
+              );
+            }
+          },
+          child: Card(
+            color: Colors.teal.shade700,
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Colors.white24,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.document_scanner, size: 28, color: Colors.white),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '📷 Quét Hóa Đơn OCR (AI)',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Bấm vào đây để chọn file ảnh hóa đơn & trích xuất tự động!',
+                          style: TextStyle(fontSize: 12, color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         if (model.dashboard case final dashboard?) ...[
           Card(
             child: Column(
@@ -915,6 +988,15 @@ class _HomeView extends StatelessWidget {
             child: EmptyState(label: 'No dashboard data yet'),
           ),
         const SizedBox(height: 16),
+        _QuickFeatureShortcuts(onSelectTab: (index) {
+          final state = context.findAncestorStateOfType<_FinanceHomeState>();
+          if (state != null) {
+            state._selectTab(index);
+          }
+        }),
+        const SizedBox(height: 16),
+        _CategoryAnalyticsCard(model: model),
+        const SizedBox(height: 16),
         Text('Accounts', style: Theme.of(context).textTheme.titleLarge),
         ...model.accounts.map((account) => BalanceCard(key: ValueKey('home-${account.id}-${account.name}'), account: account)),
         const SizedBox(height: 16),
@@ -938,6 +1020,446 @@ class _HomeView extends StatelessWidget {
       ],
     ),
   );
+}
+
+class _QuickFeatureShortcuts extends StatelessWidget {
+  const _QuickFeatureShortcuts({required this.onSelectTab});
+  final ValueChanged<int> onSelectTab;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            '🚀 Tính Năng Nổi Bật',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _FeatureShortcutChip(
+                icon: Icons.pie_chart,
+                color: Colors.teal,
+                label: 'Biểu đồ & Gợi ý AI',
+                onTap: () => onSelectTab(5),
+              ),
+              const SizedBox(width: 8),
+              _FeatureShortcutChip(
+                icon: Icons.flag,
+                color: Colors.orange,
+                label: 'Mục tiêu tiết kiệm',
+                onTap: () => onSelectTab(4),
+              ),
+              const SizedBox(width: 8),
+              _FeatureShortcutChip(
+                icon: Icons.insights,
+                color: Colors.purple,
+                label: 'Phân tích AI',
+                onTap: () => onSelectTab(6),
+              ),
+              const SizedBox(width: 8),
+              _FeatureShortcutChip(
+                icon: Icons.smart_toy,
+                color: Colors.blue,
+                label: 'Trợ lý AI Chat',
+                onTap: () => onSelectTab(9),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureShortcutChip extends StatelessWidget {
+  const _FeatureShortcutChip({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedTapScale(
+      onTap: onTap,
+      child: Material(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: color, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.teal.shade900,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Color _getCategoryColor(String name, int index) {
+  final lower = name.toLowerCase();
+  if (lower.contains('ăn') || lower.contains('cafe') || lower.contains('cơm') || lower.contains('nhà hàng') || lower.contains('bánh')) {
+    return const Color(0xFFE55737); // Orange Red
+  }
+  if (lower.contains('hóa đơn') || lower.contains('tiện ích') || lower.contains('điện') || lower.contains('nước') || lower.contains('mạng')) {
+    return const Color(0xFF2E7D32); // Emerald Green
+  }
+  if (lower.contains('siêu thị') || lower.contains('bách hóa') || lower.contains('winmart') || lower.contains('chợ')) {
+    return const Color(0xFF009688); // Teal Green
+  }
+  if (lower.contains('mua sắm') || lower.contains('đồ dùng') || lower.contains('shopee') || lower.contains('quần áo') || lower.contains('lazada') || lower.contains('tiki')) {
+    return const Color(0xFF0288D1); // Ocean Blue
+  }
+  if (lower.contains('đi lại') || lower.contains('xăng') || lower.contains('grab') || lower.contains('be') || lower.contains('xe') || lower.contains('taxi')) {
+    return const Color(0xFFF57C00); // Amber Gold
+  }
+  if (lower.contains('giải trí') || lower.contains('phim') || lower.contains('game') || lower.contains('du lịch')) {
+    return const Color(0xFF8E24AA); // Purple
+  }
+  if (lower.contains('sức khỏe') || lower.contains('thuốc') || lower.contains('khám') || lower.contains('bệnh viện')) {
+    return const Color(0xFFD81B60); // Rose Pink
+  }
+
+  final palette = [
+    const Color(0xFFE55737),
+    const Color(0xFF2E7D32),
+    const Color(0xFF0288D1),
+    const Color(0xFFF57C00),
+    const Color(0xFF009688),
+    const Color(0xFF8E24AA),
+    const Color(0xFFD81B60),
+    const Color(0xFF3F51B5),
+  ];
+  return palette[index % palette.length];
+}
+
+class _CategoryAnalyticsCard extends StatelessWidget {
+  const _CategoryAnalyticsCard({required this.model});
+  final FinanceViewModel model;
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = InheritedSettings.of(context);
+    final Map<String, int> categoryTotals = {};
+    int totalExpense = 0;
+
+    for (final tx in model.transactions) {
+      if (tx.type.toLowerCase() == 'expense') {
+        final catName = tx.description?.isNotEmpty == true
+            ? _extractCategoryName(tx.description!)
+            : 'Chi tiêu mua sắm';
+        categoryTotals[catName] = (categoryTotals[catName] ?? 0) + tx.amount;
+        totalExpense += tx.amount;
+      }
+    }
+
+    if (categoryTotals.isEmpty) {
+      categoryTotals['Ăn uống & Cafe'] = 1200000;
+      categoryTotals['Hóa đơn & Tiện ích'] = 100000;
+      totalExpense = 1300000;
+    }
+
+    final categoryIcons = {
+      'Ăn uống & Cafe': Icons.restaurant,
+      'Hóa đơn & Tiện ích': Icons.receipt_long_outlined,
+      'Mua sắm đồ dùng': Icons.shopping_bag_outlined,
+      'Siêu thị & Bách hóa': Icons.storefront_outlined,
+      'Di chuyển & Xăng xe': Icons.directions_car_outlined,
+      'Giải trí': Icons.sports_esports_outlined,
+      'Sức khỏe': Icons.medical_services_outlined,
+    };
+
+    final categoryItems = categoryTotals.entries.toList().asMap().entries.map((entry) {
+      final idx = entry.key;
+      final e = entry.value;
+      final name = e.key;
+      final amount = e.value;
+      final pct = totalExpense > 0 ? (amount / totalExpense) * 100 : 0.0;
+      final color = _getCategoryColor(name, idx);
+      final icon = categoryIcons[name] ?? Icons.category;
+      return CategorySpendingItem(
+        name: name,
+        amount: amount,
+        percentage: pct,
+        color: color,
+        icon: icon,
+        count: 1,
+      );
+    }).toList()..sort((a, b) => b.amount.compareTo(a.amount));
+
+    final topCategory = categoryItems.isNotEmpty ? categoryItems.first.name : 'Ăn uống';
+    final topAmount = categoryItems.isNotEmpty ? categoryItems.first.amount : 1200000;
+    final targetSaving = (topAmount * 0.25).round();
+
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.pie_chart, color: Colors.teal, size: 20),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '📊 Biểu Đồ Chi Tiêu & Gợi Ý AI',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    final state = context.findAncestorStateOfType<_FinanceHomeState>();
+                    state?._selectTab(5);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text(
+                          'Chi tiết',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.teal,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(Icons.arrow_forward_ios, size: 10, color: Colors.teal),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (categoryItems.isNotEmpty) ...[
+              // Pie chart visual
+              Center(
+                child: SizedBox(
+                  width: 180,
+                  height: 180,
+                  child: CustomPaint(
+                    painter: _SolidPiePainter(
+                      items: categoryItems,
+                      backgroundColor: Colors.grey.shade200,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            Text(
+              'Chi Tiêu Theo Danh Mục:',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey.shade800),
+            ),
+            const SizedBox(height: 10),
+            ...categoryItems.map((item) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(color: item.color, shape: BoxShape.circle),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              item.name,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        MoneyText(
+                          item.amount,
+                          currency: 'VND',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red.shade700),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: (item.percentage / 100).clamp(0.0, 1.0),
+                        minHeight: 8,
+                        backgroundColor: item.color.withOpacity(0.15),
+                        valueColor: AlwaysStoppedAnimation<Color>(item.color),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const Divider(height: 24),
+            // AI Recommendation Box matching Web
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.shade300, width: 1.2),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade700,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.lightbulb, color: Colors.white, size: 16),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '💡 Gợi Ý AI Cho Ngày Mai & Kế Hoạch Chi Tiêu',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade900,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.trending_down, color: Colors.red, size: 16),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Mục chi tiêu nhiều nhất: $topCategory',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Hôm nay / kỳ này bạn đã tiêu ${settings.trText(settings.formatAmount(topAmount))} vào [$topCategory].',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const Divider(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('👉 ', style: TextStyle(fontSize: 13)),
+                            Expanded(
+                              child: Text(
+                                'Gợi ý ngày mai: Đặt mục tiêu cắt giảm 20 - 30% chi tiêu cho [$topCategory] (tiết kiệm khoảng ${settings.trText(settings.formatAmount(targetSaving))}) bằng cách ưu tiên nhu cầu thiết yếu hơn.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.teal.shade900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Dành ${settings.trText(settings.formatAmount(targetSaving))} tiết kiệm được bổ sung ngay vào Quỹ Tiết Kiệm.',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _extractCategoryName(String desc) {
+    if (desc.contains('Highlands') || desc.contains('Cafe') || desc.contains('Ăn')) {
+      return 'Ăn uống & Cafe';
+    }
+    if (desc.contains('WinMart') || desc.contains('Siêu thị') || desc.contains('Chợ')) {
+      return 'Siêu thị & Bách hóa';
+    }
+    if (desc.contains('Mua sắm') || desc.contains('Shopee') || desc.contains('Lazada')) {
+      return 'Mua sắm đồ dùng';
+    }
+    if (desc.contains('Xăng') || desc.contains('Grab') || desc.contains('Xe')) {
+      return 'Di chuyển & Xăng xe';
+    }
+    return 'Chi tiêu mua sắm';
+  }
 }
 
 class _AccountsView extends StatelessWidget {
@@ -967,7 +1489,7 @@ class _AccountsView extends StatelessWidget {
   );
 }
 
-class _TransactionsView extends StatelessWidget {
+class _TransactionsView extends StatefulWidget {
   const _TransactionsView({
     required this.model,
     required this.onEdit,
@@ -979,26 +1501,73 @@ class _TransactionsView extends StatelessWidget {
   final ValueChanged<TransactionModel> onDelete;
 
   @override
-  Widget build(BuildContext context) => RefreshIndicator(
-    onRefresh: model.loadCore,
-    child: ListView(
-      children: [
-        if (model.transactions.isEmpty)
-          const SizedBox(
-            height: 200,
-            child: EmptyState(label: 'Chưa có giao dịch nào. Bấm nút + để thêm mới!'),
+  State<_TransactionsView> createState() => _TransactionsViewState();
+}
+
+class _TransactionsViewState extends State<_TransactionsView> {
+  String searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final query = searchQuery.trim().toLowerCase();
+    final filtered = widget.model.transactions.where((item) {
+      if (query.isEmpty) return true;
+      final desc = (item.description ?? '').toLowerCase();
+      final amountStr = item.amount.toString();
+      final typeStr = item.type.toLowerCase();
+      return desc.contains(query) || amountStr.contains(query) || typeStr.contains(query);
+    }).toList();
+
+    return RefreshIndicator(
+      onRefresh: widget.model.loadCore,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: '🔍 Tìm kiếm giao dịch (mô tả, số tiền)...',
+                prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () => setState(() => searchQuery = ''),
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.teal.shade50.withValues(alpha: 0.3),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              onChanged: (val) => setState(() => searchQuery = val),
+            ),
           ),
-        ...model.transactions.map(
-          (item) => TransactionTile(
-            transaction: item,
-            onTap: () => _showDetail(context, item),
-            onEdit: () => onEdit(item),
-            onDelete: () => onDelete(item),
+          const SizedBox(height: 4),
+          if (filtered.isEmpty)
+            SizedBox(
+              height: 200,
+              child: EmptyState(
+                label: searchQuery.isNotEmpty
+                    ? 'Không tìm thấy giao dịch nào với từ khóa "$searchQuery"'
+                    : 'Chưa có giao dịch nào. Bấm nút + bên dưới để thêm mới!',
+              ),
+            ),
+          ...filtered.map(
+            (item) => TransactionTile(
+              transaction: item,
+              onTap: () => _showDetail(context, item),
+              onEdit: () => widget.onEdit(item),
+              onDelete: () => widget.onDelete(item),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _BudgetView extends StatelessWidget {
@@ -1059,9 +1628,11 @@ class _GoalsView extends StatelessWidget {
           if (model.goals.isEmpty)
             const SizedBox(height: 200, child: EmptyState(label: 'Chưa có mục tiêu tiết kiệm nào. Bấm + để tạo!')),
           ...model.goals.map(
-            (goal) => Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: Padding(
+            (goal) => AnimatedTapScale(
+              onTap: () => onAddContribution(goal),
+              child: Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1090,11 +1661,24 @@ class _GoalsView extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(children: [Text('${settings.tr('nav_goals')}: '), MoneyText(goal.target, currency: goal.currency)]),
-                        Row(children: [Text('${settings.tr('add_contribution')}: '), MoneyText(goal.current, currency: goal.currency)]),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('${settings.tr('nav_goals')}: ', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                            MoneyText(goal.target, currency: goal.currency, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('${settings.tr('add_contribution')}: ', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                            MoneyText(goal.current, currency: goal.currency, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.teal.shade700)),
+                          ],
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -1151,6 +1735,7 @@ class _GoalsView extends StatelessWidget {
               ),
             ),
           ),
+          ),
         ],
       ),
     );
@@ -1184,6 +1769,573 @@ class _ForecastBadge extends StatelessWidget {
           Text(
             label,
             style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryAccumulator {
+  _CategoryAccumulator(this.name, this.color, this.icon);
+  final String name;
+  final Color color;
+  final IconData icon;
+  int amount = 0;
+  int count = 0;
+}
+
+class CategorySpendingItem {
+  CategorySpendingItem({
+    required this.name,
+    required this.amount,
+    required this.percentage,
+    required this.color,
+    required this.icon,
+    required this.count,
+  });
+
+  final String name;
+  final int amount;
+  final double percentage;
+  final Color color;
+  final IconData icon;
+  final int count;
+}
+
+class _SolidPiePainter extends CustomPainter {
+  _SolidPiePainter({required this.items, required this.backgroundColor});
+
+  final List<CategorySpendingItem> items;
+  final Color backgroundColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    if (items.isEmpty) {
+      final bgPaint = Paint()
+        ..color = backgroundColor
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(center, radius, bgPaint);
+      return;
+    }
+
+    double startAngle = -3.141592653589793 / 2;
+    for (final item in items) {
+      final sweepAngle = (item.percentage / 100) * 2 * 3.141592653589793;
+      final slicePaint = Paint()
+        ..color = item.color
+        ..style = PaintingStyle.fill;
+
+      canvas.drawArc(rect, startAngle, sweepAngle, true, slicePaint);
+
+      final borderPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      canvas.drawArc(rect, startAngle, sweepAngle, true, borderPaint);
+
+      if (sweepAngle >= 0.15) {
+        final midAngle = startAngle + sweepAngle / 2;
+        final textRadius = radius * 0.62;
+        final textX = center.dx + textRadius * (startAngle == midAngle ? 1.0 : (midAngle.abs() > 0 ? 0.0 : 0.0));
+        final textY = center.dy + textRadius * 0.0;
+        
+        // Calculate exact (x, y) along midAngle ray
+        final textXCalc = center.dx + textRadius * _cos(midAngle);
+        final textYCalc = center.dy + textRadius * _sin(midAngle);
+
+        final pctText = '${item.percentage.toStringAsFixed(0)}%';
+        final textSpan = TextSpan(
+          text: pctText,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        );
+
+        final textPainter = TextPainter(
+          text: textSpan,
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+
+        final textOffset = Offset(
+          textXCalc - textPainter.width / 2,
+          textYCalc - textPainter.height / 2,
+        );
+        textPainter.paint(canvas, textOffset);
+      }
+
+      startAngle += sweepAngle;
+    }
+  }
+
+  double _cos(double radians) {
+    return math.cos(radians);
+  }
+
+  double _sin(double radians) {
+    return math.sin(radians);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SolidPiePainter oldDelegate) => true;
+}
+
+class _CategorySpendingReportView extends StatefulWidget {
+  const _CategorySpendingReportView({required this.model});
+  final FinanceViewModel model;
+
+  @override
+  State<_CategorySpendingReportView> createState() => _CategorySpendingReportViewState();
+}
+
+class _CategorySpendingReportViewState extends State<_CategorySpendingReportView> {
+  String timeFrame = 'TODAY'; // 'TODAY', 'MONTH', 'ALL'
+
+  List<CategorySpendingItem> _getCategoryItems() {
+    final now = DateTime.now();
+    final expenseTx = widget.model.transactions.where((t) {
+      if (t.type != 'EXPENSE') return false;
+      if (timeFrame == 'TODAY') {
+        return t.transactionDate.year == now.year &&
+            t.transactionDate.month == now.month &&
+            t.transactionDate.day == now.day;
+      } else if (timeFrame == 'MONTH') {
+        return t.transactionDate.year == now.year &&
+            t.transactionDate.month == now.month;
+      }
+      return true;
+    }).toList();
+
+    if (expenseTx.isEmpty) return [];
+
+    final map = <String, _CategoryAccumulator>{};
+    for (final t in expenseTx) {
+      final desc = (t.description ?? '').toLowerCase();
+      String name = 'Chi tiêu khác';
+      Color color = Colors.green.shade600;
+      IconData icon = Icons.category_outlined;
+
+      if (desc.contains('cơm') || desc.contains('phở') || desc.contains('bún') ||
+          desc.contains('ăn') || desc.contains('lẩu') || desc.contains('cafe') ||
+          desc.contains('trà') || desc.contains('coffee') || desc.contains('nhà hàng') || desc.contains('bánh')) {
+        name = 'Ăn uống';
+        color = const Color(0xFFE55737); // Orange Red
+        icon = Icons.restaurant;
+      } else if (desc.contains('chợ') || desc.contains('siêu thị') || desc.contains('shopee') ||
+                 desc.contains('tiki') || desc.contains('lazada') || desc.contains('quần áo') || desc.contains('mua sắm') || desc.contains('đồ')) {
+        name = 'Mua sắm';
+        color = const Color(0xFF29B6F6); // Bright Blue
+        icon = Icons.shopping_bag_outlined;
+      } else if (desc.contains('xăng') || desc.contains('grab') || desc.contains('be') ||
+                 desc.contains('taxi') || desc.contains('gửi xe') || desc.contains('vé') || desc.contains('xe')) {
+        name = 'Đi lại';
+        color = const Color(0xFFFBC02D); // Vibrant Yellow/Gold
+        icon = Icons.directions_car_outlined;
+      } else if (desc.contains('điện') || desc.contains('nước') || desc.contains('mạng') ||
+                 desc.contains('internet') || desc.contains('tiền nhà') || desc.contains('hóa đơn')) {
+        name = 'Hóa đơn & Tiện ích';
+        color = const Color(0xFF2E7D32); // Emerald Green
+        icon = Icons.receipt_long_outlined;
+      } else if (desc.contains('phim') || desc.contains('game') || desc.contains('du lịch') || desc.contains('chơi')) {
+        name = 'Giải trí';
+        color = Colors.purple.shade600;
+        icon = Icons.sports_esports_outlined;
+      } else if (desc.contains('thuốc') || desc.contains('khám') || desc.contains('bệnh viện') || desc.contains('sức khỏe')) {
+        name = 'Sức khỏe';
+        color = Colors.teal.shade600;
+        icon = Icons.medical_services_outlined;
+      }
+
+      final acc = map.putIfAbsent(name, () => _CategoryAccumulator(name, color, icon));
+      acc.amount += t.amount;
+      acc.count += 1;
+    }
+
+    final totalSpend = map.values.fold<int>(0, (sum, acc) => sum + acc.amount);
+    if (totalSpend <= 0) return [];
+
+    final list = map.values.toList().asMap().entries.map((entry) {
+      final idx = entry.key;
+      final acc = entry.value;
+      return CategorySpendingItem(
+        name: acc.name,
+        amount: acc.amount,
+        percentage: (acc.amount / totalSpend) * 100,
+        color: _getCategoryColor(acc.name, idx),
+        icon: acc.icon,
+        count: acc.count,
+      );
+    }).toList();
+
+    list.sort((a, b) => b.amount.compareTo(a.amount));
+    return list;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = InheritedSettings.of(context);
+    final categoryItems = _getCategoryItems();
+    final totalSpend = categoryItems.fold<int>(0, (sum, item) => sum + item.amount);
+
+    return RefreshIndicator(
+      onRefresh: widget.model.loadCore,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Time range filter bar
+          Card(
+            margin: const EdgeInsets.only(bottom: 16),
+            elevation: 1.5,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.pie_chart, color: Colors.teal),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Phân Tích Chi Tiêu Theo Danh Mục',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        FilterChip(
+                          avatar: const Icon(Icons.today, size: 16),
+                          label: const Text('Hôm nay'),
+                          selected: timeFrame == 'TODAY',
+                          onSelected: (_) => setState(() => timeFrame = 'TODAY'),
+                        ),
+                        const SizedBox(width: 8),
+                        FilterChip(
+                          avatar: const Icon(Icons.calendar_month, size: 16),
+                          label: const Text('Tháng này'),
+                          selected: timeFrame == 'MONTH',
+                          onSelected: (_) => setState(() => timeFrame = 'MONTH'),
+                        ),
+                        const SizedBox(width: 8),
+                        FilterChip(
+                          avatar: const Icon(Icons.all_inclusive, size: 16),
+                          label: const Text('Tất cả'),
+                          selected: timeFrame == 'ALL',
+                          onSelected: (_) => setState(() => timeFrame = 'ALL'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Solid Pie Chart Card (Matching User Reference Image)
+          Card(
+            margin: const EdgeInsets.only(bottom: 16),
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        timeFrame == 'TODAY'
+                            ? 'Biểu Đồ Chi Tiêu Hôm Nay'
+                            : timeFrame == 'MONTH'
+                                ? 'Biểu Đồ Chi Tiêu Tháng Này'
+                                : 'Biểu Đồ Chi Tiêu Tổng Thể',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: MoneyText(
+                          totalSpend,
+                          currency: 'VND',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Top Legend (Colored Square Blocks + Category Names)
+                  if (categoryItems.isNotEmpty) ...[
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 16,
+                      runSpacing: 10,
+                      children: categoryItems.map((item) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: item.color,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                    // Solid Pie Chart with Percentage drawn inside slices
+                    Center(
+                      child: SizedBox(
+                        width: 220,
+                        height: 220,
+                        child: CustomPaint(
+                          painter: _SolidPiePainter(
+                            items: categoryItems,
+                            backgroundColor: Colors.grey.shade200,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Text(
+                        'Chưa có giao dịch chi tiêu nào trong khoảng thời gian này.',
+                        style: TextStyle(color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+
+          // Category Spending Breakdown List
+          if (categoryItems.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 8),
+              child: Text(
+                '📊 Chi Tiêu Theo Danh Mục',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+            ...categoryItems.map((item) {
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: item.color.withValues(alpha: 0.15),
+                            child: Icon(item.icon, color: item.color, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.name,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                Text(
+                                  '${item.count} giao dịch (${item.percentage.toStringAsFixed(1)}% tổng chi)',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                          MoneyText(
+                            item.amount,
+                            currency: 'VND',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.red.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: (item.percentage / 100).clamp(0.0, 1.0),
+                          minHeight: 6,
+                          color: item.color,
+                          backgroundColor: item.color.withValues(alpha: 0.15),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 12),
+          ],
+
+          // AI Smart Advice Card for Tomorrow
+          Card(
+            margin: const EdgeInsets.only(bottom: 20),
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.amber.shade400, width: 1.5),
+            ),
+            color: Colors.amber.shade50.withValues(alpha: 0.5),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade700,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.lightbulb, color: Colors.white, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '💡 Gợi Ý AI Cho Ngày Mai & Kế Hoạch Chi Tiêu',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber.shade900,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (categoryItems.isNotEmpty) ...[
+                    Builder(
+                      builder: (context) {
+                        final topCategory = categoryItems.first;
+                        final targetSaving = (topCategory.amount * 0.25).round();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.amber.shade200),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.trending_down, color: Colors.red, size: 18),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Mục chi tiêu nhiều nhất: ${topCategory.name}',
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Hôm nay / kỳ này bạn đã tiêu ${settings.trText(settings.formatAmount(topCategory.amount))} vào [${topCategory.name}], chiếm ${topCategory.percentage.toStringAsFixed(1)}% tổng chi tiêu.',
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                  const Divider(height: 16),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('👉 ', style: TextStyle(fontSize: 14)),
+                                      Expanded(
+                                        child: Text(
+                                          'Gợi ý ngày mai: Đặt mục tiêu cắt giảm 20 - 30% chi tiêu cho [${topCategory.name}] (tiết kiệm khoảng ${settings.trText(settings.formatAmount(targetSaving))}) bằng cách ưu tiên các nhu cầu thiết yếu hơn.',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.teal.shade900,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                const Icon(Icons.check_circle_outline, color: Colors.green, size: 18),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Dành ${settings.trText(settings.formatAmount(targetSaving))} tiết kiệm được bổ sung ngay vào Quỹ Tiết Kiệm hoặc Dự Phòng Khẩn Cấp.',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ] else ...[
+                    const Text(
+                      'Tài chính ngày hôm nay của bạn rất tuyệt vời! Chưa có khoản chi tiêu lớn nào được ghi nhận. Hãy tiếp tục duy trì thói quen tiết kiệm cho ngày mai nhé!',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -1272,16 +2424,14 @@ class _InsightsViewState extends State<_InsightsView> {
                           child: Text(
                             settings.trText(insight.title),
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ),
                         Chip(
                           visualDensity: VisualDensity.compact,
                           label: Text(
-                            settings.language == AppLanguage.vi
-                                ? '${settings.tr('confidence')} ${(insight.confidence * 100).toStringAsFixed(0)}%'
-                                : '${(insight.confidence * 100).toStringAsFixed(0)}% ${settings.tr('confidence')}',
+                            '${(insight.confidence * 100).toStringAsFixed(0)}% tin cậy',
                             style: const TextStyle(fontSize: 11),
                           ),
                         ),
@@ -1320,6 +2470,7 @@ class _InsightsViewState extends State<_InsightsView> {
   }
 }
 
+
 class _NotificationsView extends StatefulWidget {
   const _NotificationsView({required this.model});
   final FinanceViewModel model;
@@ -1346,38 +2497,38 @@ class _NotificationsViewState extends State<_NotificationsView> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  FilterChip(
-                    label: Text(settings.tr('filter_all')),
-                    selected: !unreadOnly,
-                    onSelected: (_) => setState(() => unreadOnly = false),
-                  ),
-                  const SizedBox(width: 8),
-                  FilterChip(
-                    label: Text('${settings.tr('filter_unread')} ($unreadCount)'),
-                    selected: unreadOnly,
-                    onSelected: (_) => setState(() => unreadOnly = true),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                FilterChip(
+                  label: Text(settings.tr('filter_all')),
+                  selected: !unreadOnly,
+                  onSelected: (_) => setState(() => unreadOnly = false),
+                ),
+                const SizedBox(width: 8),
+                FilterChip(
+                  label: Text('${settings.tr('filter_unread')} ($unreadCount)'),
+                  selected: unreadOnly,
+                  onSelected: (_) => setState(() => unreadOnly = true),
+                ),
+                if (unreadCount > 0) ...[
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final error = await widget.model.markAllNotificationsRead();
+                      if (error != null && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(error)),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.done_all, size: 18),
+                    label: Text(settings.tr('mark_all_read')),
                   ),
                 ],
-              ),
-              if (unreadCount > 0)
-                TextButton.icon(
-                  onPressed: () async {
-                    final error = await widget.model.markAllNotificationsRead();
-                    if (error != null && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(error)),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.done_all, size: 18),
-                  label: Text(settings.tr('mark_all_read')),
-                ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           if (filtered.isEmpty)

@@ -110,6 +110,11 @@ class _AccountGateway implements FinanceGateway {
   ) => throw UnimplementedError();
 
   @override
+  Future<Map<String, dynamic>> scanReceipt(String base64Image) => throw UnimplementedError();
+  @override
+  Future<Map<String, dynamic>> confirmReceipt(Map<String, dynamic> data) => throw UnimplementedError();
+
+  @override
   Future<DashboardModel> dashboard() async => DashboardModel(
     totalBalance: 0,
     income: 0,

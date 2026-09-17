@@ -211,22 +211,23 @@ class FinancialRAGGenerator:
         )
 
         # Generate actionable suggestions
+        is_en = language.lower() in ("en", "english")
         suggestions = []
         sql_ctx = hybrid_context.sql_context
         if sql_ctx.has_data:
             if sql_ctx.top_categories:
                 top_c = sql_ctx.top_categories[0]
-                suggestions.append(f"Tối ưu 10% chi phí cho danh mục '{top_c['category']}'")
+                suggestions.append(f"Optimize 10% expenses for category '{top_c['category']}'" if is_en else f"Tối ưu 10% chi phí cho danh mục '{top_c['category']}'")
             if sql_ctx.net_savings > 0:
-                suggestions.append(f"Chuyển {sql_ctx.net_savings * Decimal('0.3'):,.0f} VND thặng dư vào Quỹ Khẩn Cấp")
+                suggestions.append(f"Transfer {sql_ctx.net_savings * Decimal('0.3'):,.0f} VND surplus to Emergency Fund" if is_en else f"Chuyển {sql_ctx.net_savings * Decimal('0.3'):,.0f} VND thặng dư vào Quỹ Khẩn Cấp")
             else:
-                suggestions.append("Cắt giảm các khoản chi không thiết yếu để tạo thặng dư")
+                suggestions.append("Cut non-essential expenses to create savings surplus" if is_en else "Cắt giảm các khoản chi không thiết yếu để tạo thặng dư")
             if sql_ctx.goals:
                 g = sql_ctx.goals[0]
-                suggestions.append(f"Đóng góp thêm vào mục tiêu '{g['name']}'")
+                suggestions.append(f"Contribute more to goal '{g['name']}'" if is_en else f"Đóng góp thêm vào mục tiêu '{g['name']}'")
         else:
-            suggestions.append("Thêm giao dịch mới để AI phân tích dòng tiền")
-            suggestions.append("Xem cẩm nang quy tắc quản lý tài chính 50/30/20")
+            suggestions.append("Add new transactions so AI can analyze cash flow" if is_en else "Thêm giao dịch mới để AI phân tích dòng tiền")
+            suggestions.append("Check 50/30/20 financial management guide" if is_en else "Xem cẩm nang quy tắc quản lý tài chính 50/30/20")
 
         return RAGResponse(
             answer_markdown=final_markdown,

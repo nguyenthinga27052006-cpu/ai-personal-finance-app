@@ -85,21 +85,99 @@ def _as_int(value: Any) -> int:
     raise ValueError("receipt total must be an integer amount")
 
 
+class GeminiReceiptOCRProvider:
+    name = "gemini-ocr"
+
+    def __init__(self, api_key: str | None = None, model: str = "gemini-3.1-flash-lite") -> None:
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        self.api_key = api_key or getattr(settings, "gemini_api_key", None)
+        self.model = model or getattr(settings, "ai_model", "gemini-3.1-flash-lite")
+
+    def extract(self, source: str) -> dict[str, Any]:
+        if not self.api_key or self.api_key in ("your-gemini-api-key", "test_key", "dummy"):
+            raise ValueError("Gemini API key is not configured or is a dummy test key")
+
+        import json
+        import urllib.request
+
+        mime_type = "image/jpeg"
+        base64_data = source
+        if source.startswith("data:") and ";base64," in source:
+            header, base64_data = source.split(";base64,", 1)
+            mime_type = header.replace("data:", "")
+
+        model_path = self.model if self.model.startswith("models/") else f"models/{self.model}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/{model_path}:generateContent?key={self.api_key}"
+
+        prompt = (
+            "You are an expert OCR financial receipt parser. Analyze this receipt image and extract structured information.\n"
+            "Respond ONLY with a valid JSON object matching this schema:\n"
+            "{\n"
+            '  "merchant": "string (name of store/restaurant)",\n'
+            '  "date": "string YYYY-MM-DD (or empty string if not found)",\n'
+            '  "total": integer (total amount),\n'
+            '  "currency": "VND",\n'
+            '  "items": [{"name": "item name", "amount": integer_amount}]\n'
+            "}\n"
+        )
+
+        body_payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": prompt},
+                        {
+                            "inline_data": {
+                                "mime_type": mime_type,
+                                "data": base64_data,
+                            }
+                        },
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "response_mime_type": "application/json"
+            },
+        }
+
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(body_payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=30.0) as resp:
+                res_data = json.loads(resp.read().decode("utf-8"))
+                text_content = res_data["candidates"][0]["content"]["parts"][0]["text"]
+                return json.loads(text_content)
+        except Exception as exc:
+            raise ValueError(f"Gemini OCR extraction failed: {exc}") from exc
+
+
 def extract_receipt(payload: dict[str, Any]) -> ReceiptExtractionResult:
     if not isinstance(payload, dict):
         raise ValueError("receipt payload must be an object")
+
+    from datetime import date as date_cls
 
     merchant = str(payload.get("merchant") or "").strip()
     text_date = str(payload.get("date") or "").strip()
     currency = str(payload.get("currency") or "VND").upper()
     raw_items = payload.get("items") or []
 
+    date_fallback_used = False
+    if not text_date:
+        text_date = date_cls.today().isoformat()
+        date_fallback_used = True
+
     if not merchant:
         raise ValueError("receipt merchant is required")
     if len(currency) != 3 or not currency.isalpha():
         raise ValueError("receipt currency must be a three-letter code")
-    if not text_date:
-        raise ValueError("receipt date is required")
     try:
         datetime.strptime(text_date, "%Y-%m-%d")
     except ValueError as exc:  # pragma: no cover - defensive branch
@@ -130,7 +208,15 @@ def extract_receipt(payload: dict[str, Any]) -> ReceiptExtractionResult:
         amount_total += item_amount
         items.append({"name": name, "amount": item_amount})
 
-    if abs(amount_total - total) > max(1, total * 0.02):
+    reconciled = abs(amount_total - total) <= max(1, total * 0.02)
+    if date_fallback_used or not reconciled:
+        reasons: list[str] = []
+        if date_fallback_used:
+            reasons.append("receipt date not detected, default current date applied; please check.")
+        if not reconciled:
+            reasons.append(
+                "receipt totals do not reconcile cleanly; manual review is required before posting."
+            )
         return ReceiptExtractionResult(
             status="LOW_CONFIDENCE",
             merchant=merchant,
@@ -138,10 +224,7 @@ def extract_receipt(payload: dict[str, Any]) -> ReceiptExtractionResult:
             total=total,
             currency=currency,
             items=items,
-            reason=(
-                "receipt totals do not reconcile cleanly; manual review is required "
-                "before posting."
-            ),
+            reason=" ".join(reasons),
             review_required=True,
         )
 

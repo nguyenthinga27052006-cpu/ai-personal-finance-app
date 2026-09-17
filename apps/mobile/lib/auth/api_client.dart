@@ -88,6 +88,10 @@ abstract interface class FinanceGateway {
   Future<RecommendationModel> giveRecommendationFeedback(String id, String feedback);
 
   Future<DashboardModel> dashboard();
+
+  Future<Map<String, dynamic>> scanReceipt(String base64Image);
+
+  Future<Map<String, dynamic>> confirmReceipt(Map<String, dynamic> data);
 }
 
 abstract interface class AIGateway {
@@ -618,6 +622,21 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
       'rpm': rpm,
       'tpm': tpm,
     });
+  }
+
+  @override
+  Future<Map<String, dynamic>> scanReceipt(String base64Image) async {
+    final response = await request('POST', '/api/v1/ai/receipt/scan', body: {
+      'image_base64': base64Image,
+      'source_ref': 'mobile_web_upload',
+    });
+    return _decodeSuccess(response);
+  }
+
+  @override
+  Future<Map<String, dynamic>> confirmReceipt(Map<String, dynamic> data) async {
+    final response = await request('POST', '/api/v1/ai/receipt/confirm', body: data);
+    return _decodeSuccess(response);
   }
 
   Future<AuthResult> _storeAndReturn(AuthResult result) async {

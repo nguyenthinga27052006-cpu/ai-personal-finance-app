@@ -55,6 +55,80 @@ class MoneyText extends StatelessWidget {
   }
 }
 
+class AnimatedTapScale extends StatefulWidget {
+  const AnimatedTapScale({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.scaleDown = 0.97,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final double scaleDown;
+
+  @override
+  State<AnimatedTapScale> createState() => _AnimatedTapScaleState();
+}
+
+class _AnimatedTapScaleState extends State<AnimatedTapScale> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 90),
+      reverseDuration: const Duration(milliseconds: 130),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: widget.scaleDown).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    if (widget.onTap != null) {
+      _controller.forward();
+    }
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    if (widget.onTap != null) {
+      _controller.reverse();
+    }
+  }
+
+  void _handleTapCancel() {
+    if (widget.onTap != null) {
+      _controller.reverse();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.onTap == null) return widget.child;
+    return GestureDetector(
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTapCancel: _handleTapCancel,
+      onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 class BalanceCard extends StatelessWidget {
   const BalanceCard({
     super.key,
@@ -70,9 +144,13 @@ class BalanceCard extends StatelessWidget {
   final VoidCallback? onArchive;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) {
+    final targetTap = onTap ?? onEdit;
+    return AnimatedTapScale(
+      onTap: targetTap,
+      child: Card(
         child: ListTile(
-          onTap: onTap ?? onEdit,
+          onTap: targetTap,
           leading: const Icon(Icons.account_balance_wallet, color: Colors.teal),
           title: Text(account.name, style: const TextStyle(fontWeight: FontWeight.bold)),
           subtitle: Text(account.type),
@@ -115,7 +193,9 @@ class BalanceCard extends StatelessWidget {
             ],
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class TransactionTile extends StatelessWidget {
@@ -133,51 +213,54 @@ class TransactionTile extends StatelessWidget {
   final VoidCallback? onDelete;
 
   @override
-  Widget build(BuildContext context) => ListTile(
+  Widget build(BuildContext context) => AnimatedTapScale(
         onTap: onTap,
-        leading: Icon(
-          transaction.type == 'INCOME' ? Icons.arrow_downward : Icons.arrow_upward,
-          color: transaction.type == 'INCOME' ? Colors.green : Colors.red,
-        ),
-        title: Text(transaction.description?.isNotEmpty == true ? transaction.description! : transaction.type),
-        subtitle: Text(_date(context, transaction.transactionDate)),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            MoneyText(transaction.amount, currency: transaction.currency),
-            if (onEdit != null || onDelete != null)
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 20),
-                onSelected: (value) {
-                  if (value == 'edit') onEdit?.call();
-                  if (value == 'delete') onDelete?.call();
-                },
-                itemBuilder: (context) => [
-                  if (onEdit != null)
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 18),
-                          SizedBox(width: 8),
-                          Text('Sửa giao dịch'),
-                        ],
+        child: ListTile(
+          onTap: onTap,
+          leading: Icon(
+            transaction.type == 'INCOME' ? Icons.arrow_downward : Icons.arrow_upward,
+            color: transaction.type == 'INCOME' ? Colors.green : Colors.red,
+          ),
+          title: Text(transaction.description?.isNotEmpty == true ? transaction.description! : transaction.type),
+          subtitle: Text(_date(context, transaction.transactionDate)),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MoneyText(transaction.amount, currency: transaction.currency),
+              if (onEdit != null || onDelete != null)
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  onSelected: (value) {
+                    if (value == 'edit') onEdit?.call();
+                    if (value == 'delete') onDelete?.call();
+                  },
+                  itemBuilder: (context) => [
+                    if (onEdit != null)
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 18),
+                            SizedBox(width: 8),
+                            Text('Sửa giao dịch'),
+                          ],
+                        ),
                       ),
-                    ),
-                  if (onDelete != null)
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, color: Colors.red, size: 18),
-                          SizedBox(width: 8),
-                          Text('Xóa giao dịch', style: TextStyle(color: Colors.red)),
-                        ],
+                    if (onDelete != null)
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, color: Colors.red, size: 18),
+                            SizedBox(width: 8),
+                            Text('Xóa giao dịch', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
                       ),
-                    ),
-                ],
-              ),
-          ],
+                  ],
+                ),
+            ],
+          ),
         ),
       );
 

@@ -30,6 +30,8 @@ services:
   api:
     build:
       context: ../../apps/api
+    env_file:
+      - "../../.env"
     environment:
       APP_ENV: ${APP_ENV:-development}
       APP_HOST: ${APP_HOST:-0.0.0.0}
@@ -45,6 +47,7 @@ services:
       NOTIFICATION_WORKER_TOKEN: ${NOTIFICATION_WORKER_TOKEN:-development-worker-token}
       AI_PROVIDER: ${AI_PROVIDER:-gemini}
       AI_MODEL: ${AI_MODEL:-gemini-3.1-flash-lite}
+      AI_ENABLED: ${AI_ENABLED:-true}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
     ports:

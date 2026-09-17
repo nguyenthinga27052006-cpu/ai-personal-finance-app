@@ -1,0 +1,295 @@
+=== TABLE 1 ===
+  Row 0: Mã RB	Tên ràng buộc	Mô tả quy tắc nghiệp vụ	Phản ứng của hệ thống
+  Row 1: RB_M01	Giới hạn ngân sách thời gian	Không cho phép tạo 2 ngân sách giới hạn cho cùng 1 danh mục trong cùng 1 tháng.	Cảnh báo: "Danh mục đã có ngân sách trong tháng này".
+  Row 2: RB_M02	Khả năng thanh khoản	Số tiền trích lập vào mục tiêu tiết kiệm không được phép vượt quá tổng số dư khả dụng hiện tại của ví.	Từ chối giao dịch và báo lỗi: "Số dư ví không đủ".
+  Row 3: RB_M03	Ràng buộc thời gian thực	Hạn chót của mục tiêu tiết kiệm bắt buộc phải ở tương lai. Dữ liệu phân tích AI không được chọn tháng tương lai.	Chặn truy vấn và bôi đỏ yêu cầu chọn lại thời gian hợp lệ.
+  Row 4: RB_M04	Bảo vệ danh mục lõi	Nhóm danh mục mặc định của hệ thống không được phép chỉnh sửa, đổi tên hay xóa bỏ.	Ẩn nút thao tác hoặc trả mã lỗi từ chối quyền truy cập (Forbidden).
+  Row 5: RB_M05	Ngăn chặn lạm dụng AI	Giới hạn số lượng token/số lần gọi Trợ lý AI sinh báo cáo trong ngày để tránh cạn kiệt tài nguyên API.	Tạm ngưng tính năng AI, hiển thị thông báo "Trợ lý ảo đang bận".
+
+=== TABLE 2 ===
+  Row 0: Mã RB	Tên ràng buộc	Yêu cầu toàn vẹn vật lý	Ý nghĩa bảo vệ hệ thống
+  Row 1: RB_C01	Toàn vẹn định danh	Địa chỉ Email đăng ký của mỗi người dùng phải là duy nhất trên toàn hệ thống.	Ngăn chặn lỗi trùng lặp tài khoản và xung đột luồng đăng nhập.
+  Row 2: RB_C02	Miền giá trị dòng tiền	Mọi giá trị tài chính (Số tiền giao dịch, Hạn mức ngân sách, Tiền mục tiêu) bắt buộc phải lớn hơn 0.	Chặn lỗ hổng truyền dữ liệu số âm qua API nhằm trục lợi thay đổi số dư ví.
+  Row 3: RB_C03	Toàn vẹn tên danh mục	Tên danh mục cá nhân do người dùng tự tạo không được phép trùng lặp trong cùng một tài khoản.	Giúp hệ thống không bị lỗi khi nhóm các giao dịch để vẽ biểu đồ thống kê.
+  Row 4: RB_C04	Ràng buộc bảo lưu (Xóa mềm)	Dữ liệu giao dịch và danh mục khi xóa sẽ không biến mất vật lý mà chỉ chuyển trạng thái (IsDeleted).	Đảm bảo lịch sử dòng tiền và các báo cáo cũ không bị sai lệch, đứt gãy.
+
+=== TABLE 3 ===
+  Row 0: Use case : Đăng ký	Use case : Đăng ký
+  Row 1: Múc đích:	Cho phép người dùng tạo tài khoả mới.
+  Row 2: Mô tả:	Usecase cho phép người dùng đăng ký vào hệ thống
+  Row 3: Tác nhân	Người dùng
+  Row 4: Điều kiện trước	Người dùng chưa có tài khoản trong hệ thống
+  Row 5: Điều kiện sau:	Người dùng được chuyển đến trang đăng nhập của hệ | thống sau khi đăng ký thành công.
+  Row 6: Luồng sự kiện chính:	1. Người dùng truy cập vào trang đăng ký.  | 2. Nhập thông tin cá nhân: tên, email, mật khẩu.  | 3. Nhấn nút "Đăng ký". |  4. Hệ thống kiểm tra và xử lý những thông tin nhận  | 5. Nếu thông tin trả về hợp lệ, tài khoản được tạo và hiển thị thông báo thành công.
+  Row 7: Luồng sự kiện phụ	1. Nếu email đã tồn tại trước đó trong CSDL, hiển thị một thông báo lỗi.  | 2. Nếu nhập thiếu thông tin, yêu cầu nhập lại.
+
+=== TABLE 4 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Đăng nhập
+  Row 2: Mục đích	Đăng nhập tài khoản vào ứng dụng để có thể truy cập vào các chức năng khác.
+  Row 3: Mô tả	Use case này cho phép người dùng đăng nhập ứng dụng bằng cách nhập dữ liệu như tên đăng nhập (gmail) và mật khẩu hợp lệ.
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Người dùng đã có tài khoản và đang ở trang đăng nhập.
+  Row 6: Điều kiện sau	Người dùng được hệ thống chuyển màn hình đến trang chủ của ứng dụng sau khi đăng nhập thành công.
+  Row 7: Luồng sự kiện chính	Người dùng mở ứng dụng và vào trang đăng nhập của ứng dụng.  | Ứng dụng hiển thị giao diện đăng nhập với các trường: Tên đăng nhập, mật khẩu, Nút "Đăng nhập".  | Người dùng nhập thông tin như tên đăng nhập (gmail) và mật khẩu.  | Người dùng nhấn nút "Đăng nhập".  | Hệ thống kiểm tra thông tin nhập liệu khi đăng nhập.  | Hệ thống chuyển đến danh sách giao dịch chi tiêu của ứng dụng.
+  Row 8: Luồng sự kiện phụ	Người dùng không nhập đủ thông tin hoặc thông tin không hợp lệ: Hệ thống hiển thị thông báo lỗi cụ thể và yêu cầu người dùng nhập lại.  | Mật khẩu hoặc tài khoản không khớp với Cơ sở dữ liệu: Hệ thống từ chối quyền truy cập, hiển thị thông báo "Tài khoản hoặc mật khẩu không chính xác" và yêu cầu nhập lại. | Người dùng quên mật khẩu: Có thể nhấn vào nút "Quên mật khẩu" (nếu được thiết kế) để chuyển hướng sang luồng khôi phục tài khoản.
+
+=== TABLE 5 ===
+  Row 0: Tiêu chí	Nội dung chi tiết
+  Row 1: Tên chức năng	Thêm giao dịch mới
+  Row 2: Mục đích	Giúp người dùng ghi lại một khoản tiền vừa tiêu hoặc vừa nhận được để dễ dàng theo dõi.
+  Row 3: Mô tả chung	Người dùng mở ứng dụng, điền thông tin về số tiền, ngày tháng, tên mục chi tiêu và bấm lưu để ứng dụng ghi nhớ.
+  Row 4: Người thực hiện	Người dùng ứng dụng
+  Row 5: Điều kiện bắt đầu	Người dùng đã mở ứng dụng và đang ở màn hình chính.
+  Row 6: Kết quả đạt được	Khoản tiền được ứng dụng ghi nhớ. Tổng số tiền trong ví của người dùng được tự động tính toán lại cho đúng.
+  Row 7: Các bước thực hiện	Bước 1: Người dùng bấm vào nút "Thêm mới" (dấu cộng). | Bước 2: Ứng dụng hiện ra một bảng trống với các ô: Số tiền, Ngày tháng, Danh mục (Ăn uống, Mua sắm...), Ghi chú. | Bước 3: Người dùng điền đầy đủ các thông tin vào bảng. | Bước 4: Người dùng bấm nút "Lưu". | Bước 5: Ứng dụng tự động xem xét xem các ô đã được điền đúng và đủ chưa. | Bước 6: Ứng dụng ghi lại khoản tiền này vào sổ cái chung. | Bước 7: Ứng dụng báo "Đã lưu thành công" và đưa người dùng quay lại màn hình chính để xem kết quả.
+  Row 8: Các trường hợp có lỗi hoặc ngoại lệ	- Người dùng điền thiếu: Nếu ô "Số tiền" hoặc "Danh mục" bị bỏ trống, hoặc ghi số tiền bằng chữ cái, ứng dụng sẽ báo lỗi màu đỏ yêu cầu nhập lại và không cho phép bấm Lưu. | - Người dùng đổi ý: Đang điền thông tin nhưng người dùng bấm nút "Hủy" hoặc nút quay lại, ứng dụng sẽ dọn sạch các ô chữ vừa nhập, không lưu thông tin nào cả và trở về màn hình cũ.
+
+=== TABLE 6 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Sửa giao dịch (Update Transaction)
+  Row 2: Mục đích	Cho phép người dùng chỉnh sửa, cập nhật lại thông tin của một khoản thu/chi do trước đó nhập sai hoặc có sự thay đổi thực tế.
+  Row 3: Mô tả	Người dùng chọn một giao dịch cụ thể từ danh sách. Hệ thống truy xuất dữ liệu từ CSDL và điền sẵn (pre-fill) vào form. Người dùng thay đổi thông tin và lưu lại để hệ thống cập nhật.
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Người dùng đã đăng nhập và phải có ít nhất 1 giao dịch tồn tại trong hệ thống.
+  Row 6: Điều kiện sau	Bản ghi tương ứng trong bảng Transactions được cập nhật dữ liệu mới qua lệnh UPDATE. Tổng số dư tài khoản và các báo cáo/biểu đồ được tính toán lại cho khớp với số liệu mới.
+  Row 7: Luồng sự kiện chính	• Bước 1: Người dùng chọn một giao dịch trên màn hình và nhấn "Sửa". | • Bước 2: Bộ điều khiển (Controller) lấy ID của giao dịch, truy vấn CSDL để lấy thông tin cũ. | • Bước 3: Giao diện hiển thị Form với các trường (Số tiền, Ngày, Danh mục, Ghi chú) đã được điền sẵn dữ liệu cũ. | • Bước 4: Người dùng chỉnh sửa thông tin (VD: Sửa số tiền từ 50.000 thành 100.000) và nhấn "Lưu". | • Bước 5: Controller kiểm tra (validate) dữ liệu mới (không để trống, số tiền > 0). | • Bước 6: Controller tính toán độ chênh lệch giữa số tiền mới và cũ để cộng/trừ vào Tổng số dư hiện tại. | • Bước 7: Hệ thống thực thi lệnh UPDATE xuống CSDL. | • Bước 8: Hệ thống đóng form, báo "Cập nhật thành công" và tải lại danh sách giao dịch.
+  Row 8: Luồng sự kiện phụ (Alternative Flows)	- Dữ liệu mới không hợp lệ: Người dùng xóa trắng mục "Số tiền" hoặc chọn sai định dạng. Controller chặn lại, bôi đỏ trường bị lỗi và yêu cầu sửa lại. | - Hủy thao tác: Người dùng đang sửa nhưng bấm "Hủy". Hệ thống đóng form, không ghi nhận bất kỳ thay đổi nào và giữ nguyên số liệu cũ. | - Lỗi mất đồng bộ (Not Found): Người dùng bấm "Sửa" trên điện thoại A, nhưng trước đó giao dịch này đã bị xóa trên điện thoại B. Hệ thống không tìm thấy ID, hiển thị lỗi "Giao dịch không tồn tại hoặc đã bị xóa" và làm mới lại màn hình.
+
+=== TABLE 7 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Xóa giao dịch (Delete Transaction)
+  Row 2: Mục đích	Cho phép người dùng gỡ bỏ một khoản thu/chi đã được lưu vào hệ thống do nhập sai hoặc không còn giá trị thực tế.
+  Row 3: Mô tả	Người dùng chọn biểu tượng xóa trên một giao dịch. Hệ thống yêu cầu xác nhận để tránh xóa nhầm. Sau khi xác nhận, hệ thống vô hiệu hóa bản ghi này, đồng thời hoàn trả lại số tiền tương ứng vào tổng số dư của ví.
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Người dùng đã đăng nhập thành công. Giao dịch cần xóa phải đang tồn tại và được hiển thị trên danh sách.
+  Row 6: Điều kiện sau	Bản ghi giao dịch được chuyển sang trạng thái đã xóa trong SQL Server. Tổng số dư và các biểu đồ thống kê được tính toán lại (loại trừ khoản tiền của giao dịch vừa xóa).
+  Row 7: Luồng sự kiện chính	• Bước 1: Người dùng nhấn vào biểu tượng "Thùng rác" (Xóa) cạnh một giao dịch. | • Bước 2: Hệ thống hiển thị Pop-up cảnh báo: "Bạn có chắc chắn muốn xóa giao dịch này không? Thao tác không thể hoàn tác. | • Bước 3: Người dùng nhấn nút "Đồng ý" (Xác nhận). | • Bước 4: Bộ điều khiển (Controller) tiếp nhận ID của giao dịch cần xóa và truy vấn để lấy ra số tiền của giao dịch đó. | • Bước 5: Hệ thống thực thi lệnh xóa bản ghi trong Cơ sở dữ liệu. | • Bước 6: Hệ thống tiến hành đảo ngược dòng tiền (Nếu xóa khoản Chi: Cộng lại tiền vào ví. Nếu xóa khoản Thu: Trừ tiền khỏi ví). | • Bước 7: Hệ thống đóng Pop-up, thông báo "Đã xóa thành công" và làm mới lại danh sách giao dịch.
+  Row 8: Luồng sự kiện phụ	- Hủy thao tác xóa: Tại Bước 2, người dùng nhấn nút "Hủy" hoặc bấm ra ngoài Pop-up. Hệ thống đóng cảnh báo, không thực hiện bất kỳ lệnh nào xuống DB. | - Lỗi không tìm thấy dữ liệu (404 Not Found): Controller không tìm thấy ID của giao dịch (có thể do đã bị xóa từ trước ở thiết bị khác). Hệ thống báo lỗi "Giao dịch không tồn tại" và tự động tải lại trang. | - Lỗi ràng buộc hệ thống: Quá trình cập nhật số dư bị lỗi do nghẽn mạng hoặc lỗi máy chủ. Hệ thống hủy bỏ toàn bộ tiến trình (Rollback), thông báo "Xóa thất bại, vui lòng thử lại" và giữ nguyên giao dịch.
+
+=== TABLE 8 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Thêm danh mục (Add Category)
+  Row 2: Mục đích	Cho phép người dùng tạo các phân loại cá nhân hóa ngoài hệ thống mặc định để quản lý thu/chi sát với nhu cầu thực tế.
+  Row 3: Mô tả	Người dùng nhập tên danh mục, chọn phân loại (Thu hoặc Chi), chọn biểu tượng (icon) và màu sắc để lưu vào cơ sở dữ liệu.
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Đã đăng nhập thành công và truy cập vào màn hình Quản lý danh mục.
+  Row 6: Điều kiện sau	Bản ghi danh mục mới được chèn vào SQL Server. Danh mục này lập tức xuất hiện trong danh sách thả xuống (dropdown list) ở màn hình "Thêm giao dịch".
+  Row 7: Luồng sự kiện chính (Basic flows)	• Bước 1: Người dùng nhấn nút "Thêm danh mục mới". | • Bước 2: Hệ thống hiển thị biểu mẫu gồm: Tên danh mục, Loại (Thu/Chi), Biểu tượng. | • Bước 3: Người dùng điền dữ liệu hợp lệ và nhấn "Lưu". | • Bước 4: Controller xác thực dữ liệu đầu vào (Tên không trống, độ dài hợp lệ). | • Bước 5: Controller thực thi lệnh INSERT vào bảng Categories. | • Bước 6: Hệ thống thông báo thành công và làm mới giao diện danh sách.
+  Row 8: Luồng sự kiện phụ (Alternative Flows)	• Bỏ trống/Sai định dạng: Người dùng không nhập tên hoặc chứa ký tự đặc biệt không cho phép. Hệ thống bôi đỏ trường nhập liệu và chặn thao tác lưu. | • Trùng lặp tên: Người dùng nhập tên danh mục đã tồn tại trong danh sách của họ. Hệ thống từ chối lưu và báo lỗi: "Danh mục này đã tồn tại, vui lòng chọn tên khác." | • Hủy thao tác: Người dùng nhấn "Hủy". Hệ thống đóng biểu mẫu, xóa trắng dữ liệu đang nhập dở.
+
+=== TABLE 9 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Sửa danh mục (Update Category)
+  Row 2: Mục đích	Cho phép người dùng cập nhật, thay đổi tên hoặc biểu tượng của một danh mục tự tạo để phù hợp hơn với nhu cầu theo dõi thu/chi hiện tại.
+  Row 3: Mô tả	Người dùng chọn một danh mục cá nhân cần chỉnh sửa. Hệ thống tải dữ liệu cũ lên biểu mẫu. Người dùng nhập thông tin mới và lưu lại để hệ thống ghi đè dữ liệu trong Cơ sở dữ liệu.
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Người dùng đã đăng nhập và đang ở màn hình Quản lý danh mục. Danh mục được chọn phải là danh mục do người dùng tự tạo (không phải danh mục mặc định của hệ thống).
+  Row 6: Điều kiện sau	Dữ liệu danh mục được cập nhật thành công bằng lệnh UPDATE trong SQL Server. Các giao dịch cũ thuộc danh mục này sẽ tự động hiển thị theo tên/biểu tượng mới.
+  Row 7: Luồng sự kiện chính	• Bước 1: Người dùng chọn một danh mục và nhấn biểu tượng "Sửa". | • Bước 2: Bộ điều khiển (Controller) lấy ID danh mục, truy vấn CSDL và trả về Form đã điền sẵn dữ liệu cũ (Tên, Loại, Icon). | • Bước 3: Người dùng thay đổi thông tin và nhấn "Lưu". | • Bước 4: Controller xác thực dữ liệu mới (Tên không rỗng, độ dài hợp lệ). |  | • Bước 5: Controller kiểm tra xem tên mới có bị trùng lặp với danh mục nào khác không. | • Bước 6: Thực thi lệnh UPDATE xuống bảng Categories. | • Bước 7: Đóng Form, báo thành công và tải lại danh sách.
+  Row 8: Luồng sự kiện phụ (Alternative Flows)	• Lỗi quyền truy cập: Nếu danh mục được chọn là danh mục hệ thống (dùng chung), hệ thống ẩn nút "Sửa" hoặc báo lỗi "Không thể chỉnh sửa danh mục mặc định". | • Trùng lặp tên: Nếu tên mới đổi bị trùng với một danh mục khác của người dùng, hệ thống chặn lại và báo lỗi "Tên danh mục đã tồn tại". | • Hủy thao tác: Người dùng bấm "Hủy", hệ thống đóng Form và giữ nguyên dữ liệu cũ.
+
+=== TABLE 10 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Xóa danh mục (Delete Category)
+  Row 2: Mục đích	Loại bỏ một danh mục thu/chi do người dùng tự tạo khi không còn nhu cầu sử dụng, giúp làm gọn danh sách.
+  Row 3: Mô tả	Người dùng chọn thao tác xóa. Hệ thống kiểm tra xem danh mục này đã có giao dịch nào chưa. Sau khi người dùng xác nhận cách xử lý dữ liệu cũ, hệ thống sẽ thực thi xóa (vô hiệu hóa) danh mục.
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Đã đăng nhập. Danh mục được chọn phải là danh mục cá nhân (Custom), không được phép là danh mục mặc định của hệ thống (System).
+  Row 6: Điều kiện sau	Bản ghi danh mục được chuyển trạng thái (Xóa mềm - IsDeleted = 1). Các giao dịch cũ liên quan được chuyển sang danh mục "Khác" hoặc vẫn giữ hiển thị nhưng danh mục không còn xuất hiện trong form Thêm mới.
+  Row 7: Luồng sự kiện chính (Basic flows)	• Bước 1: Người dùng nhấn biểu tượng "Xóa" cạnh một danh mục. |  |  | • Bước 2: Controller truy vấn DB kiểm tra xem danh mục có giao dịch nào đang gắn với nó không. |  |  | • Bước 3: Hệ thống hiển thị Pop-up cảnh báo xác nhận. (Nếu có giao dịch cũ, Pop-up sẽ hỏi thêm: "Chuyển các giao dịch cũ sang danh mục Khác" hay "Xóa luôn các giao dịch đó?"). |  |  | • Bước 4: Người dùng chọn phương án và nhấn "Đồng ý". |  |  | • Bước 5: Controller sử dụng DB Transaction để thực thi: Xóa mềm danh mục + Cập nhật/Xóa các giao dịch liên quan. |  |  | • Bước 6: Hệ thống đóng Pop-up, báo thành công và làm mới danh sách.
+  Row 8: Luồng sự kiện phụ (Alternative Flows)	• Bấm Hủy: Người dùng đóng Pop-up cảnh báo, hệ thống không ghi nhận bất kỳ thay đổi nào. |  |  | • Chặn xóa danh mục mặc định: Nếu người dùng cố tình dùng thủ thuật can thiệp API để xóa danh mục hệ thống, Controller chặn lại và trả lỗi 403 (Forbidden). |  |  | • Lỗi Rollback: Trong quá trình xử lý giao dịch cũ, nếu kết nối gián đoạn, hệ thống Rollback toàn bộ, báo lỗi và giữ |  nguyên danh mục.
+
+=== TABLE 11 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Thiết lập ngân sách (Create Budget)
+  Row 2: Mục đích	Đặt ra một hạn mức chi tiêu tối đa cho một danh mục cụ thể trong một chu kỳ (Tháng/Năm) để kiểm soát tài chính.
+  Row 3: Mô tả	Người dùng chọn danh mục chi tiêu, nhập số tiền giới hạn và chọn tháng áp dụng. Hệ thống lưu trữ hạn mức này và bắt đầu đối chiếu với các giao dịch thực tế.
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Đã đăng nhập. Hệ thống phải có sẵn ít nhất một danh mục thuộc loại "Chi" (Expense).
+  Row 6: Điều kiện sau	Bản ghi ngân sách mới được lưu vào CSDL (bảng Budgets). Giao diện thống kê lập tức hiển thị thanh tiến độ (Progress Bar) đối chiếu giữa Hạn mức này và Tổng chi tiêu thực tế cùng kỳ.
+  Row 7: Luồng sự kiện chính (Basic flows)	• Bước 1: Người dùng vào mục Ngân sách, nhấn "Thêm ngân sách mới". |  |  | • Bước 2: Hệ thống hiển thị Form gồm: Danh mục (chỉ hiện loại Chi), Số tiền, Chu kỳ (Tháng/Năm - mặc định là tháng hiện tại). |  |  | • Bước 3: Người dùng điền thông tin và nhấn "Lưu". |  |  | • Bước 4: Controller xác thực định dạng: Số tiền > 0. |  |  | • Bước 5: Controller kiểm tra CSDL để đảm bảo danh mục này chưa có ngân sách trong tháng được chọn. |  |  | • Bước 6: Thực thi lệnh INSERT vào bảng Budgets (gồm CategoryID, Amount, Month, Year). |  |  | • Bước 7: Hệ thống báo thành công và làm mới màn hình danh sách ngân sách.
+  Row 8: Luồng sự kiện phụ (Alternative Flows)	• Danh mục đã được thiết lập: Ở Bước 5, nếu Controller phát hiện danh mục "Ăn uống" đã có ngân sách trong tháng 9/2026, hệ thống chặn lưu và báo lỗi: "Danh mục này đã có ngân sách trong tháng, vui lòng chọn Sửa thay vì tạo mới." |  |  | • Sai logic loại danh mục: Nếu người dùng dùng API đẩy ID của một danh mục "Thu" (Income) vào Form, Controller chặn lại ở Backend và trả lỗi 400 (Bad Request). |  |  | • Hủy thao tác: Người dùng bấm "Hủy", hệ thống đóng biểu mẫu, không ghi nhận dữ liệu.
+
+=== TABLE 12 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Thiết lập mục tiêu tiết kiệm (Create Savings Goal)
+  Row 2: Mục đích	Cho phép người dùng tạo các kế hoạch tích lũy tài chính cho tương lai (ví dụ: Mua laptop, Du lịch, Quỹ dự phòng) và theo dõi tiến độ hoàn thành.
+  Row 3: Mô tả	Người dùng định nghĩa một mục tiêu bằng cách nhập Tên, Số tiền cần đạt (Target Amount) và Hạn chót (Deadline). Sau đó, người dùng có thể "Nạp tiền" (Deposit) vào mục tiêu này từ số dư ví chính.
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Đã đăng nhập. Tài khoản ví chính phải có số dư lớn hơn 0 nếu muốn nạp tiền ngay lúc tạo.
+  Row 6: Điều kiện sau	Bản ghi mục tiêu được lưu vào bảng SavingsGoals. Giao diện hiển thị thanh tiến độ (Progress Bar) % hoàn thành dựa trên (Số tiền đã nạp / Số tiền mục tiêu).
+  Row 7: Luồng sự kiện chính (Basic flows)	• Bước 1: Người dùng chọn "Thêm mục tiêu tiết kiệm". |  |  | • Bước 2: Hệ thống hiển thị Form: Tên mục tiêu, Số tiền mục tiêu, Hạn chót hoàn thành. |  |  | • Bước 3: Người dùng điền thông tin và nhấn "Lưu". |  |  | • Bước 4: Controller xác thực dữ liệu: Số tiền > 0, Hạn chót phải lớn hơn Ngày hiện tại. |  |  | • Bước 5: Hệ thống thực thi INSERT vào CSDL (Khởi tạo mục tiêu với Số tiền hiện tại = 0). |  |  | • Bước 6: (Luồng trích quỹ) Người dùng chọn mục tiêu vừa tạo, bấm "Nạp tiền" và nhập số tiền (VD: 1.000.000đ). |  |  | • Bước 7: Controller kiểm tra: Số tiền nạp <= Tổng số dư khả dụng trong Ví. |  |  | • Bước 8: Hệ thống trừ tiền ở Ví chính, cộng tiền vào Mục tiêu, ghi nhận 1 giao dịch loại "Chuyển tiền tiết kiệm". |  |  | • Bước 9: Báo thành công và cập nhật % tiến độ.
+  Row 8: Luồng sự kiện phụ (Alternative Flows)	• Ngày hạn chót không hợp lệ: Ở Bước 4, nếu người dùng chọn ngày hạn chót trong quá khứ, hệ thống chặn lại và bôi đỏ: "Hạn chót phải nằm trong tương lai." |  |  | • Không đủ số dư để nạp: Ở Bước 7, nếu ví chỉ còn 500k nhưng người dùng muốn nạp 1 triệu vào quỹ, hệ thống báo lỗi: "Số dư ví không đủ để trích lập quỹ."
+
+=== TABLE 13 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Lọc giao dịch & Cảnh báo thống kê (Filter & Statistical Alerts)
+  Row 2: Mục đích	Truy xuất nhanh dữ liệu lịch sử theo nhiều tiêu chí kết hợp, đồng thời tự động phân tích và đưa ra tín hiệu cảnh báo trực quan khi dòng tiền có dấu hiệu chạm ngưỡng rủi ro.
+  Row 3: Mô tả	Người dùng nhập các tham số bộ lọc (khoảng thời gian, danh mục, loại thu/chi) trên Dashboard. Hệ thống trả về danh sách giao dịch tương ứng, kết xuất lại biểu đồ và kích hoạt các Pop-up/Banner cảnh báo nếu tổng chi tiêu vượt các mốc ngân sách (ví dụ: 80%, 100%).
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Đã đăng nhập. Cơ sở dữ liệu có chứa các bản ghi giao dịch và thiết lập ngân sách hợp lệ.
+  Row 6: Điều kiện sau	Giao diện cập nhật lại danh sách, biểu đồ phân tích và hiển thị thông điệp cảnh báo (nếu có vi phạm). Trạng thái bộ lọc được giữ nguyên trên URL hoặc State của Frontend.
+  Row 7: Luồng sự kiện chính (Basic flows)	• Bước 1: Người dùng truy cập màn hình Thống kê, nhập tham số: Từ ngày 01/09 đến 30/09, Danh mục: Tất cả. |  |  | • Bước 2: Nhấn nút "Lọc dữ liệu". |  |  | • Bước 3: Controller tiếp nhận Request, xây dựng câu truy vấn LINQ/SQL động dựa trên các tham số không rỗng. |  |  | • Bước 4: Controller thực thi truy vấn lấy danh sách giao dịch và tính toán tổng Thu, tổng Chi. |  |  | • Bước 5: Controller đối chiếu tổng Chi từng danh mục với bảng Budgets cùng kỳ. |  |  | • Bước 6: Trả dữ liệu về View. Giao diện render lại danh sách và biểu đồ. |  |  | • Bước 7: Nếu chi tiêu đạt > 80% ngân sách, hiển thị cảnh báo vàng. Nếu >= 100%, hiển thị cảnh báo đỏ cấm chi tiêu.
+  Row 8: Luồng sự kiện phụ (Alternative Flows)	• Xung đột tham số thời gian: Nếu người dùng nhập "Từ ngày" lớn hơn "Đến ngày", hệ thống chặn tại Frontend và bôi đỏ yêu cầu nhập lại. |  |  | • Dữ liệu rỗng: Không có giao dịch nào thỏa mãn điều kiện lọc. Hệ thống không vẽ biểu đồ, hiển thị thông điệp: "Không tìm thấy dữ liệu phù hợp", ẩn toàn bộ khối cảnh báo.
+
+=== TABLE 14 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Quét hóa đơn tạo giao dịch (Scan Receipt OCR)
+  Row 2: Mục đích	Tự động hóa trích xuất số tiền, ngày tháng và nội dung từ ảnh hóa đơn để tạo bản ghi giao dịch nhanh chóng.
+  Row 3: Mô tả	Người dùng tải lên hoặc chụp ảnh hóa đơn. Hệ thống phân tích hình ảnh, bóc tách các trường dữ liệu lõi và điền sẵn vào Form thêm giao dịch.
+  Row 4: Tác nhân	Người dùng, Hệ thống OCR (External API)
+  Row 5: Điều kiện trước	Cấp quyền truy cập Camera hoặc bộ nhớ thiết bị. Mạng Internet ổn định.
+  Row 6: Điều kiện sau	Các trường dữ liệu trong Form "Thêm giao dịch" được điền tự động. File ảnh được lưu trữ và sinh URL liên kết với bản ghi giao dịch đó.
+  Row 7: Luồng sự kiện chính	• Bước 1: Nhấn biểu tượng "Quét hóa đơn". |  |  | • Bước 2: Chụp ảnh mới hoặc tải ảnh từ thư viện. |  |  | • Bước 3: Frontend nén ảnh và gửi Request lên Controller. |  |  | • Bước 4: Controller gọi API OCR xử lý hình ảnh. |  |  | • Bước 5: Controller sử dụng Regex để định vị và bóc tách 3 thông tin: Số tiền lớn nhất (Total), Ngày tháng, và Tên cửa hàng. |  |  | • Bước 6: Trả JSON dữ liệu về Frontend để điền tự động vào Form. |  |  | • Bước 7: Người dùng kiểm tra, chọn Danh mục (Category) tương ứng và nhấn "Lưu".
+  Row 8: Luồng sự kiện phụ	• Không nhận diện được text: Ảnh quá mờ hoặc mất góc. Hệ thống trả lỗi "Không đọc được hóa đơn, vui lòng chụp lại hoặc nhập tay". |  |  | • Timeout từ API: Nếu dịch vụ OCR bên thứ ba phản hồi quá chậm (> 10s), Controller ngắt kết nối và chuyển người dùng về Form nhập liệu truyền thống.
+
+=== TABLE 15 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	AI Sinh báo cáo chi tiêu tháng (Kiến trúc RAG)
+  Row 2: Mục đích	Tổng hợp số liệu tài chính thực tế từ CSDL để tăng cường ngữ cảnh cho AI, từ đó sinh ra báo cáo đánh giá thói quen chi tiêu chính xác, không bị "ảo giác".
+  Row 3: Mô tả	Người dùng chọn tháng cần xem. Hệ thống thực hiện 3 bước R-A-G: Truy xuất tổng hợp số liệu (Retrieval), Tăng cường Prompt bằng dữ liệu vừa lấy (Augmented), và Gọi API LLM để sinh văn bản (Generation).
+  Row 4: Tác nhân	Người dùng, AI Engine (Gemini/OpenAI API)
+  Row 5: Điều kiện trước	Đã đăng nhập. Có ít nhất 1 giao dịch trong tháng được chọn (tháng được chọn không thể lớn hơn tháng hiện tại).
+  Row 6: Điều kiện sau	Giao diện hiển thị văn bản báo cáo. Ứng dụng không bị gián đoạn dù gọi API thành công hay thất bại.
+  Row 7: Luồng sự kiện chính (Basic flows)	1. Kích hoạt: Người dùng chọn Tháng/Năm và bấm "Phân tích RAG". |  |  | 2. Xác thực (Validation): Controller kiểm tra đầu vào. Đảm bảo Tháng/Năm hợp lệ và không nằm trong tương lai (VD: không được phân tích tháng 10/2026 khi hiện tại mới là tháng 09/2026). |  |  | 3. Retrieval (Truy xuất): Controller dùng LINQ (Entity Framework) truy vấn bảng Transactions và Budgets. Lấy 3 thông tin cốt lõi: Tổng Thu, Tổng Chi, và Top 3 danh mục chi nhiều nhất. |  |  | 4. Lọc Dữ liệu trống: Nếu Tổng Thu = 0 và Tổng Chi = 0, ngắt luồng và trả thông báo: "Chưa có dữ liệu để phân tích". Không gọi AI. |  |  | 5. Augmented (Tăng cường): Controller đóng gói 3 số liệu trên thành một chuỗi Context (Ngữ cảnh) sạch sẽ, không chứa thông tin cá nhân. Ráp vào System Prompt mẫu. |  |  | 6. Generation (Sinh tự động): Khối try-catch bọc lệnh HttpClient.PostAsync gửi Prompt lên AI Engine. |  |  | 7. Xử lý kết quả: Controller nhận kết quả Text trả về, gán vào ViewModel hoặc ViewBag. |  |  | 8. Hiển thị: View cập nhật lại màn hình (Postback) và in bài báo cáo ra giao diện.
+  Row 8: Luồng sự kiện phụ (Alternative Flows)	1. Phương án B (Lỗi API): Ở Bước 6, nếu bắt được TimeoutException hoặc API lỗi, Controller không ném lỗi ra màn hình. Thay vào đó, nó tự động sinh ra một báo cáo mặc định bằng code C#: "Hệ thống AI đang bảo trì. Tuy nhiên, số liệu của bạn cho thấy: Thu {X}đ, Chi {Y}đ. Danh mục tốn kém nhất là {Z}." Trải nghiệm người dùng vẫn mượt mà. |  |  | 2. Tháng tương lai: Ở Bước 2, nếu chọn tháng tương lai, hiển thị cảnh báo đỏ trên form: "Không thể phân tích dữ liệu tương lai".
+
+=== TABLE 16 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	AI Gợi ý ngân sách tham khảo (AI Budget Suggestion)
+  Row 2: Mục đích	Cung cấp một khung phân bổ tài chính tham khảo (ví dụ: quy tắc 50/30/20) dựa trên mức thu nhập và chi tiêu của tháng trước, giúp người dùng dễ dàng thiết lập giới hạn cho tháng mới.
+  Row 3: Mô tả	Trên màn hình "Thiết lập ngân sách", người dùng bấm nút "Nhận gợi ý AI". Controller truy xuất nhanh tổng Thu/Chi tháng trước, ghép vào Prompt cứng và gọi API. Kết quả văn bản được trả về hiển thị trong một khung tham khảo kế bên biểu mẫu nhập liệu.
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Đã đăng nhập. Có kết nối Internet để gọi External API.
+  Row 6: Điều kiện sau	Giao diện hiển thị lời khuyên phân bổ ngân sách của AI. Người dùng vẫn phải tự tay nhập số liệu vào form lưu ngân sách.
+  Row 7: Luồng sự kiện chính (Basic flows)	• Bước 1: Tại màn hình Tạo ngân sách, người dùng nhấn nút "Gợi ý thông minh". |  |  | • Bước 2: Frontend vô hiệu hóa nút, hiển thị "Đang phân tích..." và gửi request. |  |  | • Bước 3: Controller dùng Entity Framework tính Tổng Thu và Tổng Chi của tháng trước. |  |  | • Bước 4: Controller kiểm tra: Nếu Tổng Thu > 0, chuyển sang Bước 5. |  |  | • Bước 5: Nội suy chuỗi tạo Prompt: "Tháng trước tôi có thu nhập {Thu} VNĐ và đã chi tiêu {Chi} VNĐ. Hãy phân bổ mức thu nhập này thành 3 khoản ngân sách: Nhu cầu thiết yếu, Chi tiêu cá nhân, Tiết kiệm theo quy tắc 50/30/20. Trả lời ngắn gọn trong 4 dòng, đơn vị VNĐ." | Bước 6: Controller gọi API (Gemini/OpenAI) qua khối try-catch. | Bước 7: Controller nhận kết quả Text và gửi về Frontend. | Bước 8: Giao diện hiển thị đoạn văn bản tư vấn để người dùng tham khảo.
+  Row 8: Luồng sự kiện phụ (Alternative Flows)	• Tài khoản mới (Không có dữ liệu): Ở Bước 4, nếu Tổng Thu = 0, Controller không gọi AI, trả về thông báo: "Bạn chưa có dữ liệu thu nhập tháng trước. Vui lòng tự thiết lập ngân sách thủ công hoặc ghi chép thêm." |  |  | • Lỗi API (Timeout/Hết hạn mức): Ở Bước 6, nếu gọi AI thất bại, khối try-catch trả về câu cứng: "Hệ thống tư vấn hiện đang bận. Bạn hãy thử áp dụng quy tắc 50% thiết yếu, 30% cá nhân, 20% tiết kiệm nhé."
+
+=== TABLE 17 ===
+  Row 0: Thuộc tính	Mô tả chi tiết
+  Row 1: Use case	Hỏi đáp phân tích tài chính (Static Chatbot)
+  Row 2: Mục đích	Giải đáp nhanh các thắc mắc về luồng tiền của người dùng thông qua các câu hỏi được lập trình sẵn, kết hợp AI để sinh câu trả lời thân thiện.
+  Row 3: Mô tả	Người dùng chọn một câu hỏi từ danh sách Dropdown (VD: "Tôi còn bao nhiêu tiền ngân sách?", "Khoản chi lớn nhất tháng này?"). Backend nhận ID câu hỏi, chạy lệnh SQL tương ứng để lấy số liệu thực, ráp vào Prompt và nhờ AI "đọc thành văn" trả về giao diện.
+  Row 4: Tác nhân	Người dùng
+  Row 5: Điều kiện trước	Đã đăng nhập. Hệ thống phải có mạng để gọi API của Gemini/OpenAI.
+  Row 6: Điều kiện sau	Giao diện hiển thị câu trả lời của AI. Không lưu lịch sử hội thoại vào CSDL để giảm tải.
+  Row 7: Luồng sự kiện chính	• Bước 1: Tại màn hình Trợ lý ảo, người dùng chọn 1 câu hỏi từ danh sách (Dropdown List) và nhấn "Gửi". |  | • Bước 2: Controller nhận QuestionID thông qua HTTP POST. |  | • Bước 3: Controller dùng cấu trúc switch(QuestionID) để rẽ nhánh xử lý. |  | • Bước 4: Thực thi truy vấn LINQ (EF Core) tương ứng với câu hỏi để lấy số liệu thực tế. |  | • Bước 5: Ghép số liệu vào Prompt. (Ví dụ: "Người dùng hỏi khoản chi lớn nhất. Số liệu là: Ăn uống, 2 triệu. Hãy đóng vai trợ lý ảo và trả lời thân thiện trong 1 câu.") |  | • Bước 6: Gọi API AI qua try-catch.  |  | • Bước 7: Gán câu trả lời vào ViewBag.ChatResponse và tải lại giao diện hiển thị.
+  Row 8: Luồng sự kiện phụ	• Chưa có dữ liệu: Ở Bước 4, nếu truy vấn trả về rỗng (0đ), Controller không gọi AI, tự gán ViewBag.ChatResponse = "Bạn chưa có dữ liệu giao dịch cho mảng này." |  |  | • Lỗi kết nối AI: Ở Bước 6, nếu gọi API lỗi (Timeout), Controller bắt lỗi và gán ViewBag.ChatResponse = "Trợ lý ảo đang bận, xin vui lòng thử lại sau."
+
+=== TABLE 18 ===
+  Row 0: Tên Lớp	Vai trò / Trách nhiệm	Thành viên này làm gì?
+  Row 1: Tài khoản (UserAccount)	Lớp cơ sở (Base)	Quản lý định danh, email, mật khẩu mã hóa và phiên đăng nhập chung.
+  Row 2: Người dùng (User)	Thực thể chính	Lưu hồ sơ cá nhân và đóng vai trò chủ sở hữu của tất cả các giao dịch, ngân sách, danh mục.
+
+=== TABLE 19 ===
+  Row 0: Tên Lớp	Vai trò / Trách nhiệm	Thành viên này làm gì?
+  Row 1: Danh mục (Category)	Phân loại tĩnh	Lưu thông tin các nhóm Thu/Chi (ví dụ: Lương, Ăn uống) và biểu tượng icon để người dùng chọn khi nhập liệu.
+  Row 2: Giao dịch (Transaction)	Chứng từ tài chính	Lưu vết các giao dịch phát sinh thực tế (Số tiền, ngày tháng, ghi chú). Đây là trái tim của hệ thống.
+  Row 3: Ngân sách (Budget)	Kiểm soát rủi ro	Định nghĩa hạn mức chi tiêu tối đa của một Danh mục trong một tháng để đối chiếu và cảnh báo.
+  Row 4: Mục tiêu tiết kiệm (SavingsGoal)	Quản lý tích lũy	Lưu trữ kế hoạch tiết kiệm, số tiền cần đạt và hạn chót hoàn thành.
+
+=== TABLE 20 ===
+  Row 0: Tên Lớp	Vai trò / Trách nhiệm	Thành viên này làm gì?
+  Row 1: Hóa đơn OCR (OCRReceipt)	Xử lý hình ảnh	Nhận file ảnh hóa đơn, kết nối API OCR, trả về số liệu (Tổng tiền, Ngày) để điền tự động vào giao dịch.
+  Row 2: Trợ lý AI (AIAssistant)	Xử lý ngôn ngữ	Đóng gói dữ liệu tổng hợp (RAG), kết nối API LLM để sinh báo cáo, gợi ý ngân sách và trả lời Chatbot tĩnh.
+
+=== TABLE 21 ===
+  Row 0: Thuộc tính	Kiểu dữ liệu	Mô tả
+  Row 1: MaTaiKhoan	String (GUID)	Khóa chính (PK). Chuỗi định danh duy nhất không thể đoán trước.
+  Row 2: Email	String	Dùng làm tên đăng nhập và liên lạc hệ thống.
+  Row 3: MatKhauHash	String	Chuỗi mật khẩu đã được băm (Hash) an toàn bằng Bcrypt hoặc Identity.
+  Row 4: TenHienThi	String	Tên gọi hoặc nickname để cá nhân hóa giao diện.
+  Row 5: SoDuVi	Decimal	Tổng tiền hiện có trong ví.
+
+=== TABLE 22 ===
+  Row 0: Phương thức	Phạm vi	Kiểu trả về	Mô tả
+  Row 1: dangNhap()	+	Boolean	Kiểm tra Email và khớp chuỗi MatKhauHash.
+  Row 2: capNhatSoDu()	+	Void	Tự động cộng/trừ tiền khi có biến động từ Giao dịch.
+
+=== TABLE 23 ===
+  Row 0: Thuộc tính	Kiểu dữ liệu	Mô tả
+  Row 1: MaDanhMuc	String (GUID)	Khóa chính (PK).
+  Row 2: MaTaiKhoan	String	Khóa ngoại (FK). Trống (Null) nếu là danh mục mặc định của hệ thống.
+  Row 3: TenDanhMuc	String	Tên phân loại (Lương, Ăn uống, Giải trí...).
+  Row 4: LoaiDanhMuc	String	Cờ đánh dấu: "Thu" (Income) hoặc "Chi" (Expense).
+  Row 5: BieuTuong	String	Tên class của Icon (VD: fa-solid fa-burger) để hiển thị trên UI.
+  Row 6: IsDeleted	Boolean	Cờ xóa mềm (True = Đã xóa, False = Đang hiển thị).
+
+=== TABLE 24 ===
+  Row 0: Phương thức	Phạm vi	Kiểu trả về	Mô tả
+  Row 1: themMoi()	+	Boolean	Lưu danh mục tự tạo của cá nhân.
+  Row 2: xoaMem()	+	Void	Cập nhật IsDeleted = True để ẩn khỏi giao diện.
+
+=== TABLE 25 ===
+  Row 0: Thuộc tính	Kiểu dữ liệu	Mô tả
+  Row 1: MaGiaoDich	String (GUID)	Khóa chính (PK).
+  Row 2: MaTaiKhoan	String	Khóa ngoại (FK) trỏ về UserAccount.
+  Row 3: MaDanhMuc	String	Khóa ngoại (FK) trỏ về Category để biết thuộc nhóm nào.
+  Row 4: SoTien	Decimal	Giá trị giao dịch (Tiền VNĐ).
+  Row 5: NgayGiaoDich	DateTime	Mốc thời gian phát sinh biến động tiền.
+  Row 6: GhiChu	String	Giải thích chi tiết cho khoản thu/chi (Có thể Null).
+  Row 7: IsDeleted	Boolean	Cờ xóa mềm, phục vụ chức năng Khôi phục/Hủy giao dịch.
+
+=== TABLE 26 ===
+  Row 0: Phương thức	Phạm vi	Kiểu trả về	Mô tả
+  Row 1: luuGiaoDich()	+	Boolean	Khởi tạo bản ghi và gọi hàm capNhatSoDu() của UserAccount.
+  Row 2: huyGiaoDich()	+	Void	Đảo ngược dòng tiền (Hoàn tiền) và bật cờ IsDeleted.
+
+=== TABLE 27 ===
+  Row 0: Thuộc tính	Kiểu dữ liệu	Mô tả
+  Row 1: MaNganSach	String (GUID)	Khóa chính (PK).
+  Row 2: MaTaiKhoan	String	Khóa ngoại (FK).
+  Row 3: MaDanhMuc	String	Khóa ngoại (FK). Chỉ áp dụng cho danh mục loại "Chi".
+  Row 4: ThangNam	DateTime	Chu kỳ áp dụng (Lưu dạng ngày đầu tiên của tháng, VD: 01/09/2026).
+  Row 5: HanMuc	Decimal	Số tiền chi tiêu tối đa cho phép trong tháng đó.
+
+=== TABLE 28 ===
+  Row 0: Phương thức	Phạm vi	Kiểu trả về	Mô tả
+  Row 1: tinhTienDo()	+	Float	Trả về % (Tổng chi thực tế / HanMuc) để vẽ biểu đồ trực quan.
+  Row 2: canhBao()	-	Boolean	Trả về True nếu mức chi tiêu vượt quá 80% hoặc 100%.
+
+=== TABLE 29 ===
+  Row 0: Thuộc tính	Kiểu dữ liệu	Mô tả
+  Row 1: MaMucTieu	String (GUID)	Khóa chính (PK).
+  Row 2: MaTaiKhoan	String	Khóa ngoại (FK).
+  Row 3: TenMucTieu	String	Tên kế hoạch (VD: Mua điện thoại mới).
+  Row 4: TienDich	Decimal	Số tiền mục tiêu cần đạt.
+  Row 5: TienHienTai	Decimal	Số tiền đã tích lũy được (Khởi tạo = 0).
+  Row 6: HanChot	DateTime	Ngày dự kiến phải hoàn thành.
+
+=== TABLE 30 ===
+  Row 0: Phương thức	Phạm vi	Kiểu trả về	Mô tả
+  Row 1: napTien()	+	Boolean	Trừ tiền từ Ví chính, cộng vào TienHienTai của quỹ.
+  Row 2: kiemTraTrangThai()	+	String	Đánh giá tiến độ: "Sắp đạt", "Hoàn thành", "Trễ hạn".
+
+=== TABLE 31 ===
+  Row 0: Thuộc tính	Kiểu dữ liệu	Mô tả
+  Row 1: LoaiNghiepVu	String	Phân loại luồng: "BaoCaoThang", "Chatbot", "GoiYNganSach".
+  Row 2: ContextData	String	Chuỗi dữ liệu số liệu (Đã lọc danh tính) để nạp vào Prompt.
+
+=== TABLE 32 ===
+  Row 0: Phương thức	Phạm vi	Kiểu trả về	Mô tả
+  Row 1: taoPrompt()	-	String	Xây dựng câu lệnh hoàn chỉnh dựa trên ContextData.
+  Row 2: goiApiAI()	+	Task<String>	Gửi HTTP Request bất đồng bộ tới Gemini API và nhận văn bản.
+
+=== TABLE 33 ===
+  Row 0: Thuộc tính	Kiểu dữ liệu	Mô tả
+  Row 1: FileAnh	IFormFile	Đối tượng file ảnh được tải lên từ giao diện người dùng.
+  Row 2: RawText	String	Toàn bộ chuỗi văn bản thô do AI OCR đọc được từ ảnh.
+
+=== TABLE 34 ===
+  Row 0: Phương thức	Phạm vi	Kiểu trả về	Mô tả
+  Row 1: docHoaDon()	+	Task<String>	Đẩy ảnh qua API (Google Vision), bóc tách số tiền, ngày.
+
+=== TABLE 35 ===
+  Row 0: Lớp tham gia 1 (Class A)	Loại Quan hệ (Type)	Bản số (Multiplicity)	Lớp tham gia 2 (Class B)	Mô tả chi tiết (Cách chúng tương tác)
+  Row 1: UserAccount	Kết hợp	1 - 0..n	Transaction	Một người dùng có thể tạo ra không hoặc rất nhiều giao dịch. Mỗi giao dịch bắt buộc phải thuộc về đúng một người dùng. (Khóa ngoại: MaTaiKhoan lưu tại bảng Transaction).
+  Row 2: UserAccount	Kết hợp	1 - 0..n	Category	Một người dùng có thể tạo thêm nhiều danh mục cá nhân. Tuy nhiên, một danh mục mặc định có thể không thuộc về ai (MaTaiKhoan = Null).
+  Row 3: UserAccount	Kết hợp	1 - 0..n	Budget	Người dùng thiết lập nhiều mức ngân sách cho các tháng khác nhau.
+  Row 4: UserAccount	Kết hợp	1 - 0..n	SavingsGoal	Một người dùng có thể mở cùng lúc nhiều quỹ tiết kiệm khác nhau (Ví dụ: Quỹ du lịch, Quỹ hưu trí).
+  Row 5: Category	Kết hợp	1 - 0..n	Transaction	Mỗi giao dịch bắt buộc phải được gắn vào một danh mục cụ thể (Ví dụ: 50.000đ vào danh mục Cà phê). Danh mục bị xóa mềm vẫn giữ liên kết với các giao dịch cũ.
+  Row 6: Category	Kết hợp	1 - 0..n	Budget	Một danh mục "Chi" có thể được thiết lập nhiều ngân sách (Ví dụ: Ngân sách tháng 9, Ngân sách tháng 10). Mối quan hệ này giúp truy vấn chéo để tính toán % chi tiêu.
+  Row 7: Transaction	Phụ thuộc	0..n - 1	SavingsGoal	Khi người dùng nạp tiền vào quỹ, hệ thống tự động sinh ra một Transaction (dạng: Chuyển tiền nội bộ). Lớp Giao dịch phục vụ (phụ thuộc) quá trình cập nhật số dư của lớp Quỹ tiết kiệm.
+  Row 8: OCRReceipt	Phụ thuộc	1 - 0..1	Transaction	Lớp OCR xử lý hình ảnh và trả về một đối tượng (Object) có cấu trúc giống hệt Transaction để điền sẵn vào giao diện. Nó không lưu trong DB.
+  Row 9: AIAssistant	Phụ thuộc	1 - 0..n	Transaction & Budget	Lớp AI đọc và tổng hợp dữ liệu từ hàng loạt Transaction và Budget để làm Context (Ngữ cảnh) sinh báo cáo. Trả về kết quả và giải phóng bộ nhớ.

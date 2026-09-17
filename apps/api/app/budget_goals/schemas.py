@@ -22,7 +22,7 @@ class BudgetCreate(BaseModel):
     period_type: str = "MONTHLY"
     start_date: date
     end_date: date
-    total_limit: int = Field(gt=0)
+    total_limit: int | None = Field(default=None, gt=0)
     currency: str = Field(min_length=3, max_length=3)
     status: str = "ACTIVE"
     categories: list[BudgetCategoryCreate] = Field(default_factory=list)
@@ -40,6 +40,11 @@ class BudgetCreate(BaseModel):
             raise ValueError("Budget start_date must not be after end_date")
         if self.status not in {"ACTIVE", "INACTIVE", "ARCHIVED"}:
             raise ValueError("Invalid budget status")
+        if self.total_limit is None:
+            if self.categories:
+                self.total_limit = sum(cat.limit_amount for cat in self.categories)
+            else:
+                raise ValueError("total_limit is required when categories list is empty")
         return self
 
 

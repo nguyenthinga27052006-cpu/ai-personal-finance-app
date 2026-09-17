@@ -102,7 +102,7 @@ def _entry(account: Account, amount: int, entry_type: EntryType) -> TransactionE
 
 
 def create_transaction(
-    db: Session, user: User, payload: TransactionCreate, idempotency_key: str | None
+    db: Session, user: User, payload: TransactionCreate, idempotency_key: str | None = None
 ) -> Transaction:
     if idempotency_key and len(idempotency_key) > 128:
         raise TransactionError("Idempotency-Key must not exceed 128 characters")
@@ -280,6 +280,9 @@ def create_transfer(
     return transaction
 
 
+from sqlalchemy import func, select, or_
+
+
 def list_transactions(
     db: Session,
     user: User,
@@ -287,12 +290,21 @@ def list_transactions(
     page_size: int,
     account_id: str | None,
     transaction_type: TransactionType | None,
+    search: str | None = None,
 ) -> tuple[list[Transaction], int]:
     base = select(Transaction).where(Transaction.user_id == user.id)
     if account_id:
         base = base.where(Transaction.account_id == account_id)
     if transaction_type:
         base = base.where(Transaction.type == transaction_type.value)
+    if search and search.strip():
+        search_pattern = f"%{search.strip()}%"
+        base = base.where(
+            or_(
+                Transaction.description.ilike(search_pattern),
+                Transaction.external_reference.ilike(search_pattern),
+            )
+        )
     total = db.scalar(select(func.count()).select_from(base.subquery())) or 0
     statement = (
         base.options(selectinload(Transaction.entries), selectinload(Transaction.items))

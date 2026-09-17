@@ -157,6 +157,14 @@ class AIGateway:
         except (TypeError, ValueError) as exc:
             logger.error("Provider returned malformed JSON: %s (content: %r)", exc, content)
             raise StructuredOutputError("Provider returned malformed JSON") from exc
+        if isinstance(value, dict) and "citations" in value and isinstance(value["citations"], list):
+            normalized_citations = []
+            for item in value["citations"]:
+                if isinstance(item, str):
+                    normalized_citations.append({"source": item, "calculation_type": "llm_citation"})
+                else:
+                    normalized_citations.append(item)
+            value["citations"] = normalized_citations
         try:
             return output_model.model_validate(value)
         except ValueError as exc:

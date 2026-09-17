@@ -205,6 +205,7 @@ class FinanceViewModel extends ChangeNotifier {
         'period_type': 'MONTHLY',
         'start_date': startDate ?? defaultStart,
         'end_date': endDate ?? defaultEnd,
+        'total_limit': limitAmount,
         'currency': currency,
         'categories': [
           {

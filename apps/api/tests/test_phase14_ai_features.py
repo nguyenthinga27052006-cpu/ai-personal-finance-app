@@ -313,3 +313,127 @@ def test_ai_query_persists_messages_and_history_endpoint(client):
     assert "user" in roles
     assert "assistant" in roles
 
+
+def test_receipt_ocr_date_fallback():
+    extracted = extract_receipt(
+        {
+            "merchant": "Coffee Shop",
+            "date": "",
+            "total": 50000,
+            "currency": "VND",
+            "items": [{"name": "Latte", "amount": 50000}],
+        }
+    )
+    assert extracted.status == "LOW_CONFIDENCE"
+    assert extracted.review_required is True
+    assert extracted.date == date.today().isoformat()
+    assert "receipt date not detected" in extracted.reason
+
+
+def test_receipt_scan_and_confirm_endpoints(client):
+    test_client, factory = client
+    auth = __import__("test_financial_core", fromlist=["register"]).register(test_client)
+    with factory() as db:
+        seed_system_categories(db)
+        db.commit()
+    headers = {"Authorization": f"Bearer {auth['access_token']}"}
+
+    # Create an account for current user
+    acc_res = test_client.post(
+        "/api/v1/accounts",
+        json={
+            "name": "Cash Wallet",
+            "type": "CASH",
+            "currency": "VND",
+            "opening_balance": 1000000,
+        },
+        headers=headers,
+    )
+    assert acc_res.status_code == 201
+    account_id = acc_res.json()["id"]
+
+    # Scan receipt endpoint
+    scan_payload = {
+        "image_base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "source_ref": "test_receipt.png",
+    }
+    scan_res = test_client.post("/api/v1/ai/receipt/scan", json=scan_payload, headers=headers)
+    assert scan_res.status_code == 200
+    candidate = scan_res.json()
+    assert "merchant" in candidate
+    assert "total" in candidate
+
+    # Confirm receipt endpoint
+    confirm_payload = {
+        "account_id": account_id,
+        "merchant": "Highlands Coffee",
+        "transaction_date": "2026-09-17",
+        "total": 65000,
+        "currency": "VND",
+        "items": [{"name": "Phin Suada", "amount": 65000}],
+    }
+    confirm_res = test_client.post(
+        "/api/v1/ai/receipt/confirm", json=confirm_payload, headers=headers
+    )
+    assert confirm_res.status_code == 200
+    confirm_data = confirm_res.json()
+    assert confirm_data["status"] == "success"
+    assert confirm_data["merchant"] == "Highlands Coffee"
+    assert confirm_data["amount"] == 65000
+
+
+def test_transaction_search_endpoint(client):
+    test_client, factory = client
+    auth = __import__("test_financial_core", fromlist=["register"]).register(test_client)
+    with factory() as db:
+        seed_system_categories(db)
+        db.commit()
+    headers = {"Authorization": f"Bearer {auth['access_token']}"}
+
+    acc_res = test_client.post(
+        "/api/v1/accounts",
+        json={
+            "name": "Bank Account",
+            "type": "BANK",
+            "currency": "VND",
+            "opening_balance": 5000000,
+        },
+        headers=headers,
+    )
+    assert acc_res.status_code == 201
+    account_id = acc_res.json()["id"]
+
+    # Create two transactions with distinct descriptions
+    tx1_res = test_client.post(
+        "/api/v1/transactions",
+        json={
+            "account_id": account_id,
+            "type": "EXPENSE",
+            "amount": 50000,
+            "currency": "VND",
+            "description": "Starbucks Reserve Morning coffee",
+        },
+        headers=headers,
+    )
+    assert tx1_res.status_code == 201
+    tx2_res = test_client.post(
+        "/api/v1/transactions",
+        json={
+            "account_id": account_id,
+            "type": "EXPENSE",
+            "amount": 200000,
+            "currency": "VND",
+            "description": "WinMart Supermarket groceries",
+        },
+        headers=headers,
+    )
+    assert tx2_res.status_code == 201
+
+    # Search for "Starbucks"
+    search_res = test_client.get("/api/v1/transactions?search=Starbucks", headers=headers)
+    assert search_res.status_code == 200
+    data = search_res.json()
+    assert data["total"] == 1
+    assert "Starbucks" in data["items"][0]["description"]
+
+

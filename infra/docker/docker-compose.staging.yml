@@ -8,6 +8,10 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set staging JWT_SECRET from secret manager}
       NOTIFICATION_WORKER_TOKEN: ${NOTIFICATION_WORKER_TOKEN:?Set staging worker token}
       RELEASE: ${RELEASE:?Set RELEASE to commit SHA}
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      AI_MODEL: ${AI_MODEL:-gemini-3.1-flash-lite}
+      AI_ENABLED: ${AI_ENABLED:-true}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "${APP_PORT:-8000}:8000"
     healthcheck:

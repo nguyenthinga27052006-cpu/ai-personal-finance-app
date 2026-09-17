@@ -1,0 +1,343 @@
+[Normal] BÁO CÁO 
+[Normal]  CHỦ ĐỀ : QUẢN LÝ CHI TIÊU CÁ NHÂN CÓ TÍCH HỢP AI
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Heading 1] CHƯƠNG I. ĐẶC TẢ PHẦN MỀM
+[Normal] 
+[Heading 3] 1.1.1 Hiện trạng bài toán
+[Normal] Trong bối cảnh chuyển đổi số và sự phát triển của các mô hình làm việc linh hoạt (Gig Economy), thế hệ trẻ đang đối mặt với sự thay đổi lớn về cấu trúc thu nhập. Dòng tiền không còn cố định hàng tháng mà trở nên phân tán, thất thường. Điều này dẫn đến nhu cầu bức thiết trong việc kiểm soát tài chính cá nhân để xây dựng lưới an toàn tài chính.
+
+[Normal] Thứ nhất - Rào cản nhập liệu thủ công: Việc phải tự tay ghi chép từng khoản chi nhỏ lẻ (như tiền cà phê, vé xe) sau mỗi lần giao dịch tốn nhiều thời gian, dễ gây ra tâm lý chán nản và bỏ cuộc giữa chừng.
+[Normal] 
+[Normal] Thứ hai - Thiếu tính định hướng: Hầu hết các ứng dụng trên thị trường chỉ đóng vai trò là "sổ ghi chép điện tử". Chúng cung cấp các biểu đồ thống kê khô khan nhưng không thể trả lời cho người dùng câu hỏi: "Với tình hình này, tôi nên cắt giảm khoản nào và phân bổ ngân sách tháng sau ra sao?"
+[Normal] 
+[Heading 3] 1.1.3 Mục tiêu hệ thống
+[Normal] Dự án hướng tới việc xây dựng một Web Application toàn diện, tích hợp trí tuệ nhân tạo để giải quyết các điểm nghẽn của hiện trạng, với các mục tiêu cụ thể:
+[Normal] Mục tiêu số hóa (Digitalization): Xây dựng nền tảng lưu trữ dữ liệu thu chi an toàn, trực quan, cho phép phân loại giao dịch, thiết lập ngân sách và theo dõi mục tiêu tiết kiệm.
+[Normal] 
+[Normal] Mục tiêu tự động hóa (Automation): Tích hợp công nghệ Nhận dạng ký tự quang học (OCR) để tự động bóc tách dữ liệu (số tiền, ngày tháng, tên cửa hàng) từ ảnh chụp hóa đơn, giảm thiểu 80% thao tác nhập liệu thủ công.
+[Normal] 
+[Normal] Mục tiêu thông minh hóa (Intelligence): Ứng dụng mô hình Ngôn ngữ Lớn (LLM) thông qua kiến trúc RAG (Retrieval-Augmented Generation) để tạo ra một "Trợ lý tài chính ảo". Trợ lý này có khả năng đọc hiểu số liệu trong cơ sở dữ liệu để sinh báo cáo, gợi ý phân bổ ngân sách (theo quy tắc 50/30/20) và trả lời các truy vấn của người dùng bằng ngôn ngữ tự nhiên.
+[Normal] 
+[Heading 3] 1.1.4 Phạm vi bài toán
+[Normal] Để đảm bảo tính khả thi và tập trung vào trải nghiệm cốt lõi, dự án được giới hạn trong các ranh giới sau:
+[Normal] Phạm vi nghiệp vụ: Hệ thống chỉ phục vụ quản lý tài chính cá nhân đơn lẻ (Single-tenant). Không mở rộng cho tài chính gia đình chung hay kế toán doanh nghiệp. Hệ thống hoạt động độc lập như một sổ tay thông minh, không liên kết với các cổng thanh toán trực tiếp (Payment Gateways) hay Open Banking API để thực hiện chuyển tiền thật.
+[Normal] 
+[Normal] Phạm vi công nghệ: Ứng dụng được phát triển trên nền tảng Web với kiến trúc ASP.NET Core MVC, sử dụng SQL Server làm hệ quản trị cơ sở dữ liệu.
+[Normal] 
+[Normal] Phạm vi dữ liệu AI: Các truy vấn gửi lên dịch vụ AI bên thứ ba (OCR, Gemini API) được giới hạn ở các số liệu tổng hợp (Aggregated Data) và đã loại bỏ thông tin định danh cá nhân (PII), đảm bảo tuân thủ quyền riêng tư dữ liệu của người dùng.
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Heading 1] CHƯƠNG II.PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG
+[Heading 3] 1.1.2 Đối tượng người dùng
+[Normal] Hệ thống không hướng tới các doanh nghiệp hay chuyên gia kế toán, mà được thiết kế chuyên biệt cho tệp người dùng cá nhân, bao gồm:
+
+[Normal] Sinh viên và người mới đi làm (Gen Z, Millennials) có nhu cầu xây dựng thói quen quản lý tài chính từ sớm nhưng thiếu kiến thức chuyên sâu.
+[Normal] 
+[Normal] Những người làm việc tự do (Freelancers) có nguồn thu nhập không cố định, cần công cụ để theo dõi dòng tiền và trích lập các quỹ dự phòng, mục tiêu tiết kiệm.
+[Normal] 
+[Normal] Những cá nhân bận rộn, mong muốn tự động hóa quá trình nhập liệu hóa đơn và cần các lời khuyên tài chính nhanh chóng theo thời gian thực.
+[Normal] 
+[Heading 2]   2.1 Yêu cầu hệ thống
+[Heading 3] 2.1.1 Yêu cầu chức năng/phi chức năngvb  của ứng dụng
+[Normal]          Yêu cầu chức năng
+[List Paragraph] Quản lý tài khoản người dùng :
+[List Paragraph] Đăng ký , đăng nhập, quên tài khoản
+[List Paragraph] Cập nhật thông tin cá nhân.
+[List Paragraph] Quản lý thu nhập và chi tiêu: 
+[List Paragraph] Thêm, sửa, xóa giao dịch thu/chi. 
+[List Paragraph] Phân loại giao dịch theo danh mục. 
+[List Paragraph] Quét hóa đơn tự động (OCR).
+[List Paragraph] Báo cáo và thống kê: 
+[List Paragraph] Hiển thị báo cáo tài chính theo ngày, tuần, tháng. 
+[List Paragraph] Thống kê chi tiêu theo danh mục. 
+[List Paragraph] Biểu đồ trực quan hóa dữ liệu.
+[List Paragraph] Lập ngân sách chi tiêu:
+[List Paragraph] Tạo ngân sách theo danh mục.
+[List Paragraph] Theo dõi tình trạng ngân sách.
+[List Paragraph] Gợi ý chi tiêu nếu vượt qua ngân sách.
+[List Paragraph] Gợi ý và nhắc nhở :
+[List Paragraph] Nhắc nhở khi sắp vượt qua ngân sách.
+[List Paragraph] Gợi ý cắt giảm chi tiêu khi cần .
+[Heading 3] 2.1.2 Yêu cầu phi chức năng
+[List Paragraph] Hiệu suất
+[List Paragraph] Thời gian phản hồi cho các thao tác CRUD cơ bản (thêm, sửa, xóa giao dịch thủ công) phải dưới 2 giây để đảm bảo trải nghiệm mượt mà. 
+[List Paragraph] Đối với luồng quét hóa đơn bằng OCR, thời gian xử lý không vượt quá 10 giây; hệ thống bắt buộc phải có hiệu ứng chờ (loading/spinner) để không gây đóng băng giao diện người dùng.
+[List Paragraph] Ứng dụng phải hoạt động mượt mà trên các thiết bị phổ biến hiện nay.
+[List Paragraph] Bảo mật :
+[List Paragraph] Mã hóa dữ liệu nhạy cảm (mật khẩu).
+[List Paragraph] Đảm bảo tính bảo mật cao đối với các dữ liệu người dùng tronh hệ thống.
+[List Paragraph] Độ tin cậy :
+[List Paragraph] Sao lưu dữ liệu tự động hàng ngày.
+[List Paragraph] Khả năng khôi phục dữ liệu khi gặp sự cố.
+[List Paragraph] Khả năng mở rộng:
+[List Paragraph] Thiết kế module độc lập ,cho phép dễ dàng tích hợp và mở rộng các tính năng mới trong tương lai.
+[List Paragraph] 
+
+[List Paragraph] 
+[Normal] 
+[Heading 3] 2.1.3 Ràng buộc cứng và ràng buộc mềm
+[Normal] 2.1.3.1 Ràng buộc mềm (Quy tắc nghiệp vụ - Business Logic)
+[Normal] 
+[Normal] 2.1.3.2 Ràng buộc cứng (Toàn vẹn dữ liệu - Data Integrity)
+[Normal] 
+[Normal] 
+[List Paragraph] 
+[Heading 2] 2.2 Phân tích hệ thống
+[Normal] 
+[Normal] 	
+[Normal] Hình 2.1. Sơ đồ user case
+[Normal] 
+[Normal] Hình 2.2 Sơ đồ user case phân rã Quản lý thu nhập và chi tiêu
+[Normal] 
+[Normal] 
+[Normal] Hình 2.3 Sơ đồ user case phân rã Lập ngân sách chi tiêu
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] Hình 2.4 Sơ đồ user case phân ra Hiển thị báo cáo tài chính
+[Normal] 
+[Normal] 
+[Normal] Hình 2.5 Sơ đồ user case phân rã Quản lý danh mục
+[Normal] 
+[Normal] 
+[Heading 2] 2.3 Phân tích chi tiết từng chức năng
+[Heading 3] 2.3.1 Chức năng đăng ký
+[Normal] 
+[Caption] Bảng 2.3 1: Đặc tả chức năng Đăng ký 
+[Normal] 
+[Normal] 
+[Caption] Hình 2.3 1: Biểu đồ hoạt động chức năng Đăng ký
+[Caption] 
+[Normal] 
+[Caption] Hình 2.3 2: Sơ đồ tuần tự Đăng ký
+[Caption] 
+[Normal]  
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Heading 3] 2.3.2 Chức năng đăng nhập
+[Caption] Bảng 2.3 2: Đặc tả chức năng Đăng nhập
+[Normal] 
+[Normal] 
+[Caption] Hình 2.3 3: Biểu đồ hoạt động chức năng Đăng nhập
+[Normal] 
+[Normal] 
+[Caption] Hình 2.3 4: Sơ đồ tuần tự Đăng nhập
+[Normal] 
+[Heading 3] 2.3.3 Chức năng Thêm giao dịch
+[Caption] Bảng 2.3 3: Đặc tả chức năng Thêm giao dịch
+[Normal] 
+[Normal] 
+[Caption] Hình 2.3 5: Biểu đồ hoạt động chức năng Thêm giao dịch
+[Normal] 
+[Normal] 
+[Caption] Hình 2.3 6:  Sơ đồ tuần tự Thêm giao dịch
+[Caption] 
+[Normal] 
+[Heading 3] 2.3.4 Chức năng Sửa giao dịch
+[Caption] Bảng 2.3 4: Đặc tả chức năng Thêm giao dịch
+[Normal] 
+[Normal] 
+[Caption] Hình 2.3 7: Biểu đồ hoạt động chức năng Sửa giao dịch
+[Caption] 
+[Normal] 
+[Caption] 
+[Caption] Hình 2.3 8:  Sơ đồ tuần tự Sửa giao dịch
+[Heading 3] 2.3.5 Chức năng Xóa giao dịch
+[Caption] Bảng 2.3 5: Đặc tả chức năng Xóa giao dịch
+[Normal] 
+[Caption] 
+[Caption] Hình 2.3 9:  Biểu đồ hoạt động chức năng Xóa giao dịch
+[Normal] 
+[Caption] 
+[Caption] Hình 2.3 10: Sơ đồ tuần tự Xóa giao dịch
+[Normal] 
+[Heading 3] 2.3.6 Chức năng Thêm danh mục
+[Caption] Bảng 2.3.3: Đặc tả chức năng Thêm danh mục
+[Normal] 
+[Caption]  Hình 2.3.11: Biểu đồ hoạt động chức năng Thêm danh mục
+[Caption] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Caption]  Hình 2.3.32: Sơ đồ tuần tự Thêm danh mục
+[Caption] 
+[Normal] 
+[Heading 3] 2.3.7 Chức năng Sửa danh mục
+[Normal] 
+[Normal] Bảng: Đặc tả chức năng Sửa danh mục
+[Caption] Bảng 2.3.3: Đặc tả chức năng Sửa danh mục
+[Normal] 
+[Caption]  Hình 2.3.43: Biểu đồ hoạt động chức năng Sửa danh mục
+[Caption] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Caption] Hình 2.3.54: Sơ đồ tuần tự Sửa danh mục
+[Caption] 
+[Normal] 
+[Heading 3] 2.3.8 Chức năng Xóa danh mục
+[Caption] Bảng 2.3.3: Đặc tả chức năng Xóa danh mục
+[Caption]  Hình 2.3.65: Biểu đồ hoạt động chức năng Xóa danh mục
+[Caption] 
+[Normal] 
+[Normal] 
+[Caption]  Hình 2.3.76: Sơ đồ tuần tự Xóa danh mục
+[Normal] 
+[Normal] 
+[Heading 3] 2.3.9 Chức năng Thiết lập ngân sách
+[Caption] Bảng 2.3.3: Đặc tả chức năng Thiết lập ngân sách
+[Normal] 
+[Normal] 
+[Caption]  Hình 2.3.87: Biểu đồ hoạt động chức năng Thiết lập ngân sách
+[Normal] 
+[Caption]  Hình 2.3.98: Sơ đồ tuần tự Thiết lập ngân sách
+[Caption] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Heading 3] 2.3.10 Chức năng Thiết lập mục tiêu tiết kiệm
+[Caption] 
+Bảng 2.3.3: Đặc tả chức năng Thiết lập mục tiêu tiết kiệm
+[Normal] 
+[Caption]  Hình 2.3.109: Biểu đồ hoạt động chức năng Thiết lập mục tiêu tiết kiệm
+[Caption] 
+[Normal] 
+[Caption]  Hình 2.3.20: Sơ đồ tuần tự Thiết lập danh mục tiết kiệm
+[Normal] 
+[Normal] 
+[Normal] 
+[Heading 3] 2.3.11 Chức năng Lọc giao dịch và cảnh bao thống kê
+[Caption] Bảng 2.3.3: Đặc tả chức năng Lọc giao dịch và cảnh báo thống kê
+[Normal] 
+[Caption]  Hình 2.3.21: Biểu đồ hoạt động chức năng Lọc giao dịch và cảnh báo thống kê
+[Normal] 
+[Caption]  Hình 2.3.22: Sơ đồ tuần tự Lọc giao dịch và cảnh báo thống kê
+[Normal] 
+[Normal] 
+[Heading 3] 2.3.12 Chức năng Quét hóa đơn tạo giao dịch
+[Caption] Bảng 2.3.3: Đặc tả chức năng Quét hóa đơn tạo giao dịch 
+[Normal] 
+[Caption]  Hình 2.3.23: Biểu đồ hoạt động chức năng Quét hóa đơn tạo giao dịch
+[Normal] 
+[Caption]  Hình 2.3.24: Sơ đồ tuần tự Quét hóa đơn tạo giao dịch
+[Caption] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Heading 3] 2.3.13 Chức năng AI Sinh báo cáo chi tiêu tháng
+[Caption] Bảng 2.3.3: Đặc tả chức năng AI Sinh báo cáo chi tiêu tháng
+[Normal] 
+[Caption]  Hình 2.3.25: Biểu đồ hoạt động chức năng AI Sinh báo cáo chi tiêu tháng
+[Caption]  Hình 2.3.26: Sơ đồ tuần tự AI Sinh báo cáo chi tiêu tháng
+[Caption] 
+[Normal] 
+[Heading 3] 2.3.14 Chức năng AI gợi ý ngân sách tham khảo 
+[Normal] 
+[Normal] 
+[Caption] Bảng 2.3.3: Đặc tả chức năng AI gợi ý ngân sách tham khảo
+[Caption]  Hình 2.3.27: Biểu đồ hoạt động chức năng AI gợi ý ngân sách tham khảo
+[Caption]  Hình 2.3.28: Sơ đồ tuần tự AI gợi ý ngân sách tham khảo
+[Caption] 
+[Normal] 
+[Heading 3] 2.3.15 Chức năng Hỏi đáp phân tích tài chính
+[Caption] Bảng 2.3.3: Đặc tả chức năng Hỏi đáp phân tích tài chính
+[Normal] 
+[Caption] Hình 2.3.29: Biểu đồ hoạt động chức năng Hỏi đáp phân tích tài chính
+[Caption]  Hình 2.3.30: Sơ đồ tuần tự Hỏi đáp phân tích tài chính
+[Normal] 
+[Heading 2] 2.4 Bảng thiết kế biểu đồ lớp phân tích
+[Heading 3] 2.4.1 Phân tích nhóm lớp 
+[Heading 4] 1. Nhóm Quản lý Người dùng (User Management)
+[Normal] 
+[Normal] Bảng 2.10 Nhóm lớp quản lý người dùng
+[Normal] 
+[Heading 4] 2. Nhóm Nghiệp vụ Dòng tiền & Tài chính (Core Business)
+[Normal] 
+[Normal] Bảng 2.11 Nhóm lớp nghiệp vụ dòng tiền
+[Normal] 
+[Heading 4] 3. Nhóm Giao tiếp AI & Thiết bị (External Interface)
+[Normal] 
+[Normal] Bảng 2.12 Nhóm lớp thiết bị & AI
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Heading 3] 2.4.2 Phân tích chi tiết từng lớp: 
+[Heading 4] 1. Lớp TÀI KHOẢN – UserAccount
+[Normal] (Lớp cơ sở quản lý thông tin đăng nhập và hồ sơ người dùng)
+[Normal] 
+[Normal] Bảng 2.13 Thuộc tính lớp UserAccount
+[Normal] 
+[Normal] 
+[Normal] Bảng 2.14 Phương thức lớp UserAccount
+[Heading 4] 2. Lớp DANH MỤC – Category
+[Normal] Bảng 2.15 Thuộc tính lớp Category
+[Normal] Bảng 2.16 Phương thức lớp Category
+[Normal] 
+[Heading 4] 3. Lớp GIAO DỊCH – Transaction
+[Normal] (Lớp chứng từ tài chính quan trọng nhất hệ thống)
+[Normal] 
+[Normal] Bảng 2.17 Thuộc tính lớp Transaction
+[Normal] 
+[Normal] Bảng 2.18 Phương thức lớp Transaction
+[Normal] 
+[Heading 4] 4. Lớp NGÂN SÁCH – Budget
+[Normal] (Lớp kiểm soát rủi ro chi tiêu)
+[Normal] 
+[Normal] Bảng 2.19 Thuộc tính lớp Budget
+[Normal] 
+[Normal] Bảng 2.20 Phương thức lớp Budget
+[Normal] 
+[Heading 4] 5. Lớp MỤC TIÊU TIẾT KIỆM – SavingsGoal
+[Normal] (Lớp quản lý tích lũy dài hạn)
+[Normal] 
+[Normal] Bảng 2.21 Thuộc tính lớp SavingsGoal
+[Normal] 
+[Normal] Bảng 2.22 Phương thức lớp SavingsGoal
+[Normal] 
+[Heading 4] 6. Lớp TRỢ LÝ AI – AIAssistant
+[Normal] Bảng 2.23 Thuộc tính lớp AIAssistant
+[Normal] Bảng 2.24 Phương thức lớp AIAssistant
+[Normal] 
+[Heading 4] 7. Lớp HÓA ĐƠN OCR – OCRReceipt
+[Normal] 
+[Normal] Bảng 2.25 Thuộc tính lớp OCRReceipt
+[Normal] 
+[Normal] Bảng 2.26 Phương thức lớp OCRReceipt
+[Normal] 
+[Normal] 
+[Heading 3] 2.4.3 Bảng đặc tả mối quan hệ giữa các lớp
+[Normal] Bảng 2.27 Bảng đặc tả mối quan hệ giữa các lớp hệ thống
+[Normal] 
+[Normal] 
+[Normal] 
+[Heading 3] 2.4.4 Biểu đồ sơ đô lớp 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Heading 3] 2.4.5 Sơ đồ thực thể liên kết: 
+[Heading 3] 
+[Normal] 
+[Normal] 
+[Normal] 
+[Normal] 
