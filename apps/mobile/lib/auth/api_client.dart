@@ -573,12 +573,13 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
     }
     final uri = Uri.parse('$baseUrl$path');
     final encodedBody = body == null ? null : jsonEncode(body);
-    final responseFuture = switch (method) {
+    final responseFuture = switch (method.toUpperCase()) {
       'POST' => _client.post(uri, headers: headers, body: encodedBody),
       'GET' => _client.get(uri, headers: headers),
+      'PUT' => _client.put(uri, headers: headers, body: encodedBody),
       'PATCH' => _client.patch(uri, headers: headers, body: encodedBody),
       'DELETE' => _client.delete(uri, headers: headers),
-      _ => throw ArgumentError('Unsupported HTTP method'),
+      _ => throw ArgumentError('Unsupported HTTP method: $method'),
     };
     final response = await responseFuture;
     return response;
