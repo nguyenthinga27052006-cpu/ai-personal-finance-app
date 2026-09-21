@@ -35,8 +35,41 @@ class AuthController extends ChangeNotifier {
     return _authenticate(() => _api.login(email, password));
   }
 
-  Future<bool> register(String email, String password, String? displayName) async {
-    return _authenticate(() => _api.register(email, password, displayName));
+  Future<bool> register(
+    String email,
+    String password,
+    String? displayName, {
+    String? securityPin,
+  }) async {
+    return _authenticate(
+      () => _api.register(email, password, displayName, securityPin: securityPin),
+    );
+  }
+
+  Future<bool> resetPasswordWithPin(
+    String email,
+    String pin,
+    String newPassword,
+  ) async {
+    return _authenticate(
+      () => _api.resetPasswordWithPin(email, pin, newPassword),
+    );
+  }
+
+  Future<bool> updateSecurityPin(
+    String currentPassword,
+    String newPin,
+  ) async {
+    try {
+      await _api.updateSecurityPin(currentPassword, newPin);
+      errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (error) {
+      errorMessage = error.toString();
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<void> refresh() async {

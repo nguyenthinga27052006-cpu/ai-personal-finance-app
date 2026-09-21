@@ -32,8 +32,11 @@ def client():
         with factory() as db:
             yield db
 
+    from app.auth.rate_limit import get_auth_rate_limiter
+
     app.dependency_overrides.clear()
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_auth_rate_limiter] = lambda: InMemoryAuthRateLimiter(max_attempts=1000, window_seconds=60)
     with TestClient(app) as test_client:
         yield test_client, factory
     app.dependency_overrides.clear()
@@ -184,3 +187,98 @@ def test_password_hash_and_rate_limiter():
     assert limiter.allow("ip")
     assert limiter.allow("ip")
     assert not limiter.allow("ip")
+
+
+def test_register_with_security_pin_and_reset_password_flow(client):
+    test_client, _ = client
+    reg = test_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "pinuser@example.com",
+            "password": "old_password123",
+            "display_name": "PIN User",
+            "security_pin": "654321",
+        },
+    )
+    assert reg.status_code == 201
+
+    # Reset password with valid PIN
+    reset_res = test_client.post(
+        "/api/v1/auth/reset-password-with-pin",
+        json={
+            "email": "pinuser@example.com",
+            "security_pin": "654321",
+            "new_password": "new_secure_password123",
+        },
+    )
+    assert reset_res.status_code == 200
+    assert reset_res.json()["access_token"]
+
+    # Login with new password
+    login_new = test_client.post(
+        "/api/v1/auth/login",
+        json={"email": "pinuser@example.com", "password": "new_secure_password123"},
+    )
+    assert login_new.status_code == 200
+
+
+def test_reset_password_with_invalid_pin_or_missing_pin(client):
+    test_client, _ = client
+    register(test_client, email="nopin@example.com")
+
+    # User without PIN tries reset
+    reset_no_pin = test_client.post(
+        "/api/v1/auth/reset-password-with-pin",
+        json={
+            "email": "nopin@example.com",
+            "security_pin": "123456",
+            "new_password": "new_password123",
+        },
+    )
+    assert reset_no_pin.status_code == 401
+
+    # Register user with PIN and try invalid PIN
+    test_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "haspin@example.com",
+            "password": "password123",
+            "display_name": "Has PIN",
+            "security_pin": "112233",
+        },
+    )
+    reset_wrong_pin = test_client.post(
+        "/api/v1/auth/reset-password-with-pin",
+        json={
+            "email": "haspin@example.com",
+            "security_pin": "999999",
+            "new_password": "new_password123",
+        },
+    )
+    assert reset_wrong_pin.status_code == 401
+
+
+def test_update_security_pin_authenticated_flow(client):
+    test_client, _ = client
+    auth = register(test_client, email="updatepin@example.com")
+    headers = {"Authorization": f"Bearer {auth['access_token']}"}
+
+    # Update PIN
+    update_res = test_client.post(
+        "/api/v1/auth/update-pin",
+        headers=headers,
+        json={"current_password": "correct horse battery staple", "new_pin": "888999"},
+    )
+    assert update_res.status_code == 200
+    assert update_res.json()["message"] == "Mã PIN 6 số đã được cập nhật thành công"
+
+    # Verify reset works with new PIN
+    reset_res = test_client.post(
+        "/api/v1/auth/reset-password-with-pin",
+        json={
+            "email": "updatepin@example.com",
+            "security_pin": "888999",
+            "new_password": "brand_new_password123",
+        },
+    )
+    assert reset_res.status_code == 200

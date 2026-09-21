@@ -64,6 +64,7 @@ class _AuthPageState extends State<_AuthPage> {
   final email = TextEditingController();
   final password = TextEditingController();
   final displayName = TextEditingController();
+  final securityPin = TextEditingController();
   bool registerMode = false;
 
   @override
@@ -71,6 +72,7 @@ class _AuthPageState extends State<_AuthPage> {
     email.dispose();
     password.dispose();
     displayName.dispose();
+    securityPin.dispose();
     super.dispose();
   }
 
@@ -94,6 +96,9 @@ class _AuthPageState extends State<_AuthPage> {
             emailText,
             passwordText,
             displayName.text.trim(),
+            securityPin: securityPin.text.trim().isNotEmpty
+                ? securityPin.text.trim()
+                : null,
           )
         : await widget.controller.login(emailText, passwordText);
     debugPrint(
@@ -109,6 +114,16 @@ class _AuthPageState extends State<_AuthPage> {
         ),
       );
     }
+  }
+
+  void _showForgotPasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => _ForgotPasswordDialog(
+        initialEmail: email.text.trim(),
+        controller: widget.controller,
+      ),
+    );
   }
 
   @override
@@ -152,11 +167,24 @@ class _AuthPageState extends State<_AuthPage> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  if (registerMode)
+                  if (registerMode) ...[
                     TextField(
                       controller: displayName,
                       decoration: const InputDecoration(labelText: 'Name'),
                     ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: securityPin,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      decoration: const InputDecoration(
+                        labelText: 'Security PIN (6 chữ số - Dùng để khôi phục)',
+                        counterText: '',
+                        prefixIcon: Icon(Icons.pin),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   TextField(
                     controller: email,
                     keyboardType: TextInputType.emailAddress,
@@ -170,7 +198,16 @@ class _AuthPageState extends State<_AuthPage> {
                     onSubmitted: (_) => loading ? null : submit(),
                     decoration: const InputDecoration(labelText: 'Password'),
                   ),
-                  const SizedBox(height: 20),
+                  if (!registerMode) ...[
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _showForgotPasswordDialog,
+                        child: const Text('Quên mật khẩu?'),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -217,6 +254,166 @@ class _AuthPageState extends State<_AuthPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ForgotPasswordDialog extends StatefulWidget {
+  const _ForgotPasswordDialog({
+    required this.initialEmail,
+    required this.controller,
+  });
+
+  final String initialEmail;
+  final AuthController controller;
+
+  @override
+  State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+}
+
+class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
+  late final TextEditingController emailController;
+  final pinController = TextEditingController();
+  final newPasswordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+  bool submitting = false;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    emailController = TextEditingController(text: widget.initialEmail);
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    pinController.dispose();
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitReset() async {
+    final email = emailController.text.trim();
+    final pin = pinController.text.trim();
+    final newPass = newPasswordController.text;
+    final confirmPass = confirmPasswordController.text;
+
+    if (email.isEmpty || pin.length != 6 || newPass.isEmpty) {
+      setState(() {
+        error = 'Vui lòng nhập đầy đủ Email, Mã PIN (6 số) và Mật khẩu mới!';
+      });
+      return;
+    }
+
+    if (newPass != confirmPass) {
+      setState(() {
+        error = 'Mật khẩu xác nhận không khớp!';
+      });
+      return;
+    }
+
+    setState(() {
+      submitting = true;
+      error = null;
+    });
+
+    final success = await widget.controller.resetPasswordWithPin(
+      email,
+      pin,
+      newPass,
+    );
+
+    if (mounted) {
+      if (success) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.green,
+            content: Text('Đổi mật khẩu thành công và đã tự động đăng nhập!'),
+          ),
+        );
+      } else {
+        setState(() {
+          submitting = false;
+          error = widget.controller.errorMessage ?? 'Khôi phục mật khẩu thất bại';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Khôi phục mật khẩu bằng PIN'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (error != null) ...[
+              Text(
+                error!,
+                style: const TextStyle(color: Colors.red, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+            ],
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email đã đăng ký',
+                prefixIcon: Icon(Icons.email),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: pinController,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: const InputDecoration(
+                labelText: 'Mã PIN 6 số bảo mật',
+                counterText: '',
+                prefixIcon: Icon(Icons.pin),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newPasswordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Mật khẩu mới (tối thiểu 8 ký tự)',
+                prefixIcon: Icon(Icons.lock),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmPasswordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Xác nhận mật khẩu mới',
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: submitting ? null : () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        FilledButton(
+          onPressed: submitting ? null : _submitReset,
+          child: submitting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Text('Đổi mật khẩu & Đăng nhập'),
+        ),
+      ],
     );
   }
 }

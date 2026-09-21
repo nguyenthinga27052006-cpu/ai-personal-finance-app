@@ -203,6 +203,14 @@ class _SettingsDialogState extends State<SettingsDialog>
               _showChangePasswordDialog(context, controller);
             },
           ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.pin),
+            label: const Text('Đổi / Tạo mã PIN 6 số'),
+            onPressed: () {
+              _showUpdatePinDialog(context);
+            },
+          ),
           if (!isAdmin) ...[
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -491,6 +499,117 @@ class _SettingsDialogState extends State<SettingsDialog>
                         ),
                       )
                     : Text(controller.tr('save')),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showUpdatePinDialog(BuildContext context) {
+    final currentPassController = TextEditingController();
+    final newPinController = TextEditingController();
+    String? errorMsg;
+    bool loading = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Đổi / Tạo mã PIN 6 số'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (errorMsg != null)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        errorMsg!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  TextField(
+                    controller: currentPassController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Mật khẩu hiện tại',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: newPinController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    decoration: const InputDecoration(
+                      labelText: 'Mã PIN 6 số mới',
+                      counterText: '',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.pin),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: loading ? null : () => Navigator.of(ctx).pop(),
+                child: const Text('Hủy'),
+              ),
+              FilledButton(
+                onPressed: loading
+                    ? null
+                    : () async {
+                        final currentPass = currentPassController.text.trim();
+                        final newPin = newPinController.text.trim();
+
+                        if (currentPass.isEmpty || newPin.length != 6) {
+                          setDialogState(() {
+                            errorMsg = 'Vui lòng nhập mật khẩu và đủ 6 chữ số cho Mã PIN';
+                          });
+                          return;
+                        }
+
+                        setDialogState(() {
+                          loading = true;
+                          errorMsg = null;
+                        });
+
+                        try {
+                          if (widget.api is ApiClient) {
+                            await (widget.api as ApiClient).updateSecurityPin(currentPass, newPin);
+                          }
+                          if (ctx.mounted) {
+                            Navigator.of(ctx).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: Colors.green,
+                                content: Text('Đổi mã PIN 6 số thành công!'),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          setDialogState(() {
+                            loading = false;
+                            errorMsg = e.toString().replaceFirst('Exception: ', '');
+                          });
+                        }
+                      },
+                child: loading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Cập nhật'),
               ),
             ],
           );

@@ -48,4 +48,6 @@ tmp/
 temp/
 scratch_*.txt
 *.scratch
+*.egg-info/
+MP4/
 docs/qa/Untitled-*

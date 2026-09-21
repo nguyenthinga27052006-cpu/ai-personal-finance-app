@@ -15,6 +15,8 @@ from app.auth.schemas import (
     MessageResponse,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordWithPinRequest,
+    UpdatePinRequest,
     UserResponse,
 )
 from app.auth.security import decode_access_token
@@ -26,7 +28,9 @@ from app.auth.service import (
     create_session,
     issue_auth_response,
     register_user,
+    reset_password_with_pin,
     rotate_session,
+    update_user_security_pin,
 )
 from app.db.models import DeviceSession
 from app.db.session import get_db
@@ -65,7 +69,12 @@ def register(
         raise rate_limit_error()
     try:
         user, session, refresh_token = register_user(
-            db, payload.email, payload.password, payload.display_name, **request_metadata(request)
+            db,
+            payload.email,
+            payload.password,
+            payload.display_name,
+            security_pin=payload.security_pin,
+            **request_metadata(request),
         )
         db.commit()
     except InvalidCredentialsError as exc:
@@ -93,6 +102,41 @@ def login(
     session, refresh_token = create_session(db, user, **request_metadata(request))
     db.commit()
     return issue_auth_response(user, session, refresh_token)
+
+
+@router.post("/reset-password-with-pin", response_model=AuthResponse)
+def reset_password_with_pin_endpoint(
+    payload: ResetPasswordWithPinRequest,
+    request: Request,
+    db: DbSession,
+    limiter: Limiter,
+) -> dict[str, object]:
+    key = f"reset_pin:{payload.email}:{request.client.host if request.client else 'unknown'}"
+    if not limiter.allow(key):
+        raise rate_limit_error()
+    try:
+        user = reset_password_with_pin(db, payload.email, payload.security_pin, payload.new_password)
+        session, refresh_token = create_session(db, user, **request_metadata(request))
+        db.commit()
+    except InvalidCredentialsError as exc:
+        db.rollback()
+        raise auth_error("invalid_pin_reset", str(exc) or "Mã PIN hoặc Email không chính xác") from exc
+    return issue_auth_response(user, session, refresh_token)
+
+
+@router.post("/update-pin", response_model=MessageResponse)
+def update_pin_endpoint(
+    payload: UpdatePinRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> MessageResponse:
+    try:
+        update_user_security_pin(db, current_user, payload.current_password, payload.new_pin)
+        db.commit()
+    except InvalidCredentialsError as exc:
+        db.rollback()
+        raise auth_error("invalid_credentials", str(exc) or "Mật khẩu hiện tại không chính xác") from exc
+    return MessageResponse(message="Mã PIN 6 số đã được cập nhật thành công")
 
 
 @router.post("/refresh", response_model=AuthResponse)

@@ -14,7 +14,19 @@ abstract interface class AuthGateway {
   Future<AuthResult> register(
     String email,
     String password,
-    String? displayName,
+    String? displayName, {
+    String? securityPin,
+  });
+
+  Future<AuthResult> resetPasswordWithPin(
+    String email,
+    String pin,
+    String newPassword,
+  );
+
+  Future<void> updateSecurityPin(
+    String currentPassword,
+    String newPin,
   );
 
   Future<AuthResult> refresh();
@@ -117,13 +129,52 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
   Future<AuthResult> register(
     String email,
     String password,
-    String? displayName,
-  ) async {
+    String? displayName, {
+    String? securityPin,
+  }) async {
     return _authRequest(
       '/api/v1/auth/register',
       email,
       password,
       displayName: displayName,
+      securityPin: securityPin,
+    );
+  }
+
+  @override
+  Future<AuthResult> resetPasswordWithPin(
+    String email,
+    String pin,
+    String newPassword,
+  ) async {
+    final fullUrl = '$baseUrl/api/v1/auth/reset-password-with-pin';
+    debugPrint('API_RESET_PIN_REQUEST start url=$fullUrl email=$email');
+    final response = await _client
+        .post(
+          Uri.parse(fullUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'email': email,
+            'security_pin': pin,
+            'new_password': newPassword,
+          }),
+        )
+        .timeout(const Duration(seconds: 15));
+    return await _parseAuth(response);
+  }
+
+  @override
+  Future<void> updateSecurityPin(
+    String currentPassword,
+    String newPin,
+  ) async {
+    await request(
+      'POST',
+      '/api/v1/auth/update-pin',
+      body: {
+        'current_password': currentPassword,
+        'new_pin': newPin,
+      },
     );
   }
 
@@ -132,6 +183,7 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
     String email,
     String password, {
     String? displayName,
+    String? securityPin,
   }) async {
     final fullUrl = '$baseUrl$path';
     debugPrint('API_AUTH_REQUEST start url=$fullUrl email=$email');
@@ -145,6 +197,8 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
               'password': password,
               if (displayName != null && displayName.isNotEmpty)
                 'display_name': displayName,
+              if (securityPin != null && securityPin.isNotEmpty)
+                'security_pin': securityPin,
             }),
           )
           .timeout(const Duration(seconds: 15));

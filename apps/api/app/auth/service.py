@@ -12,8 +12,10 @@ from app.auth.security import (
     create_access_token,
     generate_refresh_token,
     hash_password,
+    hash_pin,
     hash_refresh_token,
     verify_password,
+    verify_pin,
 )
 from app.core.config import get_settings
 from app.db.models import DeviceSession, User, UserStatus
@@ -74,11 +76,13 @@ def register_user(
     email: str,
     password: str,
     display_name: str | None,
+    security_pin: str | None = None,
     **metadata: str | None,
 ) -> tuple[User, DeviceSession, str]:
     user = User(
         email=email,
         password_hash=hash_password(password),
+        security_pin_hash=hash_pin(security_pin) if security_pin else None,
         display_name=display_name,
         status=UserStatus.ACTIVE.value,
     )
@@ -99,6 +103,32 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     if user.status != UserStatus.ACTIVE.value:
         raise InvalidCredentialsError
     return user
+
+
+def reset_password_with_pin(
+    db: Session, email: str, pin: str, new_password: str
+) -> User:
+    user = db.scalar(select(User).where(User.email == email))
+    if user is None or not user.security_pin_hash:
+        raise InvalidCredentialsError("Thông tin xác thực không hợp lệ hoặc tài khoản chưa đặt mã PIN")
+    if not verify_pin(pin, user.security_pin_hash):
+        raise InvalidCredentialsError("Mã PIN bảo mật không chính xác")
+    if user.status != UserStatus.ACTIVE.value:
+        raise InvalidCredentialsError("Tài khoản đang bị khóa hoặc không hoạt động")
+    user.password_hash = hash_password(new_password)
+    db.add(user)
+    db.flush()
+    return user
+
+
+def update_user_security_pin(
+    db: Session, user: User, current_password: str, new_pin: str
+) -> None:
+    if not verify_password(current_password, user.password_hash):
+        raise InvalidCredentialsError("Mật khẩu hiện tại không chính xác")
+    user.security_pin_hash = hash_pin(new_pin)
+    db.add(user)
+    db.flush()
 
 
 def change_password_user(db: Session, user: User, current_password: str, new_password: str) -> None:

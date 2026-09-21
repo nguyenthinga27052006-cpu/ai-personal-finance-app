@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -36,6 +37,26 @@ def validate_password(password: str) -> str:
 
 def hash_password(password: str) -> str:
     return PASSWORD_HASHER.hash(validate_password(password))
+
+
+PIN_PATTERN = re.compile(r"^\d{6}$")
+
+
+def validate_pin(pin: str) -> str:
+    if not isinstance(pin, str) or not PIN_PATTERN.match(pin):
+        raise ValueError("Security PIN must be exactly 6 digits")
+    return pin
+
+
+def hash_pin(pin: str) -> str:
+    return PASSWORD_HASHER.hash(validate_pin(pin))
+
+
+def verify_pin(pin: str, pin_hash: str) -> bool:
+    try:
+        return PASSWORD_HASHER.verify(pin, pin_hash)
+    except (TypeError, ValueError):
+        return False
 
 
 def verify_password(password: str, password_hash: str) -> bool:

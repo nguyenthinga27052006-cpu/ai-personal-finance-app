@@ -112,6 +112,7 @@ class User(IdMixin, TimestampMixin, Base):
     locale: Mapped[str] = mapped_column(String(16), nullable=False, default="vi-VN")
     role: Mapped[str] = mapped_column(String(32), nullable=False, default=UserRole.USER.value)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default=UserStatus.ACTIVE.value)
+    security_pin_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

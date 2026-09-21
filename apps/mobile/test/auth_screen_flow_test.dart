@@ -41,8 +41,9 @@ class MockAuthGateway implements AuthGateway {
   Future<AuthResult> register(
     String email,
     String password,
-    String? displayName,
-  ) async {
+    String? displayName, {
+    String? securityPin,
+  }) async {
     lastRegisterEmail = email;
     lastRegisterPassword = password;
     lastRegisterName = displayName;
@@ -55,6 +56,38 @@ class MockAuthGateway implements AuthGateway {
           );
     }
     return sampleResult;
+  }
+
+  @override
+  Future<AuthResult> resetPasswordWithPin(
+    String email,
+    String pin,
+    String newPassword,
+  ) async {
+    if (shouldFail) {
+      throw errorToThrow ??
+          const ApiException(
+            statusCode: 400,
+            code: 'invalid_pin',
+            message: 'Mã PIN bảo mật không chính xác',
+          );
+    }
+    return sampleResult;
+  }
+
+  @override
+  Future<void> updateSecurityPin(
+    String currentPassword,
+    String newPin,
+  ) async {
+    if (shouldFail) {
+      throw errorToThrow ??
+          const ApiException(
+            statusCode: 400,
+            code: 'invalid_password',
+            message: 'Mật khẩu hiện tại không đúng',
+          );
+    }
   }
 
   @override
@@ -129,6 +162,25 @@ void main() {
     await tester.pump();
 
     expect(find.text('Create account'), findsOneWidget);
-    expect(find.byType(TextField), findsNWidgets(3));
+    expect(find.byType(TextField), findsNWidgets(4));
+  });
+
+  testWidgets('opens forgot password dialog on Quên mật khẩu tap', (
+    tester,
+  ) async {
+    final gateway = MockAuthGateway();
+
+    await tester.pumpWidget(MaterialApp(home: AuthApp(api: gateway)));
+    await tester.pump();
+
+    final forgotButton = find.widgetWithText(TextButton, 'Quên mật khẩu?');
+    expect(forgotButton, findsOneWidget);
+    await tester.tap(forgotButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Khôi phục mật khẩu bằng PIN'), findsOneWidget);
+    expect(find.text('Email đã đăng ký'), findsOneWidget);
+    expect(find.text('Mã PIN 6 số bảo mật'), findsOneWidget);
+    expect(find.text('Mật khẩu mới (tối thiểu 8 ký tự)'), findsOneWidget);
   });
 }

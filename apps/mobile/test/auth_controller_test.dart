@@ -15,7 +15,25 @@ class FakeAuthGateway implements AuthGateway {
   Future<AuthResult> login(String email, String password) async => result;
 
   @override
-  Future<AuthResult> register(String email, String password, String? displayName) async => result;
+  Future<AuthResult> register(
+    String email,
+    String password,
+    String? displayName, {
+    String? securityPin,
+  }) async => result;
+
+  @override
+  Future<AuthResult> resetPasswordWithPin(
+    String email,
+    String pin,
+    String newPassword,
+  ) async => result;
+
+  @override
+  Future<void> updateSecurityPin(
+    String currentPassword,
+    String newPin,
+  ) async {}
 
   @override
   Future<AuthResult> refresh() async {
