@@ -20,9 +20,9 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_host: str = "0.0.0.0"
     app_port: int = Field(default=8000, ge=1, le=65535)
-    database_url: str
+    database_url: str = "postgresql://finance:finance-dev-password@postgres:5432/finance"
     host_database_url: str | None = None
-    redis_url: str
+    redis_url: str = "redis://redis:6379/0"
     log_level: str = "INFO"
     jwt_secret: str = "development-only-change-me-32-bytes-minimum"
     jwt_issuer: str = "ai-personal-finance-api"
