@@ -75,9 +75,7 @@ def test_budget_thresholds_and_deduplication(client):  # noqa: F811
     _expense(test_client, auth, account_data["id"], 9_000, "notification-budget")
     with factory() as db:
         user = db.get(User, auth["user"]["id"])
-        candidates = notification_candidates(
-            db, user, date(2026, 9, 1), date(2026, 9, 30), "VND"
-        )
+        candidates = notification_candidates(db, user, date(2026, 9, 1), date(2026, 9, 30), "VND")
         budget_candidate = next(
             item
             for item in candidates
@@ -85,14 +83,25 @@ def test_budget_thresholds_and_deduplication(client):  # noqa: F811
         )
         assert budget_candidate["rule_id"] == "budget_90"
         created = evaluate_notifications(
-            db, user, date(2026, 9, 1), date(2026, 9, 30), "VND",
+            db,
+            user,
+            date(2026, 9, 1),
+            date(2026, 9, 30),
+            "VND",
             now=datetime(2026, 9, 3, 12, tzinfo=timezone.utc),
         )
         assert {item.rule_id for item in created} == {"budget_80", "budget_90"}
-        assert evaluate_notifications(
-            db, user, date(2026, 9, 1), date(2026, 9, 30), "VND",
-            now=datetime(2026, 9, 3, 12, tzinfo=timezone.utc),
-        ) == []
+        assert (
+            evaluate_notifications(
+                db,
+                user,
+                date(2026, 9, 1),
+                date(2026, 9, 30),
+                "VND",
+                now=datetime(2026, 9, 3, 12, tzinfo=timezone.utc),
+            )
+            == []
+        )
 
 
 def test_preferences_quiet_hours_cap_and_critical_bypass(client):  # noqa: F811
@@ -113,12 +122,20 @@ def test_preferences_quiet_hours_cap_and_critical_bypass(client):  # noqa: F811
     with factory() as db:
         user = db.get(User, auth["user"]["id"])
         created = evaluate_notifications(
-            db, user, date(2026, 9, 1), date(2026, 9, 30), "VND",
+            db,
+            user,
+            date(2026, 9, 1),
+            date(2026, 9, 30),
+            "VND",
             now=datetime(2026, 9, 3, 12, tzinfo=timezone.utc),
         )
         assert created == []
         created = evaluate_notifications(
-            db, user, date(2026, 9, 1), date(2026, 9, 30), "VND",
+            db,
+            user,
+            date(2026, 9, 1),
+            date(2026, 9, 30),
+            "VND",
             now=datetime(2026, 9, 3, 12, tzinfo=timezone.utc),
         )
         assert created == []
@@ -138,7 +155,11 @@ def test_notification_api_read_events_and_cross_user_denial(client):  # noqa: F8
     with factory() as db:
         user = db.get(User, auth["user"]["id"])
         created = evaluate_notifications(
-            db, user, date(2026, 9, 1), date(2026, 9, 30), "VND",
+            db,
+            user,
+            date(2026, 9, 1),
+            date(2026, 9, 30),
+            "VND",
             now=datetime.now(timezone.utc),
         )
         db.commit()
@@ -147,12 +168,13 @@ def test_notification_api_read_events_and_cross_user_denial(client):  # noqa: F8
     assert listing.status_code == 200
     assert listing.json()["unread"] == 3
     other = register(test_client)
-    assert test_client.post(
-        f"/api/v1/notifications/{notification_id}/read", headers=headers(other)
-    ).status_code == 404
-    read = test_client.post(
-        f"/api/v1/notifications/{notification_id}/read", headers=headers(auth)
+    assert (
+        test_client.post(
+            f"/api/v1/notifications/{notification_id}/read", headers=headers(other)
+        ).status_code
+        == 404
     )
+    read = test_client.post(f"/api/v1/notifications/{notification_id}/read", headers=headers(auth))
     assert read.status_code == 200
     assert read.json()["read_at"] is not None
     event = test_client.post(
@@ -182,9 +204,7 @@ def test_recurring_payment_is_fail_closed(client):  # noqa: F811
 def test_canonical_insights_feed_notifications(canonical_analytics_fixture):  # noqa: F811
     test_client, auth, _ = canonical_analytics_fixture
     with test_client as active_client:
-        response = active_client.get(
-            "/api/v1/notifications", headers=headers(auth)
-        )
+        response = active_client.get("/api/v1/notifications", headers=headers(auth))
     assert response.status_code == 200
 
 
@@ -209,7 +229,11 @@ def test_quiet_hours_midnight_crossing_and_critical_bypass(client):  # noqa: F81
         assert _in_quiet_hours(user, preference, datetime(2026, 9, 4, 6, 30, tzinfo=timezone.utc))
         assert not _in_quiet_hours(user, preference, datetime(2026, 9, 4, 12, tzinfo=timezone.utc))
         created = evaluate_notifications(
-            db, user, date(2026, 9, 1), date(2026, 9, 30), "VND",
+            db,
+            user,
+            date(2026, 9, 1),
+            date(2026, 9, 30),
+            "VND",
             now=datetime(2026, 9, 3, 23, 30, tzinfo=timezone.utc),
         )
         assert {item.rule_id for item in created} == {"budget_100"}

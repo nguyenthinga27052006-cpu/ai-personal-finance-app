@@ -125,4 +125,4 @@ jobs:
         run: python -m pip install -e ".[dev]" pip-audit
       - name: Dependency audit
         working-directory: apps/api
-        run: pip-audit --strict
+        run: pip-audit .

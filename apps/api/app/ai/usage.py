@@ -15,7 +15,9 @@ class AIUsageLimitExceeded(Exception):
 
 
 class TokenLimitExceeded(AIUsageLimitExceeded):
-    def __init__(self, message: str = "Daily token limit exceeded", *, retry_after: int = 86400) -> None:
+    def __init__(
+        self, message: str = "Daily token limit exceeded", *, retry_after: int = 86400
+    ) -> None:
         super().__init__(message, retry_after=retry_after)
         self.code = "DAILY_TOKEN_LIMIT_EXCEEDED"
 
@@ -117,4 +119,3 @@ def get_ai_usage_budget() -> InMemoryAIUsageBudget:
 
 def get_token_budget_tracker() -> TokenBudgetTracker:
     return _token_budget_tracker
-

@@ -27,4 +27,3 @@ def seed_super_admin(session: Session) -> User:
     session.commit()
     session.refresh(admin)
     return admin
-

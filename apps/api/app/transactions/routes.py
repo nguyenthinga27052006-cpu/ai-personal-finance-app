@@ -219,4 +219,3 @@ def delete_route(transaction_id: str, current_user: CurrentUser, db: DbSession) 
     except TransactionError as exc:
         db.rollback()
         raise domain_error(exc) from exc
-

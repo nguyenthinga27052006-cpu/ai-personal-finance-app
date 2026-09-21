@@ -21,6 +21,7 @@ from app.db.models.finance import (
     NotificationEvent,
     Recommendation,
     RecommendationEvent,
+    SystemSetting,
     Transaction,
     TransactionEntry,
     TransactionItem,
@@ -32,7 +33,6 @@ from app.db.models.finance import (
     UserRole,
     UserSetting,
     UserStatus,
-    SystemSetting,
 )
 
 __all__ = [
@@ -58,6 +58,7 @@ __all__ = [
     "NotificationEvent",
     "Recommendation",
     "RecommendationEvent",
+    "SystemSetting",
     "Transaction",
     "TransactionEntry",
     "TransactionItem",
@@ -70,5 +71,3 @@ __all__ = [
     "UserStatus",
     "UserSetting",
 ]
-
-

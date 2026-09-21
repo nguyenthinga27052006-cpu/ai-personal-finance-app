@@ -124,4 +124,3 @@ SEED_KNOWLEDGE_DOCUMENTS: list[KnowledgeDocument] = [
         ),
     ),
 ]
-

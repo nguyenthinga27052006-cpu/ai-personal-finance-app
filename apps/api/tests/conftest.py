@@ -24,12 +24,12 @@ def _load_repository_environment() -> None:
 _load_repository_environment()
 
 
-import pytest
-import sqlalchemy as sa
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
+import pytest  # noqa: E402
+import sqlalchemy as sa  # noqa: E402
+from sqlalchemy.orm import Session, sessionmaker  # noqa: E402
+from sqlalchemy.pool import StaticPool  # noqa: E402
 
-from app.db.base import Base
+from app.db.base import Base  # noqa: E402
 
 
 @pytest.fixture
@@ -41,4 +41,4 @@ def db_session():
     factory = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)
     with factory() as session:
         yield session
-    engine.dispose()
+    engine.dispose()

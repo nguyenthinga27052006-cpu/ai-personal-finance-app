@@ -15,6 +15,7 @@ class RecommendationExplanationOutput(BaseModel):
     answer: str = Field(min_length=1, max_length=4000)
     citations: list[dict[str, Any]] = Field(default_factory=list)
 
+
 def explain_recommendation(
     candidate: dict[str, Any],
     *,

@@ -55,9 +55,7 @@ def test_register_login_and_me_do_not_expose_hash(client):
     assert "password_hash" not in auth["user"]
     assert auth["refresh_token"]
 
-    me = test_client.get(
-        "/api/v1/me", headers={"Authorization": f"Bearer {auth['access_token']}"}
-    )
+    me = test_client.get("/api/v1/me", headers={"Authorization": f"Bearer {auth['access_token']}"})
     assert me.status_code == 200
     assert me.json()["email"] == "person@example.com"
 
@@ -94,9 +92,11 @@ def test_wrong_and_nonexistent_login_have_same_error(client):
         "/api/v1/auth/login", json={"email": "missing@example.com", "password": "wrong password"}
     )
     assert wrong.status_code == missing.status_code == 401
-    assert wrong.json() == missing.json() == {
-        "detail": {"code": "invalid_credentials", "message": "Invalid credentials"}
-    }
+    assert (
+        wrong.json()
+        == missing.json()
+        == {"detail": {"code": "invalid_credentials", "message": "Invalid credentials"}}
+    )
 
 
 def test_refresh_rotates_and_old_token_is_rejected(client):
@@ -131,9 +131,12 @@ def test_logout_revokes_current_session_and_protected_access(client):
 def test_malformed_expired_and_invalid_tokens_are_denied(client):
     test_client, _ = client
     assert test_client.get("/api/v1/me").status_code == 401
-    assert test_client.get(
-        "/api/v1/me", headers={"Authorization": "Bearer not-a-token"}
-    ).json()["detail"]["code"] == "invalid_token"
+    assert (
+        test_client.get("/api/v1/me", headers={"Authorization": "Bearer not-a-token"}).json()[
+            "detail"
+        ]["code"]
+        == "invalid_token"
+    )
     settings = get_settings()
     expired = jwt.encode(
         {
@@ -165,9 +168,12 @@ def test_disabled_user_cannot_login_or_use_token(client):
         json={"email": "person@example.com", "password": "correct horse battery staple"},
     )
     assert login.status_code == 401
-    assert test_client.get(
-        "/api/v1/me", headers={"Authorization": f"Bearer {auth['access_token']}"}
-    ).status_code == 401
+    assert (
+        test_client.get(
+            "/api/v1/me", headers={"Authorization": f"Bearer {auth['access_token']}"}
+        ).status_code
+        == 401
+    )
 
 
 def test_password_hash_and_rate_limiter():

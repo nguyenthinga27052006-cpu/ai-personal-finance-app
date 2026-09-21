@@ -23,7 +23,7 @@ DbSession = Annotated[Session, Depends(get_db)]
 
 
 def _active_filter(now: datetime):
-    return (Notification.expires_at.is_(None) | (Notification.expires_at > now))
+    return Notification.expires_at.is_(None) | (Notification.expires_at > now)
 
 
 @router.get("/notifications", response_model=NotificationListResponse)
@@ -46,13 +46,16 @@ def list_notifications(
         .limit(limit)
     ).all()
     total = db.scalar(select(func.count(Notification.id)).where(*filters)) or 0
-    unread = db.scalar(
-        select(func.count(Notification.id)).where(
-            Notification.user_id == current_user.id,
-            _active_filter(now),
-            Notification.read_at.is_(None),
+    unread = (
+        db.scalar(
+            select(func.count(Notification.id)).where(
+                Notification.user_id == current_user.id,
+                _active_filter(now),
+                Notification.read_at.is_(None),
+            )
         )
-    ) or 0
+        or 0
+    )
     return NotificationListResponse(items=items, total=total, unread=unread)
 
 

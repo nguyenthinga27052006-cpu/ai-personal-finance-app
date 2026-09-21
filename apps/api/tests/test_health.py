@@ -30,4 +30,3 @@ def test_cors_preflight_options_request() -> None:
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
-

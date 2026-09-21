@@ -46,9 +46,7 @@ def test_empty_evidence_and_recurring_recommendation_fail_closed(client):  # noq
     auth = register(test_client)
     with factory() as db:
         user = db.get(User, auth["user"]["id"])
-        candidates = generate_candidates(
-            db, user, date(2026, 8, 1), date(2026, 8, 31), "VND"
-        )
+        candidates = generate_candidates(db, user, date(2026, 8, 1), date(2026, 8, 31), "VND")
         assert candidates == []
         assert all(item.type != "REVIEW_RECURRING_EXPENSE" for item in candidates)
 
@@ -61,21 +59,27 @@ def test_accept_dismiss_feedback_and_cross_user_isolation(canonical_analytics_fi
         params={"start": "2026-08-01", "end": "2026-08-31"},
     ).json()
     recommendation_id = listing["items"][0]["id"]
-    balance_before = test_client.get(
-        "/api/v1/accounts", headers=headers(auth)
-    ).json()["items"][0]["current_balance"]
+    balance_before = test_client.get("/api/v1/accounts", headers=headers(auth)).json()["items"][0][
+        "current_balance"
+    ]
     other = register(test_client)
-    assert test_client.post(
-        f"/api/v1/recommendations/{recommendation_id}/accept", headers=headers(other)
-    ).status_code == 404
+    assert (
+        test_client.post(
+            f"/api/v1/recommendations/{recommendation_id}/accept", headers=headers(other)
+        ).status_code
+        == 404
+    )
     accepted = test_client.post(
         f"/api/v1/recommendations/{recommendation_id}/accept", headers=headers(auth)
     )
     assert accepted.status_code == 200
     assert accepted.json()["status"] == ACCEPTED
-    assert test_client.get(
-        "/api/v1/accounts", headers=headers(auth)
-    ).json()["items"][0]["current_balance"] == balance_before
+    assert (
+        test_client.get("/api/v1/accounts", headers=headers(auth)).json()["items"][0][
+            "current_balance"
+        ]
+        == balance_before
+    )
 
     remaining = test_client.get(
         "/api/v1/recommendations",
@@ -119,8 +123,11 @@ def test_recommendation_events_and_source_database_row(canonical_analytics_fixtu
     )
     assert event.status_code == 201
     with test_client as active_client:
-        assert active_client.get(
-            f"/api/v1/recommendations/{item['id']}",
-            headers=headers(auth),
-            params={"start": "2026-08-01", "end": "2026-08-31"},
-        ).status_code == 200
+        assert (
+            active_client.get(
+                f"/api/v1/recommendations/{item['id']}",
+                headers=headers(auth),
+                params={"start": "2026-08-01", "end": "2026-08-31"},
+            ).status_code
+            == 200
+        )

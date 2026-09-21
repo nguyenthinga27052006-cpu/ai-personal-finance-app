@@ -71,8 +71,7 @@ def analyze_spending(facts: dict[str, Any]) -> SpendingAnalysisResult:
         answer=answer,
         source_facts=source_facts,
         estimate=(
-            "ESTIMATE: pattern interpretation may change as more canonical data "
-            "becomes available."
+            "ESTIMATE: pattern interpretation may change as more canonical data becomes available."
         ),
     )
 

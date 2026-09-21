@@ -157,11 +157,17 @@ class AIGateway:
         except (TypeError, ValueError) as exc:
             logger.error("Provider returned malformed JSON: %s (content: %r)", exc, content)
             raise StructuredOutputError("Provider returned malformed JSON") from exc
-        if isinstance(value, dict) and "citations" in value and isinstance(value["citations"], list):
+        if (
+            isinstance(value, dict)
+            and "citations" in value
+            and isinstance(value["citations"], list)
+        ):
             normalized_citations = []
             for item in value["citations"]:
                 if isinstance(item, str):
-                    normalized_citations.append({"source": item, "calculation_type": "llm_citation"})
+                    normalized_citations.append(
+                        {"source": item, "calculation_type": "llm_citation"}
+                    )
                 else:
                     normalized_citations.append(item)
             value["citations"] = normalized_citations
@@ -169,9 +175,9 @@ class AIGateway:
             return output_model.model_validate(value)
         except ValueError as exc:
             logger.error("Provider output failed structured validation: %s (value: %r)", exc, value)
-            raise StructuredOutputError(f"Provider output failed structured validation: {exc}") from exc
-
-
+            raise StructuredOutputError(
+                f"Provider output failed structured validation: {exc}"
+            ) from exc
 
 
 def default_gateway() -> AIGateway:
@@ -180,13 +186,17 @@ def default_gateway() -> AIGateway:
 
     settings = get_settings()
     if settings.ai_provider == "gemini" and settings.gemini_api_key:
-        primary = GeminiLLMProvider(api_key=settings.gemini_api_key, default_model=settings.ai_model)
+        primary = GeminiLLMProvider(
+            api_key=settings.gemini_api_key, default_model=settings.ai_model
+        )
         fallback = FakeProvider()
     elif settings.ai_provider == "openai" and settings.openai_api_key:
         primary = OpenAIProvider(api_key=settings.openai_api_key, default_model=settings.ai_model)
         fallback = FakeProvider()
     elif settings.gemini_api_key:
-        primary = GeminiLLMProvider(api_key=settings.gemini_api_key, default_model=settings.ai_model)
+        primary = GeminiLLMProvider(
+            api_key=settings.gemini_api_key, default_model=settings.ai_model
+        )
         fallback = FakeProvider()
     elif settings.openai_api_key:
         primary = OpenAIProvider(api_key=settings.openai_api_key, default_model=settings.ai_model)
@@ -199,5 +209,3 @@ def default_gateway() -> AIGateway:
         ModelRouter(primary, fallback),
         build_read_only_registry(),
     )
-
-

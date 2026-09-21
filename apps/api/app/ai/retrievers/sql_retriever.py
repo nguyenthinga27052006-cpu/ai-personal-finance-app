@@ -6,7 +6,6 @@ from decimal import Decimal
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.ai.retrievers.intent_detector import IntentDetector
@@ -17,10 +16,8 @@ from app.db.models import (
     FinancialGoal,
     Notification,
     Transaction,
-    TransactionType,
     User,
 )
-
 
 
 @dataclass(frozen=True)
@@ -190,9 +187,15 @@ class SQLUserDataContext:
         ]
 
         if self.monthly_breakdown and len(self.monthly_breakdown) > 1:
-            parts.append(f"\nPhân tích & So sánh chi tiết từng tháng ({self.period_start} đến {self.period_end}):")
+            parts.append(
+                f"\nPhân tích & So sánh chi tiết từng tháng ({self.period_start} đến {self.period_end}):"
+            )
             for m in self.monthly_breakdown:
-                chg = f" (Biến động chi tiêu: {'+' if m['change_pct'] > 0 else ''}{m['change_pct']}%)" if m['change_pct'] is not None else ""
+                chg = (
+                    f" (Biến động chi tiêu: {'+' if m['change_pct'] > 0 else ''}{m['change_pct']}%)"
+                    if m["change_pct"] is not None
+                    else ""
+                )
                 parts.append(
                     f"* {m['month']}: Chi tiêu {m['expense']:,.0f} {self.currency}{chg} | Thu nhập {m['income']:,.0f} {self.currency} | Thặng dư {m['savings']:,.0f} {self.currency} (Danh mục chính: {m['top_category']})"
                 )
@@ -260,11 +263,7 @@ class SQLRetriever:
                 end = next_month - timedelta(days=1)
 
         # 1. Accounts
-        accounts_query = (
-            self.db.query(Account)
-            .filter(Account.user_id == user.id)
-            .all()
-        )
+        accounts_query = self.db.query(Account).filter(Account.user_id == user.id).all()
         accounts_data = []
         total_balance = Decimal("0")
 
@@ -392,11 +391,7 @@ class SQLRetriever:
             )
 
         # 3. Budgets
-        budgets_query = (
-            self.db.query(Budget)
-            .filter(Budget.user_id == user.id)
-            .all()
-        )
+        budgets_query = self.db.query(Budget).filter(Budget.user_id == user.id).all()
         budgets_data = []
         for b in budgets_query:
             amt = Decimal(str(getattr(b, "total_limit", getattr(b, "amount", Decimal("0")))))
@@ -420,11 +415,7 @@ class SQLRetriever:
             )
 
         # 4. Goals
-        goals_query = (
-            self.db.query(FinancialGoal)
-            .filter(FinancialGoal.user_id == user.id)
-            .all()
-        )
+        goals_query = self.db.query(FinancialGoal).filter(FinancialGoal.user_id == user.id).all()
         goals_data = []
         for g in goals_query:
             target = Decimal(str(g.target_amount))
@@ -453,7 +444,11 @@ class SQLRetriever:
             .all()
         )
         notifs_data = [
-            {"id": n.id, "title": n.title, "message": getattr(n, "description", getattr(n, "message", ""))}
+            {
+                "id": n.id,
+                "title": n.title,
+                "message": getattr(n, "description", getattr(n, "message", "")),
+            }
             for n in notifs_query
         ]
 
@@ -478,4 +473,3 @@ class SQLRetriever:
             has_data=has_data,
             monthly_breakdown=monthly_breakdown,
         )
-

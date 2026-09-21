@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.models import (
@@ -280,9 +280,6 @@ def create_transfer(
     return transaction
 
 
-from sqlalchemy import func, select, or_
-
-
 def list_transactions(
     db: Session,
     user: User,
@@ -326,9 +323,7 @@ def get_transaction(db: Session, user: User, transaction_id: str) -> Transaction
     return transaction
 
 
-def update_transaction(
-    db: Session, user: User, transaction_id: str, payload: dict
-) -> Transaction:
+def update_transaction(db: Session, user: User, transaction_id: str, payload: dict) -> Transaction:
     transaction = get_transaction(db, user, transaction_id)
     if transaction.status != TransactionStatus.POSTED.value:
         raise TransactionError("Only posted transactions can be updated")
@@ -348,7 +343,11 @@ def update_transaction(
     if "transaction_date" in payload and payload["transaction_date"] is not None:
         transaction.transaction_date = payload["transaction_date"]
 
-    if "amount" in payload and payload["amount"] is not None and payload["amount"] != transaction.amount:
+    if (
+        "amount" in payload
+        and payload["amount"] is not None
+        and payload["amount"] != transaction.amount
+    ):
         new_amount = payload["amount"]
         if new_amount <= 0:
             raise TransactionError("Amount must be greater than 0")
@@ -358,8 +357,16 @@ def update_transaction(
             entry = next((e for e in transaction.entries if e.account_id == account.id), None)
             if entry:
                 entry_type = entry.entry_type
-                old_signed = transaction.amount if entry_type == EntryType.CREDIT.value or entry_type == EntryType.CREDIT else -transaction.amount
-                new_signed = new_amount if entry_type == EntryType.CREDIT.value or entry_type == EntryType.CREDIT else -new_amount
+                old_signed = (
+                    transaction.amount
+                    if entry_type == EntryType.CREDIT.value or entry_type == EntryType.CREDIT
+                    else -transaction.amount
+                )
+                new_signed = (
+                    new_amount
+                    if entry_type == EntryType.CREDIT.value or entry_type == EntryType.CREDIT
+                    else -new_amount
+                )
                 delta = new_signed - old_signed
 
                 if account.current_balance + delta < 0:
@@ -390,4 +397,3 @@ def delete_transaction(db: Session, user: User, transaction_id: str) -> None:
 
     db.delete(transaction)
     db.flush()
-

@@ -435,5 +435,3 @@ def test_transaction_search_endpoint(client):
     data = search_res.json()
     assert data["total"] == 1
     assert "Starbucks" in data["items"][0]["description"]
-
-

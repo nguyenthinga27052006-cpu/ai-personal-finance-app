@@ -32,7 +32,6 @@ class UserStatus(str, Enum):
     ARCHIVED = "ARCHIVED"
 
 
-
 class AccountType(str, Enum):
     CASH = "CASH"
     BANK = "BANK"
@@ -563,7 +562,11 @@ class Budget(IdMixin, TimestampMixin, Base):
         CheckConstraint("start_date <= end_date", name="ck_budgets_period_valid"),
         CheckConstraint("total_limit > 0", name="ck_budgets_total_limit_positive"),
         UniqueConstraint(
-            "user_id", "period_type", "start_date", "end_date", "currency",
+            "user_id",
+            "period_type",
+            "start_date",
+            "end_date",
+            "currency",
             name="uq_budget_definition",
         ),
         Index("ix_budgets_user_period", "user_id", "start_date", "end_date"),
@@ -650,9 +653,7 @@ class AIChatMessage(IdMixin, TimestampMixin, Base):
     role: Mapped[str] = mapped_column(String(16), nullable=False)
     content: Mapped[str] = mapped_column(String, nullable=False)
     intent: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    metadata_json: Mapped[dict[str, object]] = mapped_column(
-        JSON, nullable=False, default=dict
-    )
+    metadata_json: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False, default=dict)
 
     user: Mapped[User] = relationship()
 
@@ -736,4 +737,3 @@ class SystemSetting(Base, IdMixin, TimestampMixin):
     value: Mapped[str] = mapped_column(String(2000), nullable=False)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     updated_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
-

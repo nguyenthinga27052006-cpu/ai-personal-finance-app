@@ -24,9 +24,13 @@ def postgres_engine():
         pytest.skip("POSTGRES_TEST_DATABASE_URL is not configured")
     engine = create_engine(database_url)
     with engine.connect() as connection:
-        tables = connection.exec_driver_sql(
-            "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'"
-        ).scalars().all()
+        tables = (
+            connection.exec_driver_sql(
+                "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'"
+            )
+            .scalars()
+            .all()
+        )
     if not {"users", "device_sessions"}.issubset(tables):
         pytest.skip("PostgreSQL schema is not migrated; run alembic upgrade head first")
     return engine
@@ -57,22 +61,21 @@ def test_auth_lifecycle_persists_and_revokes_postgresql_session(client, postgres
     with Session(postgres_engine) as db:
         user = db.scalar(select(User).where(User.email == email))
         assert user is not None
-        first_session = db.scalar(
-            select(DeviceSession).where(DeviceSession.user_id == user.id)
-        )
+        first_session = db.scalar(select(DeviceSession).where(DeviceSession.user_id == user.id))
         assert first_session is not None
         assert first_session.refresh_token_hash not in first["refresh_token"]
 
     login = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert login.status_code == 200
     second = login.json()
-    assert client.get(
-        "/api/v1/me", headers={"Authorization": f"Bearer {second['access_token']}"}
-    ).json()["email"] == email
-
-    rotated = client.post(
-        "/api/v1/auth/refresh", json={"refresh_token": second["refresh_token"]}
+    assert (
+        client.get(
+            "/api/v1/me", headers={"Authorization": f"Bearer {second['access_token']}"}
+        ).json()["email"]
+        == email
     )
+
+    rotated = client.post("/api/v1/auth/refresh", json={"refresh_token": second["refresh_token"]})
     assert rotated.status_code == 200
     assert rotated.json()["refresh_token"] != second["refresh_token"]
     old_refresh = client.post(
@@ -81,18 +84,19 @@ def test_auth_lifecycle_persists_and_revokes_postgresql_session(client, postgres
     assert old_refresh.status_code == 401
     assert old_refresh.json()["detail"]["code"] == "invalid_refresh_session"
 
-    active = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    ).json()
+    active = client.post("/api/v1/auth/login", json={"email": email, "password": password}).json()
     logout = client.post(
         "/api/v1/auth/logout",
         headers={"Authorization": f"Bearer {active['access_token']}"},
     )
     assert logout.status_code == 200
-    assert client.get(
-        "/api/v1/auth/session",
-        headers={"Authorization": f"Bearer {active['access_token']}"},
-    ).status_code == 401
+    assert (
+        client.get(
+            "/api/v1/auth/session",
+            headers={"Authorization": f"Bearer {active['access_token']}"},
+        ).status_code
+        == 401
+    )
 
     with Session(postgres_engine) as db:
         user = db.scalar(select(User).where(User.email == email))
@@ -108,9 +112,15 @@ def test_auth_lifecycle_persists_and_revokes_postgresql_session(client, postgres
         db.commit()
         expired_access = create_access_token(user.id, session.id)
 
-    assert client.post(
-        "/api/v1/auth/refresh", json={"refresh_token": active["refresh_token"]}
-    ).status_code == 401
-    assert client.get(
-        "/api/v1/me", headers={"Authorization": f"Bearer {expired_access}"}
-    ).json()["detail"]["code"] == "session_expired"
+    assert (
+        client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": active["refresh_token"]}
+        ).status_code
+        == 401
+    )
+    assert (
+        client.get("/api/v1/me", headers={"Authorization": f"Bearer {expired_access}"}).json()[
+            "detail"
+        ]["code"]
+        == "session_expired"
+    )

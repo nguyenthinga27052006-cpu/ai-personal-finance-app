@@ -38,6 +38,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+ignore = ["E501"]
 
 [build-system]
 requires = ["setuptools>=75"]

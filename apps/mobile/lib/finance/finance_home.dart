@@ -1186,12 +1186,6 @@ class _CategoryAnalyticsCard extends StatelessWidget {
       }
     }
 
-    if (categoryTotals.isEmpty) {
-      categoryTotals['Ăn uống & Cafe'] = 1200000;
-      categoryTotals['Hóa đơn & Tiện ích'] = 100000;
-      totalExpense = 1300000;
-    }
-
     final categoryIcons = {
       'Ăn uống & Cafe': Icons.restaurant,
       'Hóa đơn & Tiện ích': Icons.receipt_long_outlined,
@@ -1220,8 +1214,8 @@ class _CategoryAnalyticsCard extends StatelessWidget {
       );
     }).toList()..sort((a, b) => b.amount.compareTo(a.amount));
 
-    final topCategory = categoryItems.isNotEmpty ? categoryItems.first.name : 'Ăn uống';
-    final topAmount = categoryItems.isNotEmpty ? categoryItems.first.amount : 1200000;
+    final topCategory = categoryItems.isNotEmpty ? categoryItems.first.name : '';
+    final topAmount = categoryItems.isNotEmpty ? categoryItems.first.amount : 0;
     final targetSaving = (topAmount * 0.25).round();
 
     return Card(
@@ -1290,155 +1284,175 @@ class _CategoryAnalyticsCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-            ],
-            Text(
-              'Chi Tiêu Theo Danh Mục:',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey.shade800),
-            ),
-            const SizedBox(height: 10),
-            ...categoryItems.map((item) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10.0),
+              Text(
+                'Chi Tiêu Theo Danh Mục:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey.shade800),
+              ),
+              const SizedBox(height: 10),
+              ...categoryItems.map((item) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(color: item.color, shape: BoxShape.circle),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                item.name,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                          MoneyText(
+                            item.amount,
+                            currency: 'VND',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red.shade700),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: (item.percentage / 100).clamp(0.0, 1.0),
+                          minHeight: 8,
+                          backgroundColor: item.color.withOpacity(0.15),
+                          valueColor: AlwaysStoppedAnimation<Color>(item.color),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const Divider(height: 24),
+              // AI Recommendation Box matching Web
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade300, width: 1.2),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(color: item.color, shape: BoxShape.circle),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              item.name,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                            ),
-                          ],
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade700,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.lightbulb, color: Colors.white, size: 16),
                         ),
-                        MoneyText(
-                          item.amount,
-                          currency: 'VND',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '💡 Gợi Ý AI Cho Ngày Mai & Kế Hoạch Chi Tiêu',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber.shade900,
+                              fontSize: 13,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: (item.percentage / 100).clamp(0.0, 1.0),
-                        minHeight: 8,
-                        backgroundColor: item.color.withOpacity(0.15),
-                        valueColor: AlwaysStoppedAnimation<Color>(item.color),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.shade200),
                       ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.trending_down, color: Colors.red, size: 16),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Mục chi tiêu nhiều nhất: $topCategory',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Hôm nay / kỳ này bạn đã tiêu ${settings.trText(settings.formatAmount(topAmount))} vào [$topCategory].',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          const Divider(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('👉 ', style: TextStyle(fontSize: 13)),
+                              Expanded(
+                                child: Text(
+                                  'Gợi ý ngày mai: Đặt mục tiêu cắt giảm 20 - 30% chi tiêu cho [$topCategory] (tiết kiệm khoảng ${settings.trText(settings.formatAmount(targetSaving))}) bằng cách ưu tiên nhu cầu thiết yếu hơn.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.teal.shade900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Dành ${settings.trText(settings.formatAmount(targetSaving))} tiết kiệm được bổ sung ngay vào Quỹ Tiết Kiệm.',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              );
-            }),
-            const Divider(height: 24),
-            // AI Recommendation Box matching Web
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.shade300, width: 1.2),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade700,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.lightbulb, color: Colors.white, size: 16),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '💡 Gợi Ý AI Cho Ngày Mai & Kế Hoạch Chi Tiêu',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.amber.shade900,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.amber.shade200),
+            ] else ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                child: Column(
+                  children: [
+                    Icon(Icons.pie_chart_outline, size: 48, color: Colors.teal.shade200),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Chưa có dữ liệu chi tiêu',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey.shade800),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.trending_down, color: Colors.red, size: 16),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                'Mục chi tiêu nhiều nhất: $topCategory',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Hôm nay / kỳ này bạn đã tiêu ${settings.trText(settings.formatAmount(topAmount))} vào [$topCategory].',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        const Divider(height: 12),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('👉 ', style: TextStyle(fontSize: 13)),
-                            Expanded(
-                              child: Text(
-                                'Gợi ý ngày mai: Đặt mục tiêu cắt giảm 20 - 30% chi tiêu cho [$topCategory] (tiết kiệm khoảng ${settings.trText(settings.formatAmount(targetSaving))}) bằng cách ưu tiên nhu cầu thiết yếu hơn.',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.teal.shade900,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    const SizedBox(height: 4),
+                    Text(
+                      'Hãy tạo giao dịch chi tiêu đầu tiên để xem biểu đồ phân tích và gợi ý AI!',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Dành ${settings.trText(settings.formatAmount(targetSaving))} tiết kiệm được bổ sung ngay vào Quỹ Tiết Kiệm.',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -1841,8 +1855,6 @@ class _SolidPiePainter extends CustomPainter {
       if (sweepAngle >= 0.15) {
         final midAngle = startAngle + sweepAngle / 2;
         final textRadius = radius * 0.62;
-        final textX = center.dx + textRadius * (startAngle == midAngle ? 1.0 : (midAngle.abs() > 0 ? 0.0 : 0.0));
-        final textY = center.dy + textRadius * 0.0;
         
         // Calculate exact (x, y) along midAngle ray
         final textXCalc = center.dx + textRadius * _cos(midAngle);

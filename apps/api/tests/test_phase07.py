@@ -160,9 +160,7 @@ def test_budget_timezone_first_local_day_boundary(client):
             "currency": "VND",
         },
     ).json()
-    status = test_client.get(
-        f"/api/v1/budgets/{budget['id']}/status", headers=headers(auth)
-    ).json()
+    status = test_client.get(f"/api/v1/budgets/{budget['id']}/status", headers=headers(auth)).json()
     assert status["spent"] == 2000
 
 
@@ -200,9 +198,7 @@ def test_budget_timezone_last_local_day_boundary(client):
             "currency": "VND",
         },
     ).json()
-    status = test_client.get(
-        f"/api/v1/budgets/{budget['id']}/status", headers=headers(auth)
-    ).json()
+    status = test_client.get(f"/api/v1/budgets/{budget['id']}/status", headers=headers(auth)).json()
     assert status["spent"] == 3000
 
 
@@ -298,9 +294,7 @@ def test_zero_income_zero_target_and_update_validation(client):
             "currency": "VND",
         },
     ).json()
-    status = test_client.get(
-        f"/api/v1/budgets/{budget['id']}/status", headers=headers(auth)
-    ).json()
+    status = test_client.get(f"/api/v1/budgets/{budget['id']}/status", headers=headers(auth)).json()
     assert status["spent"] == 0
     assert status["current_spending_velocity"] == 0
     assert status["projected_spending"] == 0
@@ -308,33 +302,51 @@ def test_zero_income_zero_target_and_update_validation(client):
         value not in {float("nan"), float("inf")}
         for value in (status["utilization"], status["current_spending_velocity"])
     )
-    assert test_client.post(
-        "/api/v1/goals",
-        headers=headers(auth),
-        json={"name": "Zero", "target_amount": 0, "currency": "VND"},
-    ).status_code == 422
-    assert test_client.patch(
-        f"/api/v1/budgets/{budget['id']}", headers=headers(auth), json={"total_limit": -1}
-    ).status_code == 422
-    assert test_client.patch(
-        f"/api/v1/budgets/{budget['id']}", headers=headers(auth), json={"status": "INVALID"}
-    ).status_code == 422
-    assert test_client.patch(
-        f"/api/v1/budgets/{budget['id']}",
-        headers=headers(auth),
-        json={"start_date": "2026-09-01", "end_date": "2026-08-01"},
-    ).status_code == 400
+    assert (
+        test_client.post(
+            "/api/v1/goals",
+            headers=headers(auth),
+            json={"name": "Zero", "target_amount": 0, "currency": "VND"},
+        ).status_code
+        == 422
+    )
+    assert (
+        test_client.patch(
+            f"/api/v1/budgets/{budget['id']}", headers=headers(auth), json={"total_limit": -1}
+        ).status_code
+        == 422
+    )
+    assert (
+        test_client.patch(
+            f"/api/v1/budgets/{budget['id']}", headers=headers(auth), json={"status": "INVALID"}
+        ).status_code
+        == 422
+    )
+    assert (
+        test_client.patch(
+            f"/api/v1/budgets/{budget['id']}",
+            headers=headers(auth),
+            json={"start_date": "2026-09-01", "end_date": "2026-08-01"},
+        ).status_code
+        == 400
+    )
     goal = test_client.post(
         "/api/v1/goals",
         headers=headers(auth),
         json={"name": "Validation", "target_amount": 1000, "currency": "VND"},
     ).json()
-    assert test_client.patch(
-        f"/api/v1/goals/{goal['id']}", headers=headers(auth), json={"target_amount": -1}
-    ).status_code == 422
-    assert test_client.patch(
-        f"/api/v1/goals/{goal['id']}", headers=headers(auth), json={"status": "INVALID"}
-    ).status_code == 422
+    assert (
+        test_client.patch(
+            f"/api/v1/goals/{goal['id']}", headers=headers(auth), json={"target_amount": -1}
+        ).status_code
+        == 422
+    )
+    assert (
+        test_client.patch(
+            f"/api/v1/goals/{goal['id']}", headers=headers(auth), json={"status": "INVALID"}
+        ).status_code
+        == 422
+    )
 
 
 def test_budget_split_and_ownership_and_goal_arithmetic(client):

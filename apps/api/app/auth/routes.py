@@ -144,7 +144,9 @@ def change_password(
         db.commit()
     except InvalidCredentialsError as exc:
         db.rollback()
-        raise auth_error("invalid_credentials", str(exc) or "Current password is incorrect") from exc
+        raise auth_error(
+            "invalid_credentials", str(exc) or "Current password is incorrect"
+        ) from exc
     return MessageResponse(message="Mật khẩu đã được thay đổi thành công")
 
 

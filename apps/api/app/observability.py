@@ -71,10 +71,12 @@ class Metrics:
                 f'method="{self._label(method)}",route="{self._label(route)}",'
                 f'status="{status}"}} {count}'
             )
-        lines.extend([
-            "# HELP app_http_request_duration_ms HTTP request duration in milliseconds.",
-            "# TYPE app_http_request_duration_ms histogram",
-        ])
+        lines.extend(
+            [
+                "# HELP app_http_request_duration_ms HTTP request duration in milliseconds.",
+                "# TYPE app_http_request_duration_ms histogram",
+            ]
+        )
         for key, buckets in sorted(self.duration_buckets.items()):
             method, route = key.split(" ", 1)
             for bucket in self.BUCKETS:

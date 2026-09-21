@@ -176,21 +176,33 @@ def execute_nl_query(
         )
     except (ProviderTimeoutError, ProviderUnavailableError) as exc:
         return NLQueryResult(
-            status="PROVIDER_ERROR", intent=intent, tool=tool_name,
-            answer="The AI provider is temporarily unavailable.", source=None,
-            citations=[], message=str(exc),
+            status="PROVIDER_ERROR",
+            intent=intent,
+            tool=tool_name,
+            answer="The AI provider is temporarily unavailable.",
+            source=None,
+            citations=[],
+            message=str(exc),
         )
     except StructuredOutputError as exc:
         return NLQueryResult(
-            status="VALIDATION_ERROR", intent=intent, tool=tool_name,
-            answer="The AI response could not be validated.", source=None,
-            citations=[], message=str(exc),
+            status="VALIDATION_ERROR",
+            intent=intent,
+            tool=tool_name,
+            answer="The AI response could not be validated.",
+            source=None,
+            citations=[],
+            message=str(exc),
         )
     except ToolExecutionError as exc:
         return NLQueryResult(
-            status="VALIDATION_ERROR", intent=intent, tool=tool_name,
-            answer="The canonical financial tool could not validate this request.", source=None,
-            citations=[], message=str(exc),
+            status="VALIDATION_ERROR",
+            intent=intent,
+            tool=tool_name,
+            answer="The canonical financial tool could not validate this request.",
+            source=None,
+            citations=[],
+            message=str(exc),
         )
 
     if tool_name == "get_monthly_expense":

@@ -42,7 +42,6 @@ class Settings(BaseSettings):
     ai_max_retries: int = Field(default=2, ge=0, le=5)
     release: str = "local"
 
-
     model_config = SettingsConfigDict(
         env_file=REPOSITORY_ROOT / ".env",
         env_file_encoding="utf-8",

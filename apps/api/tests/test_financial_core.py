@@ -307,5 +307,6 @@ def test_update_and_delete_transaction_updates_balance(client):
     assert acc_check["current_balance"] == 100000
 
     # Getting deleted transaction returns 404
-    assert test_client.get(f"/api/v1/transactions/{tx_id}", headers=headers(auth)).status_code == 404
-
+    assert (
+        test_client.get(f"/api/v1/transactions/{tx_id}", headers=headers(auth)).status_code == 404
+    )

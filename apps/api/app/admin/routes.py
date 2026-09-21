@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from app.ai.rag.knowledge_docs import KnowledgeDocument
+from app.ai.rag.vector_store import get_vector_store
 from app.auth.dependencies import CurrentAdminUser
 from app.auth.security import hash_password
 from app.core.config import get_settings
@@ -21,8 +23,6 @@ from app.db.models import (
     UserStatus,
 )
 from app.db.session import get_db
-from app.ai.rag.vector_store import get_vector_store
-from app.ai.rag.knowledge_docs import KnowledgeDocument
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 DbSession = Annotated[Session, Depends(get_db)]
@@ -93,7 +93,9 @@ def list_users(
     query = db.query(User)
     if q and q.strip():
         search_term = f"%{q.strip()}%"
-        query = query.filter((User.email.ilike(search_term)) | (User.display_name.ilike(search_term)))
+        query = query.filter(
+            (User.email.ilike(search_term)) | (User.display_name.ilike(search_term))
+        )
     query = query.order_by(User.created_at.desc())
     total = query.count()
     users = query.offset(offset).limit(limit).all()
@@ -125,7 +127,7 @@ def get_user_detail(
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     account_count = db.query(Account).filter(Account.user_id == user.id).count()
     transaction_count = db.query(Transaction).filter(Transaction.user_id == user.id).count()
     budget_count = db.query(Budget).filter(Budget.user_id == user.id).count()
@@ -157,7 +159,7 @@ def update_user_status(
     target_user = db.get(User, user_id)
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     target_user.status = payload.status.value
     db.commit()
     db.refresh(target_user)
@@ -231,12 +233,25 @@ def get_ai_config(
 ) -> dict[str, Any]:
     app_settings = get_settings()
     settings = {s.key: s.value for s in db.query(SystemSetting).all()}
-    
+
     provider = settings.get("ai_provider") or getattr(app_settings, "ai_provider", "gemini")
-    model_name = settings.get("ai_model_name") or getattr(app_settings, "ai_model", "gemini-3.1-flash-lite")
-    
-    api_key_raw = settings.get("ai_api_key") or getattr(app_settings, "gemini_api_key", "") or getattr(app_settings, "openai_api_key", "") or ""
-    masked_key = (api_key_raw[:4] + "..." + api_key_raw[-4:]) if len(api_key_raw) > 8 else "********" if api_key_raw else ""
+    model_name = settings.get("ai_model_name") or getattr(
+        app_settings, "ai_model", "gemini-3.1-flash-lite"
+    )
+
+    api_key_raw = (
+        settings.get("ai_api_key")
+        or getattr(app_settings, "gemini_api_key", "")
+        or getattr(app_settings, "openai_api_key", "")
+        or ""
+    )
+    masked_key = (
+        (api_key_raw[:4] + "..." + api_key_raw[-4:])
+        if len(api_key_raw) > 8
+        else "********"
+        if api_key_raw
+        else ""
+    )
 
     return {
         "provider": provider,
@@ -244,7 +259,9 @@ def get_ai_config(
         "api_key_masked": masked_key,
         "rpd": int(settings.get("ai_rpd", "1000")),
         "rpm": int(settings.get("ai_rpm", "60")),
-        "tpm": int(settings.get("ai_tpm", str(getattr(app_settings, "daily_user_token_limit", 50000)))),
+        "tpm": int(
+            settings.get("ai_tpm", str(getattr(app_settings, "daily_user_token_limit", 50000)))
+        ),
     }
 
 
@@ -290,10 +307,9 @@ def add_knowledge_document(
         content=payload.content,
         source=payload.source,
     )
-    indexed_count = vector_store.index_documents([doc])
+    vector_store.index_documents([doc])
     return {
         "message": f"Successfully indexed knowledge document '{payload.title}'",
         "doc_id": payload.doc_id,
         "total_vector_chunks": len(vector_store.chunks),
     }
-

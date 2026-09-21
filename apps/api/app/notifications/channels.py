@@ -11,8 +11,7 @@ class DeliveryResult:
 class NotificationChannel(Protocol):
     name: str
 
-    def deliver(self, notification_id: str) -> DeliveryResult:
-        ...
+    def deliver(self, notification_id: str) -> DeliveryResult: ...
 
 
 class InAppChannel:

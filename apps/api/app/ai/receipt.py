@@ -137,9 +137,7 @@ class GeminiReceiptOCRProvider:
                     ]
                 }
             ],
-            "generationConfig": {
-                "response_mime_type": "application/json"
-            },
+            "generationConfig": {"response_mime_type": "application/json"},
         }
 
         req = urllib.request.Request(

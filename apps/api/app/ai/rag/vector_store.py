@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from app.ai.rag.knowledge_docs import SEED_KNOWLEDGE_DOCUMENTS, KnowledgeDocument
@@ -349,7 +349,8 @@ class RAGVectorStore:
         candidate_chunks = self.chunks
         if filters:
             candidate_chunks = [
-                c for c in candidate_chunks
+                c
+                for c in candidate_chunks
                 if all(c.metadata.get(k) == v for k, v in filters.items())
             ]
 
@@ -381,17 +382,21 @@ class RAGVectorStore:
         for rank, (sim, chunk) in enumerate(dense_scored, start=1):
             chunk_lookup[chunk.chunk_id] = chunk
             raw_sim_lookup[chunk.chunk_id] = sim
-            rrf_scores[chunk.chunk_id] = rrf_scores.get(chunk.chunk_id, 0.0) + (1.0 / (k_rrf + rank))
+            rrf_scores[chunk.chunk_id] = rrf_scores.get(chunk.chunk_id, 0.0) + (
+                1.0 / (k_rrf + rank)
+            )
 
         for rank, (bm_score, chunk) in enumerate(sparse_scored, start=1):
-            rrf_scores[chunk.chunk_id] = rrf_scores.get(chunk.chunk_id, 0.0) + (1.0 / (k_rrf + rank))
+            rrf_scores[chunk.chunk_id] = rrf_scores.get(chunk.chunk_id, 0.0) + (
+                1.0 / (k_rrf + rank)
+            )
 
         # 5. Reranking & Relevance Thresholding
         reranked_chunks: list[DocumentChunk] = []
         for cid, score in sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True):
             chunk = chunk_lookup[cid]
             raw_sim = raw_sim_lookup.get(cid, 0.0)
-            
+
             # Enforce relevance threshold
             if raw_sim < similarity_threshold:
                 continue
@@ -431,4 +436,3 @@ def get_vector_store() -> RAGVectorStore:
         _global_vector_store = RAGVectorStore()
         _global_vector_store.index_documents()
     return _global_vector_store
-

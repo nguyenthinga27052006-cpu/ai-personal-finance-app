@@ -76,9 +76,12 @@ def test_account_lifecycle_balance_cache_and_ownership(client):
     assert account["currency"] == "VND"
     assert account["current_balance"] == 75000
 
-    assert test_client.get(
-        f"/api/v1/accounts/{account['id']}", headers=auth_headers(other)
-    ).status_code == 404
+    assert (
+        test_client.get(
+            f"/api/v1/accounts/{account['id']}", headers=auth_headers(other)
+        ).status_code
+        == 404
+    )
     listed = test_client.get("/api/v1/accounts", headers=auth_headers(owner))
     assert listed.status_code == 200
     assert listed.json()["total"] == 1
@@ -91,9 +94,12 @@ def test_account_lifecycle_balance_cache_and_ownership(client):
     assert updated.status_code == 200
     assert updated.json()["status"] == "ARCHIVED"
     assert test_client.get("/api/v1/accounts", headers=auth_headers(owner)).json()["total"] == 0
-    assert test_client.get(
-        "/api/v1/accounts?include_archived=true", headers=auth_headers(owner)
-    ).json()["total"] == 1
+    assert (
+        test_client.get(
+            "/api/v1/accounts?include_archived=true", headers=auth_headers(owner)
+        ).json()["total"]
+        == 1
+    )
 
 
 def test_account_validation_and_archived_edit_rejection(client):

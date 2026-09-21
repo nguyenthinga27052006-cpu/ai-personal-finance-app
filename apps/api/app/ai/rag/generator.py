@@ -29,7 +29,6 @@ FINANCIAL_LEGAL_DISCLAIMER = (
 
 
 class CitationValidator:
-
     """Validates citations against real retrieved evidence metadata, removing hallucinated citations."""
 
     @staticmethod
@@ -48,7 +47,11 @@ class CitationValidator:
 
         for c in citations:
             # Must strictly match valid SQL context summary or explicit document titles/sources
-            if c in valid_sql_summary or c in allowed_set or any(r in c for r in allowed_set if len(r) > 4):
+            if (
+                c in valid_sql_summary
+                or c in allowed_set
+                or any(r in c for r in allowed_set if len(r) > 4)
+            ):
                 if c not in valid_summary:
                     valid_summary.append(c)
 
@@ -102,7 +105,13 @@ class FinancialRAGGenerator:
 
         # 2. Retrieve hybrid context (SQL user facts + Chroma VectorDB RAG knowledge)
         hybrid_context: HybridContext = self.hybrid_retriever.retrieve(
-            user=user, question=question, start=start, end=end, currency=currency, top_k=4, history=history_msgs
+            user=user,
+            question=question,
+            start=start,
+            end=end,
+            currency=currency,
+            top_k=4,
+            history=history_msgs,
         )
 
         # Validate financial facts integrity & user ownership
@@ -119,7 +128,11 @@ class FinancialRAGGenerator:
 
         # 3. Handle strict Hallucination Guard when no SQL data and no RAG data (skip for general/greeting conversational queries)
         is_general_or_greeting = hybrid_context.intent in ("greeting", "general_query")
-        if not hybrid_context.has_sql_data and not hybrid_context.has_rag_data and not is_general_or_greeting:
+        if (
+            not hybrid_context.has_sql_data
+            and not hybrid_context.has_rag_data
+            and not is_general_or_greeting
+        ):
             if language.lower() in ("en", "english"):
                 fallback_answer = (
                     "## Answer\n"
@@ -147,7 +160,10 @@ class FinancialRAGGenerator:
                     "* Chưa có nguồn dữ liệu"
                 )
             self.memory_store.add_message(
-                user_id=user.id, content=fallback_answer, role="assistant", conversation_id=conversation_id
+                user_id=user.id,
+                content=fallback_answer,
+                role="assistant",
+                conversation_id=conversation_id,
             )
             return RAGResponse(
                 answer_markdown=fallback_answer,
@@ -207,7 +223,10 @@ class FinancialRAGGenerator:
 
         # Save assistant message in memory
         self.memory_store.add_message(
-            user_id=user.id, content=final_markdown, role="assistant", conversation_id=conversation_id
+            user_id=user.id,
+            content=final_markdown,
+            role="assistant",
+            conversation_id=conversation_id,
         )
 
         # Generate actionable suggestions
@@ -217,17 +236,41 @@ class FinancialRAGGenerator:
         if sql_ctx.has_data:
             if sql_ctx.top_categories:
                 top_c = sql_ctx.top_categories[0]
-                suggestions.append(f"Optimize 10% expenses for category '{top_c['category']}'" if is_en else f"Tối ưu 10% chi phí cho danh mục '{top_c['category']}'")
+                suggestions.append(
+                    f"Optimize 10% expenses for category '{top_c['category']}'"
+                    if is_en
+                    else f"Tối ưu 10% chi phí cho danh mục '{top_c['category']}'"
+                )
             if sql_ctx.net_savings > 0:
-                suggestions.append(f"Transfer {sql_ctx.net_savings * Decimal('0.3'):,.0f} VND surplus to Emergency Fund" if is_en else f"Chuyển {sql_ctx.net_savings * Decimal('0.3'):,.0f} VND thặng dư vào Quỹ Khẩn Cấp")
+                suggestions.append(
+                    f"Transfer {sql_ctx.net_savings * Decimal('0.3'):,.0f} VND surplus to Emergency Fund"
+                    if is_en
+                    else f"Chuyển {sql_ctx.net_savings * Decimal('0.3'):,.0f} VND thặng dư vào Quỹ Khẩn Cấp"
+                )
             else:
-                suggestions.append("Cut non-essential expenses to create savings surplus" if is_en else "Cắt giảm các khoản chi không thiết yếu để tạo thặng dư")
+                suggestions.append(
+                    "Cut non-essential expenses to create savings surplus"
+                    if is_en
+                    else "Cắt giảm các khoản chi không thiết yếu để tạo thặng dư"
+                )
             if sql_ctx.goals:
                 g = sql_ctx.goals[0]
-                suggestions.append(f"Contribute more to goal '{g['name']}'" if is_en else f"Đóng góp thêm vào mục tiêu '{g['name']}'")
+                suggestions.append(
+                    f"Contribute more to goal '{g['name']}'"
+                    if is_en
+                    else f"Đóng góp thêm vào mục tiêu '{g['name']}'"
+                )
         else:
-            suggestions.append("Add new transactions so AI can analyze cash flow" if is_en else "Thêm giao dịch mới để AI phân tích dòng tiền")
-            suggestions.append("Check 50/30/20 financial management guide" if is_en else "Xem cẩm nang quy tắc quản lý tài chính 50/30/20")
+            suggestions.append(
+                "Add new transactions so AI can analyze cash flow"
+                if is_en
+                else "Thêm giao dịch mới để AI phân tích dòng tiền"
+            )
+            suggestions.append(
+                "Check 50/30/20 financial management guide"
+                if is_en
+                else "Xem cẩm nang quy tắc quản lý tài chính 50/30/20"
+            )
 
         return RAGResponse(
             answer_markdown=final_markdown,
@@ -236,7 +279,11 @@ class FinancialRAGGenerator:
             status="SUCCESS" if facts_status == "VALID" else facts_status,
             has_sql_data=hybrid_context.has_sql_data,
             has_rag_data=hybrid_context.has_rag_data,
-            metadata={"citations": citations, "intent": hybrid_context.intent, "detailed_citations": detailed_citations},
+            metadata={
+                "citations": citations,
+                "intent": hybrid_context.intent,
+                "detailed_citations": detailed_citations,
+            },
             suggestions=suggestions,
             confidence=0.95,
             detailed_citations=detailed_citations,
@@ -258,7 +305,13 @@ class FinancialRAGGenerator:
 
         # 2. Retrieve hybrid context (SQL user facts + Chroma VectorDB RAG knowledge)
         hybrid_context: HybridContext = self.hybrid_retriever.retrieve(
-            user=user, question=question, start=start, end=end, currency=currency, top_k=4, history=history_msgs
+            user=user,
+            question=question,
+            start=start,
+            end=end,
+            currency=currency,
+            top_k=4,
+            history=history_msgs,
         )
 
         # Validate financial facts integrity & user ownership
@@ -273,10 +326,13 @@ class FinancialRAGGenerator:
             user_id=user.id, content=question, role="user", conversation_id=conversation_id
         )
 
-
         # 3. Handle strict Hallucination Guard when no SQL data and no RAG data (skip for general/greeting conversational queries)
         is_general_or_greeting = hybrid_context.intent in ("greeting", "general_query")
-        if not hybrid_context.has_sql_data and not hybrid_context.has_rag_data and not is_general_or_greeting:
+        if (
+            not hybrid_context.has_sql_data
+            and not hybrid_context.has_rag_data
+            and not is_general_or_greeting
+        ):
             if language.lower() in ("en", "english"):
                 fallback_answer = (
                     "## Answer\n"
@@ -310,7 +366,10 @@ class FinancialRAGGenerator:
                 await asyncio.sleep(0.01)
 
             self.memory_store.add_message(
-                user_id=user.id, content=fallback_answer, role="assistant", conversation_id=conversation_id
+                user_id=user.id,
+                content=fallback_answer,
+                role="assistant",
+                conversation_id=conversation_id,
             )
 
             metadata_event = {
@@ -360,14 +419,19 @@ class FinancialRAGGenerator:
         is_real_llm_stream = False
 
         primary = getattr(self.gateway.router, "primary", None)
-        if primary and (getattr(primary, "is_production", False) or getattr(primary, "name", "") in ("gemini", "openai")):
+        if primary and (
+            getattr(primary, "is_production", False)
+            or getattr(primary, "name", "") in ("gemini", "openai")
+        ):
             try:
                 async for token_chunk in self.gateway.router.stream_generate(provider_req):
                     is_real_llm_stream = True
                     full_chunks.append(token_chunk)
                     yield f"data: {json.dumps({'type': 'token', 'content': token_chunk}, ensure_ascii=False)}\n\n"
             except Exception as exc:
-                logger.warning("Streaming LLM call failed, falling back to deterministic response: %s", exc)
+                logger.warning(
+                    "Streaming LLM call failed, falling back to deterministic response: %s", exc
+                )
                 full_chunks = []
                 is_real_llm_stream = False
 
@@ -400,7 +464,9 @@ class FinancialRAGGenerator:
                 top_c = sql_ctx.top_categories[0]
                 suggestions.append(f"Tối ưu 10% chi phí cho danh mục '{top_c['category']}'")
             if sql_ctx.net_savings > 0:
-                suggestions.append(f"Chuyển {sql_ctx.net_savings * Decimal('0.3'):,.0f} VND thặng dư vào Quỹ Khẩn Cấp")
+                suggestions.append(
+                    f"Chuyển {sql_ctx.net_savings * Decimal('0.3'):,.0f} VND thặng dư vào Quỹ Khẩn Cấp"
+                )
             else:
                 suggestions.append("Cắt giảm các khoản chi không thiết yếu để tạo thặng dư")
             if sql_ctx.goals:
@@ -414,7 +480,8 @@ class FinancialRAGGenerator:
             "type": "metadata",
             "status": "SUCCESS" if facts_status == "VALID" else facts_status,
             "intent": hybrid_context.intent,
-            "citations": detailed_citations or [
+            "citations": detailed_citations
+            or [
                 {"source": c, "type": "postgresql_db" if "PostgreSQL" in c else "knowledge_base"}
                 for c in citations
             ],
@@ -423,8 +490,6 @@ class FinancialRAGGenerator:
             "suggestions": suggestions,
         }
         yield f"data: {json.dumps(metadata_event, ensure_ascii=False)}\n\n"
-
-
 
     def _format_markdown_response(
         self,
@@ -447,11 +512,12 @@ class FinancialRAGGenerator:
             "balance_query",
             "comparison_query",
         }
-        needs_disclaimer = (
-            intent in disclaimer_intents
-            or hybrid_context.has_sql_data
-        )
-        if needs_disclaimer and intent not in ("greeting", "general_query") and FINANCIAL_LEGAL_DISCLAIMER.strip() not in body:
+        needs_disclaimer = intent in disclaimer_intents or hybrid_context.has_sql_data
+        if (
+            needs_disclaimer
+            and intent not in ("greeting", "general_query")
+            and FINANCIAL_LEGAL_DISCLAIMER.strip() not in body
+        ):
             body = body.rstrip() + FINANCIAL_LEGAL_DISCLAIMER
 
         return body
@@ -471,7 +537,6 @@ class FinancialRAGGenerator:
         ):
             return raw_text.strip()
 
-
         intent = hybrid_context.intent
         sql_ctx = hybrid_context.sql_context
 
@@ -490,28 +555,38 @@ class FinancialRAGGenerator:
         # 2. Knowledge Queries (RAG Vector Store)
         if intent == "knowledge" and hybrid_context.vector_chunks:
             chunk = hybrid_context.vector_chunks[0]
-            title = chunk.metadata.get('title', 'Quản lý tài chính')
+            title = chunk.metadata.get("title", "Quản lý tài chính")
             return f"### {title}\n\n{chunk.content}\n\n💡 *Nguồn: {chunk.metadata.get('source', 'Cẩm nang Tài chính')}*"
 
         # 3. Multi-Month / Comparison Queries
-        if intent == "comparison_query" or (sql_ctx.monthly_breakdown and len(sql_ctx.monthly_breakdown) > 1):
+        if intent == "comparison_query" or (
+            sql_ctx.monthly_breakdown and len(sql_ctx.monthly_breakdown) > 1
+        ):
             num_m = len(sql_ctx.monthly_breakdown) if sql_ctx.monthly_breakdown else 1
             lines = [f"Theo thống kê chi tiêu trong **{num_m} tháng gần nhất**:\n"]
 
             if sql_ctx.monthly_breakdown:
                 max_expense_m = max(sql_ctx.monthly_breakdown, key=lambda x: x["expense"])
                 min_expense_m = min(sql_ctx.monthly_breakdown, key=lambda x: x["expense"])
-                lines.append(f"🏆 **Tháng chi tiêu nhiều nhất**: **{max_expense_m['month']}** với số tiền **{max_expense_m['expense']:,.0f} {sql_ctx.currency}**.")
+                lines.append(
+                    f"🏆 **Tháng chi tiêu nhiều nhất**: **{max_expense_m['month']}** với số tiền **{max_expense_m['expense']:,.0f} {sql_ctx.currency}**."
+                )
                 if min_expense_m != max_expense_m:
-                    lines.append(f"🟢 **Tháng tiết kiệm nhất**: **{min_expense_m['month']}** với số tiền **{min_expense_m['expense']:,.0f} {sql_ctx.currency}**.\n")
+                    lines.append(
+                        f"🟢 **Tháng tiết kiệm nhất**: **{min_expense_m['month']}** với số tiền **{min_expense_m['expense']:,.0f} {sql_ctx.currency}**.\n"
+                    )
 
             if sql_ctx.top_categories:
                 top_cat = sql_ctx.top_categories[0]
-                lines.append(f"🛒 **Danh mục chi tiêu cao nhất**: **{top_cat['category']}** với tổng số tiền **{top_cat['amount']:,.0f} {sql_ctx.currency}** (chiếm **{top_cat['percentage']:.1f}%** tổng chi toàn kỳ).\n")
+                lines.append(
+                    f"🛒 **Danh mục chi tiêu cao nhất**: **{top_cat['category']}** với tổng số tiền **{top_cat['amount']:,.0f} {sql_ctx.currency}** (chiếm **{top_cat['percentage']:.1f}%** tổng chi toàn kỳ).\n"
+                )
 
             if sql_ctx.monthly_breakdown:
                 lines.append("#### 📅 Bảng tổng hợp các tháng:")
-                lines.append("| Tháng | Chi tiêu (VND) | Thu nhập (VND) | Thặng dư (VND) | Biến động |")
+                lines.append(
+                    "| Tháng | Chi tiêu (VND) | Thu nhập (VND) | Thặng dư (VND) | Biến động |"
+                )
                 lines.append("|---|---|---|---|---|")
                 for m in sql_ctx.monthly_breakdown:
                     chg_str = "-"
@@ -525,15 +600,23 @@ class FinancialRAGGenerator:
                         else:
                             chg_str = "➡️ Không đổi"
 
-                    highlight = " 🏆 (Cao nhất)" if m == max_expense_m and len(sql_ctx.monthly_breakdown) > 1 else ""
-                    lines.append(f"| **{m['month']}**{highlight} | {m['expense']:,.0f} | {m['income']:,.0f} | {m['savings']:+,.0f} | {chg_str} |")
+                    highlight = (
+                        " 🏆 (Cao nhất)"
+                        if m == max_expense_m and len(sql_ctx.monthly_breakdown) > 1
+                        else ""
+                    )
+                    lines.append(
+                        f"| **{m['month']}**{highlight} | {m['expense']:,.0f} | {m['income']:,.0f} | {m['savings']:+,.0f} | {chg_str} |"
+                    )
 
             return "\n".join(lines)
 
         # 4. Balance Query
         if intent == "balance_query":
-            lines = [f"### 💵 Số dư tài khoản hiện tại\n"]
-            lines.append(f"Tổng số dư tài khoản của bạn là **{sql_ctx.total_balance:,.0f} {sql_ctx.currency}** (gồm {len(sql_ctx.accounts)} tài khoản).\n")
+            lines = ["### 💵 Số dư tài khoản hiện tại\n"]
+            lines.append(
+                f"Tổng số dư tài khoản của bạn là **{sql_ctx.total_balance:,.0f} {sql_ctx.currency}** (gồm {len(sql_ctx.accounts)} tài khoản).\n"
+            )
             if sql_ctx.accounts:
                 lines.append("#### 💳 Chi tiết từng tài khoản:")
                 for acc in sql_ctx.accounts:
@@ -543,21 +626,33 @@ class FinancialRAGGenerator:
 
         # 5. Income Query
         if intent == "income_query":
-            lines = [f"### 🟢 Tổng thu nhập kỳ này\n"]
-            lines.append(f"Trong kỳ từ **{sql_ctx.period_start}** đến **{sql_ctx.period_end}**, tổng thu nhập của bạn là **{sql_ctx.total_income:,.0f} {sql_ctx.currency}**.\n")
-            lines.append(f"* ⚖️ **Thặng dư tích lũy kỳ này**: `{sql_ctx.net_savings:,.0f} {sql_ctx.currency}`")
-            lines.append(f"* 🔴 **Tổng chi tiêu cùng kỳ**: `{sql_ctx.total_expense:,.0f} {sql_ctx.currency}`")
+            lines = ["### 🟢 Tổng thu nhập kỳ này\n"]
+            lines.append(
+                f"Trong kỳ từ **{sql_ctx.period_start}** đến **{sql_ctx.period_end}**, tổng thu nhập của bạn là **{sql_ctx.total_income:,.0f} {sql_ctx.currency}**.\n"
+            )
+            lines.append(
+                f"* ⚖️ **Thặng dư tích lũy kỳ này**: `{sql_ctx.net_savings:,.0f} {sql_ctx.currency}`"
+            )
+            lines.append(
+                f"* 🔴 **Tổng chi tiêu cùng kỳ**: `{sql_ctx.total_expense:,.0f} {sql_ctx.currency}`"
+            )
             return "\n".join(lines)
 
         # 6. Expense / Spending Query
         if intent in {"expense_query", "spending_analysis"}:
-            lines = [f"### 🔴 Báo cáo chi tiêu kỳ này\n"]
-            lines.append(f"Trong kỳ từ **{sql_ctx.period_start}** đến **{sql_ctx.period_end}**, tổng chi tiêu của bạn là **{sql_ctx.total_expense:,.0f} {sql_ctx.currency}** (gồm **{sql_ctx.transaction_count}** giao dịch).\n")
+            lines = ["### 🔴 Báo cáo chi tiêu kỳ này\n"]
+            lines.append(
+                f"Trong kỳ từ **{sql_ctx.period_start}** đến **{sql_ctx.period_end}**, tổng chi tiêu của bạn là **{sql_ctx.total_expense:,.0f} {sql_ctx.currency}** (gồm **{sql_ctx.transaction_count}** giao dịch).\n"
+            )
             if sql_ctx.top_categories:
                 lines.append("#### 🛒 Các danh mục chi tiêu hàng đầu:")
                 for cat in sql_ctx.top_categories:
-                    lines.append(f"* **{cat['category']}**: `{cat['amount']:,.0f} {sql_ctx.currency}` ({cat['percentage']:.1f}% tổng chi)")
-            lines.append(f"\n* 💵 **Số dư tài khoản hiện tại**: `{sql_ctx.total_balance:,.0f} {sql_ctx.currency}`")
+                    lines.append(
+                        f"* **{cat['category']}**: `{cat['amount']:,.0f} {sql_ctx.currency}` ({cat['percentage']:.1f}% tổng chi)"
+                    )
+            lines.append(
+                f"\n* 💵 **Số dư tài khoản hiện tại**: `{sql_ctx.total_balance:,.0f} {sql_ctx.currency}`"
+            )
             return "\n".join(lines)
 
         # 7. Budget & Goal Review Query
@@ -566,14 +661,18 @@ class FinancialRAGGenerator:
             if sql_ctx.budgets:
                 lines.append("#### 📊 Trạng thái ngân sách:")
                 for b in sql_ctx.budgets:
-                    lines.append(f"* Ngân sách **{b['name']}**: Đã dùng `{b['spent']:,.0f}/{b['amount']:,.0f} {sql_ctx.currency}` ({b['usage_pct']:.1f}%)")
+                    lines.append(
+                        f"* Ngân sách **{b['name']}**: Đã dùng `{b['spent']:,.0f}/{b['amount']:,.0f} {sql_ctx.currency}` ({b['usage_pct']:.1f}%)"
+                    )
             else:
                 lines.append("* Bạn chưa thiết lập ngân sách hàng tháng.")
 
             if sql_ctx.goals:
                 lines.append("\n#### 🏆 Mục tiêu tiết kiệm:")
                 for g in sql_ctx.goals:
-                    lines.append(f"* Mục tiêu **{g['name']}**: Tích lũy `{g['current']:,.0f}/{g['target']:,.0f} {sql_ctx.currency}` ({g['progress_pct']:.1f}%)")
+                    lines.append(
+                        f"* Mục tiêu **{g['name']}**: Tích lũy `{g['current']:,.0f}/{g['target']:,.0f} {sql_ctx.currency}` ({g['progress_pct']:.1f}%)"
+                    )
             else:
                 lines.append("\n* Bạn chưa tạo mục tiêu tiết kiệm nào.")
             return "\n".join(lines)
@@ -582,9 +681,15 @@ class FinancialRAGGenerator:
         if hybrid_context.has_sql_data:
             lines = ["### 📊 Báo cáo tài chính tổng quan\n"]
             lines.append(f"Trong kỳ từ **{sql_ctx.period_start}** đến **{sql_ctx.period_end}**:\n")
-            lines.append(f"* 💵 **Số dư tài khoản**: `{sql_ctx.total_balance:,.0f} {sql_ctx.currency}` ({len(sql_ctx.accounts)} tài khoản)")
-            lines.append(f"* 🔴 **Tổng chi tiêu**: `{sql_ctx.total_expense:,.0f} {sql_ctx.currency}` ({sql_ctx.transaction_count} giao dịch)")
-            lines.append(f"* 🟢 **Tổng thu nhập**: `{sql_ctx.total_income:,.0f} {sql_ctx.currency}`")
+            lines.append(
+                f"* 💵 **Số dư tài khoản**: `{sql_ctx.total_balance:,.0f} {sql_ctx.currency}` ({len(sql_ctx.accounts)} tài khoản)"
+            )
+            lines.append(
+                f"* 🔴 **Tổng chi tiêu**: `{sql_ctx.total_expense:,.0f} {sql_ctx.currency}` ({sql_ctx.transaction_count} giao dịch)"
+            )
+            lines.append(
+                f"* 🟢 **Tổng thu nhập**: `{sql_ctx.total_income:,.0f} {sql_ctx.currency}`"
+            )
             lines.append(f"* ⚖️ **Thặng dư**: `{sql_ctx.net_savings:,.0f} {sql_ctx.currency}`")
             return "\n".join(lines)
 

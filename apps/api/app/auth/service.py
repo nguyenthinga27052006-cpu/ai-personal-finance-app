@@ -172,28 +172,46 @@ def delete_user_and_purge_all_data(db: Session, target_user: User) -> None:
 
     user_id = target_user.id
 
-    db.query(DeviceSession).filter(DeviceSession.user_id == user_id).delete(synchronize_session=False)
-    db.query(AIChatMessage).filter(AIChatMessage.user_id == user_id).delete(synchronize_session=False)
+    db.query(DeviceSession).filter(DeviceSession.user_id == user_id).delete(
+        synchronize_session=False
+    )
+    db.query(AIChatMessage).filter(AIChatMessage.user_id == user_id).delete(
+        synchronize_session=False
+    )
     db.query(AIFeedback).filter(AIFeedback.user_id == user_id).delete(synchronize_session=False)
     db.query(Notification).filter(Notification.user_id == user_id).delete(synchronize_session=False)
-    db.query(Recommendation).filter(Recommendation.user_id == user_id).delete(synchronize_session=False)
-    db.query(UserPreference).filter(UserPreference.user_id == user_id).delete(synchronize_session=False)
+    db.query(Recommendation).filter(Recommendation.user_id == user_id).delete(
+        synchronize_session=False
+    )
+    db.query(UserPreference).filter(UserPreference.user_id == user_id).delete(
+        synchronize_session=False
+    )
     db.query(UserSetting).filter(UserSetting.user_id == user_id).delete(synchronize_session=False)
 
     goals = db.query(FinancialGoal).filter(FinancialGoal.user_id == user_id).all()
     for g in goals:
-        db.query(GoalContribution).filter(GoalContribution.goal_id == g.id).delete(synchronize_session=False)
-    db.query(FinancialGoal).filter(FinancialGoal.user_id == user_id).delete(synchronize_session=False)
+        db.query(GoalContribution).filter(GoalContribution.goal_id == g.id).delete(
+            synchronize_session=False
+        )
+    db.query(FinancialGoal).filter(FinancialGoal.user_id == user_id).delete(
+        synchronize_session=False
+    )
 
     budgets = db.query(Budget).filter(Budget.user_id == user_id).all()
     for b in budgets:
-        db.query(BudgetCategory).filter(BudgetCategory.budget_id == b.id).delete(synchronize_session=False)
+        db.query(BudgetCategory).filter(BudgetCategory.budget_id == b.id).delete(
+            synchronize_session=False
+        )
     db.query(Budget).filter(Budget.user_id == user_id).delete(synchronize_session=False)
 
     transactions = db.query(Transaction).filter(Transaction.user_id == user_id).all()
     for t in transactions:
-        db.query(TransactionEntry).filter(TransactionEntry.transaction_id == t.id).delete(synchronize_session=False)
-        db.query(TransactionItem).filter(TransactionItem.transaction_id == t.id).delete(synchronize_session=False)
+        db.query(TransactionEntry).filter(TransactionEntry.transaction_id == t.id).delete(
+            synchronize_session=False
+        )
+        db.query(TransactionItem).filter(TransactionItem.transaction_id == t.id).delete(
+            synchronize_session=False
+        )
     db.query(Transaction).filter(Transaction.user_id == user_id).delete(synchronize_session=False)
 
     db.query(Account).filter(Account.user_id == user_id).delete(synchronize_session=False)

@@ -28,7 +28,9 @@ class HybridContext:
             return "Không tìm thấy kiến thức RAG liên quan."
         parts = []
         for idx, chunk in enumerate(self.vector_chunks, start=1):
-            source_title = chunk.metadata.get("source") or chunk.metadata.get("title") or "RAG Document"
+            source_title = (
+                chunk.metadata.get("source") or chunk.metadata.get("title") or "RAG Document"
+            )
             parts.append(f"[{idx}] Source: {source_title}\n{chunk.content}")
         return "\n\n".join(parts)
 
@@ -53,26 +55,30 @@ class HybridContext:
     def detailed_citations(self) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
         if self.has_sql_data:
-            records.append({
-                "citation_id": "sql-user-data",
-                "source": "PostgreSQL_Database",
-                "title": "Dữ liệu Tài chính Cá nhân",
-                "type": "sql_fact",
-                "period": f"{self.sql_context.period_start} đến {self.sql_context.period_end}",
-            })
+            records.append(
+                {
+                    "citation_id": "sql-user-data",
+                    "source": "PostgreSQL_Database",
+                    "title": "Dữ liệu Tài chính Cá nhân",
+                    "type": "sql_fact",
+                    "period": f"{self.sql_context.period_start} đến {self.sql_context.period_end}",
+                }
+            )
 
         for chunk in self.vector_chunks:
             doc_id = chunk.metadata.get("document_id") or chunk.doc_id
             title = chunk.metadata.get("title") or "Tài liệu Tài chính"
             source = chunk.metadata.get("source") or title
-            records.append({
-                "citation_id": f"kb-{doc_id}",
-                "document_id": doc_id,
-                "title": title,
-                "source": source,
-                "chunk_id": chunk.chunk_id,
-                "type": "knowledge_base",
-            })
+            records.append(
+                {
+                    "citation_id": f"kb-{doc_id}",
+                    "document_id": doc_id,
+                    "title": title,
+                    "source": source,
+                    "chunk_id": chunk.chunk_id,
+                    "type": "knowledge_base",
+                }
+            )
         return records
 
 
@@ -101,7 +107,6 @@ class HybridRetriever:
         # 1. Intent & plan resolution (incorporating conversation history for follow-ups)
         plan = IntentDetector.create_plan(question, today=start, history=history)
         intent = plan.intent
-
 
         # 2. Topic metadata filtering
         filters = None
@@ -157,4 +162,3 @@ class HybridRetriever:
             has_rag_data=has_rag_data,
             status=status,
         )
-

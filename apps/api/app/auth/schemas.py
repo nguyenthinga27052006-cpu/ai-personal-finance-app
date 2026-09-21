@@ -74,4 +74,3 @@ class ChangePasswordRequest(BaseModel):
     @classmethod
     def validate_password_value(cls, value: str) -> str:
         return validate_password(value)
-

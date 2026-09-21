@@ -87,9 +87,7 @@ def test_missing_auth_fails_closed(client):
             allowed_tools=ALL_TOOLS,
         )
         with pytest.raises(AuthenticationContextError):
-            build_read_only_registry().execute(
-                "get_current_balance", context, {"currency": "VND"}
-            )
+            build_read_only_registry().execute("get_current_balance", context, {"currency": "VND"})
 
 
 def test_cross_user_access_is_denied(client):
@@ -102,9 +100,7 @@ def test_cross_user_access_is_denied(client):
         second["user"]["id"],
         allowed_tools=frozenset({"get_current_balance"}),
     )
-    result = build_read_only_registry().execute(
-        "get_current_balance", context, {"currency": "VND"}
-    )
+    result = build_read_only_registry().execute("get_current_balance", context, {"currency": "VND"})
     assert result.data["accounts"] == []
 
 
@@ -114,9 +110,12 @@ def test_read_only_tool_has_no_write_side_effect(client):
     created = account(test_client, auth, "Stable", opening=100000)
     context = _context(factory, auth["user"]["id"])
     build_read_only_registry().execute("get_current_balance", context, {"currency": "VND"})
-    assert test_client.get(
-        f"/api/v1/accounts/{created['id']}", headers=headers(auth)
-    ).json()["current_balance"] == 100000
+    assert (
+        test_client.get(f"/api/v1/accounts/{created['id']}", headers=headers(auth)).json()[
+            "current_balance"
+        ]
+        == 100000
+    )
     with pytest.raises(WriteToolsDisabledError):
         WriteTool().execute(context)
 
@@ -189,9 +188,7 @@ def test_structured_output_success_and_fail_closed():
     )
     assert valid.status == "OK"
     with pytest.raises(ValidationError):
-        AIOutput.model_validate(
-            {"status": "OK", "answer": "bad", "unexpected": True}
-        )
+        AIOutput.model_validate({"status": "OK", "answer": "bad", "unexpected": True})
     gateway = AIGateway(
         ModelRouter(FakeProvider(response="{malformed")), build_read_only_registry()
     )
@@ -244,9 +241,7 @@ def test_gateway_insufficient_data_is_controlled(client):
             {"get_monthly_expense", "get_category_spending", "get_spending_trend", "get_insights"}
         ),
     )
-    result = AIGateway(
-        ModelRouter(FakeProvider()), build_read_only_registry()
-    ).execute(
+    result = AIGateway(ModelRouter(FakeProvider()), build_read_only_registry()).execute(
         context,
         task="spending_analysis",
         start=date(2026, 8, 1),
@@ -443,6 +438,7 @@ def test_ai_chat_stream_endpoint(client):
 
 def test_token_budget_tracker_quota_and_audit_logging(caplog):
     import logging
+
     from app.ai.usage import TokenBudgetTracker, TokenLimitExceeded
 
     caplog.set_level(logging.INFO)
@@ -490,10 +486,11 @@ def test_token_limit_exceeded_returns_429_http_response(client):
 
 
 def test_legal_disclaimer_injection():
+    from decimal import Decimal
+
     from app.ai.rag.generator import FINANCIAL_LEGAL_DISCLAIMER
     from app.ai.retrievers.hybrid_retriever import HybridContext
     from app.ai.retrievers.sql_retriever import SQLUserDataContext
-    from decimal import Decimal
 
     sql_ctx = SQLUserDataContext(
         user_id="u1",
@@ -522,6 +519,7 @@ def test_legal_disclaimer_injection():
     )
 
     from app.ai.rag.generator import FinancialRAGGenerator
+
     gen = FinancialRAGGenerator(db=None)  # type: ignore[arg-type]
     formatted = gen._format_markdown_response("", hybrid_context, citations=[])
     assert FINANCIAL_LEGAL_DISCLAIMER.strip() in formatted
@@ -561,11 +559,9 @@ def test_ai_feedback_endpoint(client):
     # Verify persistence in database
     with factory() as db:
         from app.db.models import AIFeedback
+
         fb = db.get(AIFeedback, body["feedback_id"])
         assert fb is not None
         assert fb.user_id == auth["user"]["id"]
         assert fb.rating == 5
         assert fb.feedback_type == "accurate"
-
-
-

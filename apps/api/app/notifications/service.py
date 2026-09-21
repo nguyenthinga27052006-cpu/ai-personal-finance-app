@@ -159,13 +159,16 @@ def evaluate_notifications(
     local_today = local_now.date()
     day_start = datetime.combine(local_today, time.min, tzinfo=local_now.tzinfo)
     day_end = datetime.combine(local_today, time.max, tzinfo=local_now.tzinfo)
-    created_today = db.scalar(
-        select(func.count(Notification.id)).where(
-            Notification.user_id == user.id,
-            Notification.created_at >= day_start.astimezone(timezone.utc),
-            Notification.created_at <= day_end.astimezone(timezone.utc),
+    created_today = (
+        db.scalar(
+            select(func.count(Notification.id)).where(
+                Notification.user_id == user.id,
+                Notification.created_at >= day_start.astimezone(timezone.utc),
+                Notification.created_at <= day_end.astimezone(timezone.utc),
+            )
         )
-    ) or 0
+        or 0
+    )
     created: list[Notification] = []
     for values in notification_candidates(db, user, start, end, currency):
         if not getattr(preference, values["preference"]):
@@ -188,11 +191,7 @@ def evaluate_notifications(
             dedupe_key=dedupe,
             channel="IN_APP",
             **{
-                key: (
-                    json.loads(json.dumps(value, default=str))
-                    if key == "evidence"
-                    else value
-                )
+                key: (json.loads(json.dumps(value, default=str)) if key == "evidence" else value)
                 for key, value in values.items()
                 if key != "preference"
             },
@@ -218,14 +217,16 @@ def mark_read(db: Session, user: User, notification_id: str) -> Notification | N
         return None
     if notification.read_at is None:
         notification.read_at = datetime.now(timezone.utc)
-    db.add(NotificationEvent(
-        notification_id=notification.id,
-        user_id=user.id,
-        event_type="READ",
-        channel="IN_APP",
-        result="accepted",
-        event_metadata={},
-    ))
+    db.add(
+        NotificationEvent(
+            notification_id=notification.id,
+            user_id=user.id,
+            event_type="READ",
+            channel="IN_APP",
+            result="accepted",
+            event_metadata={},
+        )
+    )
     return notification
 
 

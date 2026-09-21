@@ -92,9 +92,7 @@ class FakeProvider:
             else:
                 payload = {
                     "status": (
-                        "INSUFFICIENT_DATA"
-                        if request.context.get("insufficient_data")
-                        else "OK"
+                        "INSUFFICIENT_DATA" if request.context.get("insufficient_data") else "OK"
                     ),
                     "answer": "AI provider foundation response; no financial action was taken.",
                     "citations": request.context.get("provenance", []),
@@ -137,19 +135,27 @@ class FakeProvider:
 class GeminiLLMProvider:
     name = "gemini"
 
-    def __init__(self, api_key: str | None = None, default_model: str = "gemini-3.1-flash-lite") -> None:
+    def __init__(
+        self, api_key: str | None = None, default_model: str = "gemini-3.1-flash-lite"
+    ) -> None:
         self.api_key = api_key
         self.default_model = default_model
 
     def _get_model_path(self, model: str) -> str:
-        model_name = model if (model.startswith("gemini-") or model.startswith("models/")) else self.default_model
+        model_name = (
+            model
+            if (model.startswith("gemini-") or model.startswith("models/"))
+            else self.default_model
+        )
         if not model_name.startswith("models/"):
             return f"models/{model_name}"
         return model_name
 
     def generate(self, request: ProviderRequest) -> ProviderResponse:
         if not self.api_key or self.api_key in ("your-gemini-api-key", "test_key", "dummy"):
-            raise ProviderUnavailableError("Gemini API key is not configured or is a dummy test key")
+            raise ProviderUnavailableError(
+                "Gemini API key is not configured or is a dummy test key"
+            )
         started = monotonic()
         import json
         import urllib.request
@@ -177,8 +183,11 @@ class GeminiLLMProvider:
 
     async def stream_generate(self, request: ProviderRequest) -> AsyncGenerator[str, None]:
         if not self.api_key or self.api_key in ("your-gemini-api-key", "test_key", "dummy"):
-            raise ProviderUnavailableError("Gemini API key is not configured or is a dummy test key")
+            raise ProviderUnavailableError(
+                "Gemini API key is not configured or is a dummy test key"
+            )
         import json
+
         import httpx
 
         model_path = self._get_model_path(request.model)
@@ -190,7 +199,9 @@ class GeminiLLMProvider:
             async with httpx.AsyncClient(timeout=request.timeout_seconds) as client:
                 async with client.stream("POST", url, json=payload) as response:
                     if response.status_code != 200:
-                        raise ProviderUnavailableError(f"Gemini API returned status {response.status_code}")
+                        raise ProviderUnavailableError(
+                            f"Gemini API returned status {response.status_code}"
+                        )
                     async for line in response.aiter_lines():
                         if line.startswith("data: "):
                             data_str = line[6:].strip()
@@ -221,7 +232,9 @@ class OpenAIProvider:
 
     def generate(self, request: ProviderRequest) -> ProviderResponse:
         if not self.api_key or self.api_key in ("your-openai-api-key", "test_key", "dummy"):
-            raise ProviderUnavailableError("OpenAI API key is not configured or is a dummy test key")
+            raise ProviderUnavailableError(
+                "OpenAI API key is not configured or is a dummy test key"
+            )
         started = monotonic()
         import openai
 
@@ -250,7 +263,9 @@ class OpenAIProvider:
 
     async def stream_generate(self, request: ProviderRequest) -> AsyncGenerator[str, None]:
         if not self.api_key or self.api_key in ("your-openai-api-key", "test_key", "dummy"):
-            raise ProviderUnavailableError("OpenAI API key is not configured or is a dummy test key")
+            raise ProviderUnavailableError(
+                "OpenAI API key is not configured or is a dummy test key"
+            )
         import openai
 
         model_name = request.model if request.model.startswith("gpt-") else self.default_model
@@ -344,4 +359,3 @@ class ModelRouter:
             )
             async for chunk in self.fallback.stream_generate(fallback_request):
                 yield chunk
-

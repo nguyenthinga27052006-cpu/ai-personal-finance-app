@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import date, datetime
-import logging
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -25,17 +25,20 @@ from app.ai.errors import (
     WriteToolsDisabledError,
 )
 from app.ai.gateway import default_gateway
-from app.ai.nl_query import execute_nl_query
+from app.ai.rag.generator import FinancialRAGGenerator
 from app.ai.schemas import AIExecuteRequest, AIExecuteResponse
-from app.ai.usage import AIUsageLimitExceeded, TokenLimitExceeded, get_ai_usage_budget, get_token_budget_tracker
+from app.ai.usage import (
+    AIUsageLimitExceeded,
+    TokenLimitExceeded,
+    get_ai_usage_budget,
+    get_token_budget_tracker,
+)
 from app.auth.dependencies import CurrentUser
 from app.auth.rate_limit import AuthRateLimiter, get_ai_rate_limiter
-from app.ai.rag.generator import FinancialRAGGenerator
 from app.db.models import AIChatMessage, AIFeedback
 from app.db.session import get_db
 
 logger = logging.getLogger("app.ai.routes")
-
 
 
 router = APIRouter(prefix="/api/v1/ai", tags=["ai"])
@@ -403,7 +406,7 @@ def confirm_receipt_endpoint(
     current_user: CurrentUser,
     db: DbSession,
 ) -> dict[str, Any]:
-    from app.db.models import TransactionSource, TransactionType
+    from app.db.models import TransactionType
     from app.transactions.schemas import TransactionCreate
     from app.transactions.service import create_transaction
 
@@ -471,7 +474,6 @@ def submit_feedback(
     }
 
 
-
 def _check_ai_rate_limit(request: Request, user_id: str, limiter: AuthRateLimiter) -> None:
     client_ip = request.client.host if request.client else "unknown"
     if not limiter.allow(f"ai:{user_id}:{client_ip}"):
@@ -508,4 +510,3 @@ def _check_token_quota(user_id: str, question_or_prompt: str = "") -> None:
             headers={"Retry-After": str(exc.retry_after)},
             detail={"code": "DAILY_TOKEN_LIMIT_EXCEEDED", "message": str(exc)},
         ) from exc
-

@@ -49,7 +49,7 @@ class ConversationStore:
         entries = self._messages.setdefault(conversation_id, [])
         entries.append(message)
         if len(entries) > self.max_messages:
-            del entries[:-self.max_messages]
+            del entries[: -self.max_messages]
         return message
 
     def list(

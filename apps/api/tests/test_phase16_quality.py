@@ -118,9 +118,10 @@ def test_representative_api_negative_contracts(phase16_client):
 
     auth = register(test_client)
     assert test_client.get("/api/v1/transactions?page=0", headers=headers(auth)).status_code == 422
-    assert test_client.get(
-        "/api/v1/transactions/not-a-real-id", headers=headers(auth)
-    ).status_code == 404
+    assert (
+        test_client.get("/api/v1/transactions/not-a-real-id", headers=headers(auth)).status_code
+        == 404
+    )
 
     account_data = account(test_client, auth, "Contract")
     unknown_field = test_client.post(

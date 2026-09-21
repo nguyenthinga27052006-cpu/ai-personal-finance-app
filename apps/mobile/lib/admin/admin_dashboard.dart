@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../auth/api_client.dart';
+import '../components/sliding_tab_navigation.dart';
 import '../settings/settings_controller.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -308,7 +309,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   @override
   Widget build(BuildContext context) {
     final settings = InheritedSettings.of(context);
-    final tabBar = TabBar(
+    final tabBar = SlidingIndicatorTabBar(
       controller: _tabController,
       tabs: const [
         Tab(icon: Icon(Icons.dashboard), text: 'Tổng quan & Biểu đồ'),

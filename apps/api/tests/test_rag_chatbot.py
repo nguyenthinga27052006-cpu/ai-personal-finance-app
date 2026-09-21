@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import pytest
 from datetime import date
 from uuid import uuid4
 
-from app.ai.rag.knowledge_docs import KnowledgeDocument, SEED_KNOWLEDGE_DOCUMENTS
-from app.ai.rag.vector_store import RAGVectorStore, recursive_chunk_text
-from app.ai.rag.memory import RAGMemoryStore
-from app.ai.retrievers.intent_detector import IntentDetector
-from app.ai.retrievers.hybrid_retriever import HybridRetriever
+import pytest
+
 from app.ai.rag.generator import FinancialRAGGenerator
+from app.ai.rag.knowledge_docs import SEED_KNOWLEDGE_DOCUMENTS, KnowledgeDocument
+from app.ai.rag.memory import RAGMemoryStore
+from app.ai.rag.vector_store import RAGVectorStore, recursive_chunk_text
+from app.ai.retrievers.intent_detector import IntentDetector
 from app.db.models import User, UserStatus
 
 
@@ -137,10 +137,11 @@ def test_metadata_filtering_and_threshold():
 
 
 def test_citation_validator_filters_fake_citations():
+    from decimal import Decimal
+
     from app.ai.rag.generator import CitationValidator
     from app.ai.retrievers.hybrid_retriever import HybridContext
     from app.ai.retrievers.sql_retriever import SQLUserDataContext
-    from decimal import Decimal
 
     sql_ctx = SQLUserDataContext(
         user_id="user_123",
@@ -191,7 +192,12 @@ def test_semantic_synonym_retrieval():
     # Financial slang 'tích sản' should retrieve investment/saving document
     results = store.search("tích sản", top_k=2)
     assert len(results) > 0
-    assert any("investment" in r.metadata.get("topic", "") or "saving" in r.metadata.get("topic", "") or "tích" in r.content.lower() for r in results)
+    assert any(
+        "investment" in r.metadata.get("topic", "")
+        or "saving" in r.metadata.get("topic", "")
+        or "tích" in r.content.lower()
+        for r in results
+    )
 
 
 def test_multi_turn_anaphora_context_inheritance():
@@ -206,7 +212,10 @@ def test_multi_turn_anaphora_context_inheritance():
     q2 = "Thế còn tháng trước thì sao?"
     history = [
         {"role": "user", "content": q1},
-        {"role": "assistant", "content": "Báo cáo chi tiêu ăn uống tháng này của bạn là 3,500,000 VND."},
+        {
+            "role": "assistant",
+            "content": "Báo cáo chi tiêu ăn uống tháng này của bạn là 3,500,000 VND.",
+        },
     ]
     plan2 = IntentDetector.create_plan(q2, history=history)
     assert plan2.intent == "spending_analysis"
@@ -234,10 +243,15 @@ def test_multi_turn_abrupt_context_switching():
     assert plan2.requires_knowledge is True
     assert plan2.entities.category is None  # no leftover SQL category
 
-    history.extend([
-        {"role": "user", "content": q2},
-        {"role": "assistant", "content": "Lãi suất kép là việc lãi phát sinh được cộng dồn vào vốn gốc..."},
-    ])
+    history.extend(
+        [
+            {"role": "user", "content": q2},
+            {
+                "role": "assistant",
+                "content": "Lãi suất kép là việc lãi phát sinh được cộng dồn vào vốn gốc...",
+            },
+        ]
+    )
 
     # Turn 3: Switch back to spending query
     q3 = "Quay lại tiền ăn uống, quán nào đắt nhất?"
@@ -264,6 +278,3 @@ def test_rag_memory_store_truncation_and_system_prompt():
     formatted = mem.get_formatted_context(user_id)
     assert "Người dùng: Câu hỏi 5 về tài chính" in formatted
     assert "Trợ lý AI: Câu trả lời 7 từ hệ thống" in formatted
-
-
-

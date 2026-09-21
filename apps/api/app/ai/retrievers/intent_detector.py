@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Any, Literal
 
 IntentType = Literal[
@@ -85,13 +85,35 @@ class IntentDetector:
 
         # 2. Personal Hybrid queries prioritize advice/affordability over generic knowledge
         if is_personal:
-            if any(kw in lowered for kw in ["đủ tiền", "mua được", "mua laptop", "mua điện thoại", "có nên mua", "có thể bắt đầu", "afford"]):
+            if any(
+                kw in lowered
+                for kw in [
+                    "đủ tiền",
+                    "mua được",
+                    "mua laptop",
+                    "mua điện thoại",
+                    "có nên mua",
+                    "có thể bắt đầu",
+                    "afford",
+                ]
+            ):
                 return "affordability"
             if any(kw in lowered for kw in ["trả nợ", "khoản nợ", "nợ nào"]):
                 return "debt_advice"
             if any(kw in lowered for kw in ["vượt hạn mức", "mục tiêu tiết kiệm"]):
                 return "budget_review"
-            if any(kw in lowered for kw in ["tiết kiệm", "phân bổ", "tối ưu", "giảm chi", "cắt giảm", "trích", "xây dựng"]):
+            if any(
+                kw in lowered
+                for kw in [
+                    "tiết kiệm",
+                    "phân bổ",
+                    "tối ưu",
+                    "giảm chi",
+                    "cắt giảm",
+                    "trích",
+                    "xây dựng",
+                ]
+            ):
                 return "saving_advice"
 
         # 3. Knowledge queries (Educational / Framework / Financial rules)
@@ -112,15 +134,33 @@ class IntentDetector:
             ]
         ) or (
             ("là gì" in lowered or "khái niệm" in lowered or "definition" in lowered)
-            and not any(b in lowered for b in ["số dư", "balance", "tài khoản", "ngân sách", "thu nhập", "tôi", "tên", "mình", "tuổi"])
+            and not any(
+                b in lowered
+                for b in [
+                    "số dư",
+                    "balance",
+                    "tài khoản",
+                    "ngân sách",
+                    "thu nhập",
+                    "tôi",
+                    "tên",
+                    "mình",
+                    "tuổi",
+                ]
+            )
         ):
             return "knowledge"
 
-
         # 4. Category Spending & Breakdown ("Tôi tiêu nhiều nhất ở đâu", "ăn uống", "danh mục")
         if any(kw in lowered for kw in ["ở đâu", "danh mục", "khoản nào", "top chi tiêu"]) or (
-            any(kw in lowered for kw in ["ăn uống", "mua sắm", "đi lại", "giải trí", "hóa đơn", "tiền nhà"])
-            and any(kw in lowered for kw in ["chi tiêu", "đã tiêu", "tiêu bao nhiêu", "tổng chi", "tiêu"])
+            any(
+                kw in lowered
+                for kw in ["ăn uống", "mua sắm", "đi lại", "giải trí", "hóa đơn", "tiền nhà"]
+            )
+            and any(
+                kw in lowered
+                for kw in ["chi tiêu", "đã tiêu", "tiêu bao nhiêu", "tổng chi", "tiêu"]
+            )
         ):
             return "spending_analysis"
 
@@ -166,7 +206,7 @@ class IntentDetector:
                 "min",
                 "kỷ lục",
             ]
-        ) or re.search(r'\d+\s*tháng', lowered):
+        ) or re.search(r"\d+\s*tháng", lowered):
             return "comparison_query"
 
         # 7. Balance Queries
@@ -264,7 +304,6 @@ class IntentDetector:
 
         return "general_query"
 
-
     @staticmethod
     def parse_date_range(question: str, today: date | None = None) -> tuple[date, date, bool]:
         """
@@ -277,7 +316,19 @@ class IntentDetector:
         q = question.lower().strip()
 
         # Check for historical extreme analytical questions ("tháng nào", "nhiều nhất", "ít nhất", etc.)
-        if any(kw in q for kw in ["tháng nào", "nhiều nhất", "ít nhất", "cao nhất", "thấp nhất", "max", "min", "kỷ lục"]):
+        if any(
+            kw in q
+            for kw in [
+                "tháng nào",
+                "nhiều nhất",
+                "ít nhất",
+                "cao nhất",
+                "thấp nhất",
+                "max",
+                "min",
+                "kỷ lục",
+            ]
+        ):
             num_months = 12
             start_month = today.month - num_months + 1
             start_year = today.year
@@ -286,13 +337,15 @@ class IntentDetector:
                 start_year -= 1
             start = date(start_year, start_month, 1)
 
-            next_month = date(today.year + (today.month == 12), 1 if today.month == 12 else today.month + 1, 1)
+            next_month = date(
+                today.year + (today.month == 12), 1 if today.month == 12 else today.month + 1, 1
+            )
             end = next_month - timedelta(days=1)
             return start, end, True
 
         # 1. Match "X tháng gần nhất" / "X tháng qua" / "X tháng vừa qua" / "X tháng"
-        match_recent_months = re.search(r'(\d+)\s*tháng', q)
-        if match_recent_months and not re.search(r'tháng\s*\d{1,2}', q):
+        match_recent_months = re.search(r"(\d+)\s*tháng", q)
+        if match_recent_months and not re.search(r"tháng\s*\d{1,2}", q):
             num_months = int(match_recent_months.group(1))
             num_months = max(1, min(num_months, 12))  # cap between 1 and 12
             start_month = today.month - num_months + 1
@@ -302,12 +355,14 @@ class IntentDetector:
                 start_year -= 1
             start = date(start_year, start_month, 1)
 
-            next_month = date(today.year + (today.month == 12), 1 if today.month == 12 else today.month + 1, 1)
+            next_month = date(
+                today.year + (today.month == 12), 1 if today.month == 12 else today.month + 1, 1
+            )
             end = next_month - timedelta(days=1)
             return start, end, num_months > 1
 
         # 2. Match specific month: "tháng X" or "tháng X/YYYY" (e.g. tháng 5, tháng 08, tháng 8/2026)
-        match_specific_month = re.search(r'tháng\s*(\d{1,2})(?:\s*[/ năm]*\s*(\d{4}))?', q)
+        match_specific_month = re.search(r"tháng\s*(\d{1,2})(?:\s*[/ năm]*\s*(\d{4}))?", q)
         if match_specific_month:
             m = int(match_specific_month.group(1))
             y = int(match_specific_month.group(2)) if match_specific_month.group(2) else today.year
@@ -345,13 +400,17 @@ class IntentDetector:
         # 6. Match "tháng này" or "tháng hiện tại"
         if "tháng này" in q or "tháng hiện tại" in q:
             start = date(today.year, today.month, 1)
-            next_m = date(today.year + (today.month == 12), 1 if today.month == 12 else today.month + 1, 1)
+            next_m = date(
+                today.year + (today.month == 12), 1 if today.month == 12 else today.month + 1, 1
+            )
             end = next_m - timedelta(days=1)
             return start, end, False
 
         # Default fallback: current month
         start = date(today.year, today.month, 1)
-        next_m = date(today.year + (today.month == 12), 1 if today.month == 12 else today.month + 1, 1)
+        next_m = date(
+            today.year + (today.month == 12), 1 if today.month == 12 else today.month + 1, 1
+        )
         end = next_m - timedelta(days=1)
         return start, end, False
 
@@ -371,7 +430,16 @@ class IntentDetector:
 
         # Entity extraction
         cat_match = None
-        for cat in ["ăn uống", "mua sắm", "đi lại", "giải trí", "hóa đơn", "tiền nhà", "y tế", "công nghệ"]:
+        for cat in [
+            "ăn uống",
+            "mua sắm",
+            "đi lại",
+            "giải trí",
+            "hóa đơn",
+            "tiền nhà",
+            "y tế",
+            "công nghệ",
+        ]:
             if cat in lowered:
                 cat_match = cat
                 break
@@ -381,10 +449,23 @@ class IntentDetector:
         prev_cat = None
         if history:
             for msg in reversed(history):
-                content = getattr(msg, "content", "") if hasattr(msg, "content") else str(msg.get("content", "") if isinstance(msg, dict) else msg)
+                content = (
+                    getattr(msg, "content", "")
+                    if hasattr(msg, "content")
+                    else str(msg.get("content", "") if isinstance(msg, dict) else msg)
+                )
                 if content:
                     content_lowered = content.lower()
-                    for cat in ["ăn uống", "mua sắm", "đi lại", "giải trí", "hóa đơn", "tiền nhà", "y tế", "công nghệ"]:
+                    for cat in [
+                        "ăn uống",
+                        "mua sắm",
+                        "đi lại",
+                        "giải trí",
+                        "hóa đơn",
+                        "tiền nhà",
+                        "y tế",
+                        "công nghệ",
+                    ]:
                         if cat in content_lowered:
                             prev_cat = cat
                             break
@@ -395,15 +476,29 @@ class IntentDetector:
                         break
 
         # If it's a follow-up or general query and previous turn had a specific intent, inherit context (unless it's personal chat)
-        is_personal_chat = any(w in lowered for w in ["tên", "tuổi", "bạn là ai", "tôi là ai", "ai đấy", "ai đây"])
-        if (is_followup_phrase or intent == "general_query") and prev_intent and not is_personal_chat and intent not in ("knowledge", "greeting", "app_faq"):
+        is_personal_chat = any(
+            w in lowered for w in ["tên", "tuổi", "bạn là ai", "tôi là ai", "ai đấy", "ai đây"]
+        )
+        if (
+            (is_followup_phrase or intent == "general_query")
+            and prev_intent
+            and not is_personal_chat
+            and intent not in ("knowledge", "greeting", "app_faq")
+        ):
             intent = prev_intent
-        if cat_match is None and prev_cat and intent not in ("knowledge", "greeting", "app_faq") and (is_followup_phrase or intent in ("spending_analysis", "expense_query", "category_analysis")):
+        if (
+            cat_match is None
+            and prev_cat
+            and intent not in ("knowledge", "greeting", "app_faq")
+            and (
+                is_followup_phrase
+                or intent in ("spending_analysis", "expense_query", "category_analysis")
+            )
+        ):
             cat_match = prev_cat
 
-
         amt_match = None
-        match_amt = re.search(r'(\d+)\s*(triệu|tr|k|đ|vnd)', lowered)
+        match_amt = re.search(r"(\d+)\s*(triệu|tr|k|đ|vnd)", lowered)
         if match_amt:
             val = float(match_amt.group(1))
             unit = match_amt.group(2)
@@ -413,18 +508,20 @@ class IntentDetector:
                 amt_match = val * 1_000
 
         requires_sql = intent not in ("knowledge", "greeting", "app_faq")
-        requires_knowledge = intent in ("knowledge", "saving_advice", "debt_advice", "affordability", "app_faq") or ("và" in lowered and "như thế nào" in lowered)
+        requires_knowledge = intent in (
+            "knowledge",
+            "saving_advice",
+            "debt_advice",
+            "affordability",
+            "app_faq",
+        ) or ("và" in lowered and "như thế nào" in lowered)
 
         sub_queries = []
         if "và" in lowered and ("làm sao" in lowered or "thế nào" in lowered):
-            sub_queries.append({
-                "type": "sql",
-                "query": "Retrieving financial stats from PostgreSQL"
-            })
-            sub_queries.append({
-                "type": "knowledge",
-                "query": "Searching advice knowledge base"
-            })
+            sub_queries.append(
+                {"type": "sql", "query": "Retrieving financial stats from PostgreSQL"}
+            )
+            sub_queries.append({"type": "knowledge", "query": "Searching advice knowledge base"})
 
         return QueryPlan(
             intent=intent,
@@ -444,5 +541,3 @@ class IntentDetector:
             requires_knowledge=requires_knowledge,
             sub_queries=sub_queries,
         )
-
-

@@ -46,4 +46,3 @@ NGỮ CẢNH HỘI THOẠI TRƯỚC ĐÓ:
 
 {lang_inst}
 """
-

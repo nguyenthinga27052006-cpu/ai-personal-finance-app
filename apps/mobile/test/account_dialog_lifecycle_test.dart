@@ -186,7 +186,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AccountDialog), findsNothing);
 
-    final dynamic state = tester.state(find.byType(FinanceHome));
     expect(find.text('Created'), findsOneWidget);
 
     await tester.tap(find.text('Created'));

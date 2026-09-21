@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../admin/admin_dashboard.dart';
 import '../auth/api_client.dart';
+import '../components/sliding_tab_navigation.dart';
 import 'settings_controller.dart';
 
 class SettingsDialog extends StatefulWidget {
@@ -103,10 +104,10 @@ class _SettingsDialogState extends State<SettingsDialog>
               ],
             ),
             const SizedBox(height: 12),
-            TabBar(
+            SlidingIndicatorTabBar(
               controller: _tabController,
               isScrollable: true,
-              labelColor: Colors.teal,
+              activeColor: Colors.teal,
               indicatorColor: Colors.teal,
               tabs: [
                 Tab(

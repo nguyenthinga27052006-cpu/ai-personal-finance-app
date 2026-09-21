@@ -86,8 +86,7 @@ def _impact(item: Any, recommendation_type: str) -> str:
         return f"ESTIMATE: review budget headroom; source utilization={evidence.get('utilization')}"
     if recommendation_type == "INCREASE_SAVING":
         return (
-            "ESTIMATE: increasing the saving rate from the source value may improve future "
-            "saving"
+            "ESTIMATE: increasing the saving rate from the source value may improve future saving"
         )
     if recommendation_type == "GOAL_PACING":
         return (
@@ -96,8 +95,7 @@ def _impact(item: Any, recommendation_type: str) -> str:
         )
     if recommendation_type == "CASHFLOW_PREPARATION":
         return (
-            "ESTIMATE: preparing for the projected deficit may reduce near-term cashflow "
-            "pressure"
+            "ESTIMATE: preparing for the projected deficit may reduce near-term cashflow pressure"
         )
     return "ESTIMATE: impact depends on the user's confirmed action"
 
