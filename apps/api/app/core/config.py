@@ -21,7 +21,9 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     app_port: int = Field(default=8000, ge=1, le=65535)
     database_url: str = "postgresql://finance:finance-dev-password@postgres:5432/finance"
-    host_database_url: str | None = None
+    host_database_url: str | None = (
+        "postgresql://finance:finance-dev-password@localhost:5433/finance"
+    )
     redis_url: str = "redis://redis:6379/0"
     log_level: str = "INFO"
     jwt_secret: str = "development-only-change-me-32-bytes-minimum"
