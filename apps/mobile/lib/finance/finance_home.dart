@@ -1820,83 +1820,59 @@ _CategoryInfo _resolveCategoryInfo(TransactionModel tx, List<CategoryModel> cate
     }
   }
 
-  if (rawName != null && rawName.trim().isNotEmpty) {
-    final lowerName = rawName.trim().toLowerCase();
-    if (lowerName.contains('điện') || lowerName.contains('nước') || lowerName.contains('utilities') ||
-        lowerName.contains('utility') || lowerName.contains('electric') || lowerName.contains('wifi') ||
-        lowerName.contains('internet') || lowerName.contains('hóa đơn')) {
-      return const _CategoryInfo(
-        name: 'Điện nước & Internet',
-        color: Color(0xFF2E7D32),
-        icon: Icons.receipt_long_outlined,
-      );
-    }
-    if (lowerName.contains('ăn') || lowerName.contains('food') || lowerName.contains('cơm') ||
-        lowerName.contains('phở') || lowerName.contains('siêu thị') || lowerName.contains('bách hóa')) {
-      return const _CategoryInfo(
-        name: 'Ăn uống & Siêu thị',
-        color: Color(0xFFE55737),
-        icon: Icons.restaurant,
-      );
-    }
-    if (lowerName.contains('di chuyển') || lowerName.contains('xăng') || lowerName.contains('transport') ||
-        lowerName.contains('vehicle') || lowerName.contains('xe')) {
-      return const _CategoryInfo(
-        name: 'Di chuyển & Xăng xe',
-        color: Color(0xFFFBC02D),
-        icon: Icons.directions_car_outlined,
-      );
-    }
-    if (lowerName.contains('mua sắm') || lowerName.contains('shopping') || lowerName.contains('thiết bị')) {
-      return const _CategoryInfo(
-        name: 'Mua sắm & Thiết bị',
-        color: Color(0xFF29B6F6),
-        icon: Icons.shopping_bag_outlined,
-      );
-    }
-    if (lowerName.contains('giải trí') || lowerName.contains('entertainment') || lowerName.contains('game')) {
-      return _CategoryInfo(
-        name: 'Giải trí',
-        color: Colors.purple.shade600,
-        icon: Icons.sports_esports_outlined,
-      );
-    }
-    if (lowerName.contains('sức khỏe') || lowerName.contains('health') || lowerName.contains('y tế')) {
-      return _CategoryInfo(
-        name: 'Sức khỏe',
-        color: Colors.teal.shade600,
-        icon: Icons.medical_services_outlined,
-      );
-    }
-    if (lowerName.contains('tiền nhà') || lowerName.contains('housing') || lowerName.contains('thuê nhà')) {
-      return _CategoryInfo(
-        name: 'Tiền nhà & Hóa đơn',
-        color: Colors.indigo.shade600,
-        icon: Icons.home_outlined,
-      );
-    }
-    if (lowerName.contains('giáo dục') || lowerName.contains('education') || lowerName.contains('học')) {
-      return _CategoryInfo(
-        name: 'Giáo dục',
-        color: Colors.deepOrange.shade600,
-        icon: Icons.school_outlined,
-      );
+  // 1. If an explicit Category was assigned, ALWAYS use its exact name without alias mutation
+  if (rawName != null && rawName.trim().isNotEmpty && rawName.trim() != 'Chưa chọn danh mục') {
+    final cleanName = rawName.trim();
+    final lowerName = cleanName.toLowerCase();
+
+    IconData icon = Icons.category_outlined;
+    Color color = _getCategoryColor(cleanName, cleanName.hashCode);
+
+    if (lowerName == 'shopping' || lowerName == 'mua sắm & thiết bị' || lowerName == 'mua sắm đồ dùng' || lowerName == 'mua sắm') {
+      icon = Icons.shopping_bag_outlined;
+      color = const Color(0xFF29B6F6);
+    } else if (lowerName == 'food' || lowerName == 'ăn uống & siêu thị' || lowerName == 'ăn uống & cafe' || lowerName == 'ăn uống' || lowerName == 'siêu thị & bách hóa') {
+      icon = Icons.restaurant;
+      color = const Color(0xFFE55737);
+    } else if (lowerName == 'housing' || lowerName == 'tiền nhà & hóa đơn' || lowerName == 'tiền nhà') {
+      icon = Icons.home_outlined;
+      color = Colors.indigo.shade600;
+    } else if (lowerName == 'utilities' || lowerName == 'điện nước & internet' || lowerName == 'hóa đơn & tiện ích' || lowerName == 'điện nước') {
+      icon = Icons.receipt_long_outlined;
+      color = const Color(0xFF2E7D32);
+    } else if (lowerName == 'transportation' || lowerName == 'di chuyển & xăng xe' || lowerName == 'di chuyển' || lowerName == 'đi lại') {
+      icon = Icons.directions_car_outlined;
+      color = const Color(0xFFFBC02D);
+    } else if (lowerName == 'health' || lowerName == 'sức khỏe') {
+      icon = Icons.medical_services_outlined;
+      color = Colors.teal.shade600;
+    } else if (lowerName == 'education' || lowerName == 'giáo dục') {
+      icon = Icons.school_outlined;
+      color = Colors.deepOrange.shade600;
+    } else if (lowerName == 'entertainment' || lowerName == 'giải trí' || lowerName == 'giải trí & tiếp khách') {
+      icon = Icons.sports_esports_outlined;
+      color = Colors.purple.shade600;
+    } else if (lowerName == 'subscription' || lowerName == 'đăng ký dịch vụ') {
+      icon = Icons.subscriptions_outlined;
+      color = Colors.pink.shade600;
+    } else if (lowerName == 'other' || lowerName == 'chi tiêu khác') {
+      icon = Icons.category_outlined;
+      color = Colors.blueGrey.shade600;
     }
 
-    if (rawName.trim() != 'Other' && rawName.trim() != 'Chi tiêu khác' && rawName.trim() != 'Chưa chọn danh mục') {
-      return _CategoryInfo(
-        name: rawName.trim(),
-        color: _getCategoryColor(rawName, rawName.hashCode),
-        icon: Icons.category_outlined,
-      );
-    }
+    return _CategoryInfo(
+      name: cleanName,
+      color: color,
+      icon: icon,
+    );
   }
 
+  // 2. Fallback ONLY when NO category is assigned: infer from description keywords
   final desc = (tx.description ?? '').toLowerCase();
   if (desc.contains('điện') || desc.contains('nước') || desc.contains('mạng') ||
       desc.contains('internet') || desc.contains('wifi') || desc.contains('electric') ||
       desc.contains('power') || desc.contains('utility') || desc.contains('utilities') ||
-      desc.contains('tiền nhà') || desc.contains('hóa đơn') || desc.contains('bill')) {
+      desc.contains('bill')) {
     return const _CategoryInfo(
       name: 'Điện nước & Internet',
       color: Color(0xFF2E7D32),
@@ -1946,7 +1922,7 @@ _CategoryInfo _resolveCategoryInfo(TransactionModel tx, List<CategoryModel> cate
 
   return _CategoryInfo(
     name: 'Chi tiêu khác',
-    color: Colors.grey.shade600,
+    color: Colors.blueGrey.shade600,
     icon: Icons.category_outlined,
   );
 }
