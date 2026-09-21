@@ -43,7 +43,7 @@ def test_full_refund_restores_balance_and_cannot_double_count(phase16_client):
 
     refund = test_client.post(
         f"/api/v1/transactions/{expense.json()['id']}/refund",
-        headers={**headers(auth), "Idempotency-Key": "phase16-full-refund"},
+        headers={**headers(auth), "Idempotency-Key": "idem-ref-1"},
         json={"account_id": account_data["id"], "amount": 12_345, "currency": "VND"},
     )
     assert refund.status_code == 201
@@ -53,7 +53,7 @@ def test_full_refund_restores_balance_and_cannot_double_count(phase16_client):
 
     duplicate_refund = test_client.post(
         f"/api/v1/transactions/{expense.json()['id']}/refund",
-        headers={**headers(auth), "Idempotency-Key": "phase16-second-refund"},
+        headers={**headers(auth), "Idempotency-Key": "idem-ref-2"},
         json={"account_id": account_data["id"], "amount": 1, "currency": "VND"},
     )
     assert duplicate_refund.status_code == 400
@@ -126,7 +126,7 @@ def test_representative_api_negative_contracts(phase16_client):
     account_data = account(test_client, auth, "Contract")
     unknown_field = test_client.post(
         "/api/v1/transactions",
-        headers={**headers(auth), "Idempotency-Key": "phase16-unknown"},
+        headers={**headers(auth), "Idempotency-Key": "idem-unk"},
         json={
             "type": "EXPENSE",
             "account_id": account_data["id"],
@@ -162,7 +162,7 @@ def test_ai_golden_dataset_contracts_are_deterministic(phase16_client):
     account_data = account(test_client, auth, "AI golden account", opening=100_000)
     expense = test_client.post(
         "/api/v1/transactions",
-        headers={**headers(auth), "Idempotency-Key": "phase16-ai-golden-expense"},
+        headers={**headers(auth), "Idempotency-Key": "idem-gold"},
         json={
             "type": "EXPENSE",
             "account_id": account_data["id"],

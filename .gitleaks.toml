@@ -1,0 +1,10 @@
+title = "gitleaks config"
+
+[allowlist]
+description = "Allow mock test headers and idempotency keys in test suite"
+paths = [
+    '''apps/api/tests/.*''',
+]
+regexes = [
+    '''(?i)Idempotency-Key''',
+]
