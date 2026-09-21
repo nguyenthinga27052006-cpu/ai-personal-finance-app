@@ -483,13 +483,17 @@ class _FinanceHomeState extends State<FinanceHome> {
     }
     final values = await showDialog<TransactionInput>(
       context: context,
-      builder: (context) => TransactionDialog(accounts: viewModel.accounts),
+      builder: (context) => TransactionDialog(
+        accounts: viewModel.accounts,
+        categories: viewModel.categories,
+      ),
     );
     if (values == null) return;
     final error = await viewModel.addTransaction(
       type: values.type,
       account: values.account,
       amount: values.amount,
+      category: values.category,
       description: values.description,
     );
     if (error != null && context.mounted) {
@@ -503,36 +507,66 @@ class _FinanceHomeState extends State<FinanceHome> {
   Future<void> _editTransaction(BuildContext context, TransactionModel item) async {
     final amountController = TextEditingController(text: item.amount.toString());
     final descriptionController = TextEditingController(text: item.description ?? '');
+    CategoryModel? selectedCategory = viewModel.categories.firstWhere(
+      (cat) => cat.id == item.categoryId || cat.name == item.categoryName,
+      orElse: () => viewModel.categories.isNotEmpty ? viewModel.categories.first : CategoryModel(id: '', name: '', type: 'BOTH', isSystem: true),
+    );
+    if (selectedCategory.id.isEmpty) selectedCategory = null;
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Chỉnh sửa giao dịch'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Số tiền (VND)'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Chỉnh sửa giao dịch'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Số tiền (VND)'),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<CategoryModel?>(
+                  initialValue: selectedCategory,
+                  items: [
+                    const DropdownMenuItem<CategoryModel?>(
+                      value: null,
+                      child: Text('Chưa chọn danh mục'),
+                    ),
+                    ...viewModel.categories.map(
+                      (cat) => DropdownMenuItem<CategoryModel?>(
+                        value: cat,
+                        child: Text(cat.name),
+                      ),
+                    ),
+                  ],
+                  onChanged: (val) => setDialogState(() => selectedCategory = val),
+                  decoration: const InputDecoration(
+                    labelText: 'Danh mục',
+                    prefixIcon: Icon(Icons.category),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(labelText: 'Mô tả / Ghi chú'),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(labelText: 'Mô tả / Ghi chú'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Cập nhật'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Cập nhật'),
-          ),
-        ],
       ),
     );
 
@@ -541,6 +575,7 @@ class _FinanceHomeState extends State<FinanceHome> {
       final error = await viewModel.editTransaction(
         id: item.id,
         amount: amount,
+        categoryId: selectedCategory?.id,
         description: descriptionController.text.trim(),
       );
       if (error != null && mounted) {
@@ -2921,19 +2956,26 @@ class TransactionInput {
     required this.type,
     required this.account,
     required this.amount,
+    this.category,
     required this.description,
   });
 
   final String type;
   final AccountModel account;
   final int amount;
+  final CategoryModel? category;
   final String description;
 }
 
 class TransactionDialog extends StatefulWidget {
-  const TransactionDialog({super.key, required this.accounts});
+  const TransactionDialog({
+    super.key,
+    required this.accounts,
+    this.categories = const [],
+  });
 
   final List<AccountModel> accounts;
+  final List<CategoryModel> categories;
 
   @override
   State<TransactionDialog> createState() => _TransactionDialogState();
@@ -2944,6 +2986,7 @@ class _TransactionDialogState extends State<TransactionDialog> {
   late final TextEditingController noteController;
   var type = 'EXPENSE';
   late AccountModel account;
+  CategoryModel? category;
 
   @override
   void initState() {
@@ -2951,6 +2994,12 @@ class _TransactionDialogState extends State<TransactionDialog> {
     amountController = TextEditingController();
     noteController = TextEditingController();
     account = widget.accounts.first;
+    if (widget.categories.isNotEmpty) {
+      final filtered = widget.categories
+          .where((cat) => cat.type == type || cat.type == 'BOTH')
+          .toList();
+      category = filtered.isNotEmpty ? filtered.first : widget.categories.first;
+    }
   }
 
   @override
@@ -2962,26 +3011,38 @@ class _TransactionDialogState extends State<TransactionDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Add transaction'),
+    title: const Text('Tạo giao dịch mới'),
     content: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           DropdownButtonFormField<String>(
             initialValue: type,
-            items: const ['EXPENSE', 'INCOME']
-                .map(
-                  (value) => DropdownMenuItem(value: value, child: Text(value)),
-                )
-                .toList(),
-            onChanged: (value) => setState(() => type = value!),
-            decoration: const InputDecoration(labelText: 'Type'),
+            items: const [
+              DropdownMenuItem(value: 'EXPENSE', child: Text('Chi tiêu (Expense)')),
+              DropdownMenuItem(value: 'INCOME', child: Text('Thu nhập (Income)')),
+            ],
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() {
+                type = value;
+                if (widget.categories.isNotEmpty) {
+                  final filtered = widget.categories
+                      .where((cat) => cat.type == type || cat.type == 'BOTH')
+                      .toList();
+                  category = filtered.isNotEmpty ? filtered.first : widget.categories.first;
+                }
+              });
+            },
+            decoration: const InputDecoration(labelText: 'Loại giao dịch'),
           ),
+          const SizedBox(height: 8),
           TextField(
             controller: amountController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Amount'),
+            decoration: const InputDecoration(labelText: 'Số tiền (VND)'),
           ),
+          const SizedBox(height: 8),
           DropdownButtonFormField<AccountModel>(
             initialValue: account,
             items: widget.accounts
@@ -2991,11 +3052,36 @@ class _TransactionDialogState extends State<TransactionDialog> {
                 )
                 .toList(),
             onChanged: (value) => setState(() => account = value!),
-            decoration: const InputDecoration(labelText: 'Account'),
+            decoration: const InputDecoration(labelText: 'Tài khoản thanh toán'),
           ),
+          const SizedBox(height: 8),
+          if (widget.categories.isNotEmpty)
+            DropdownButtonFormField<CategoryModel?>(
+              initialValue: category,
+              items: [
+                const DropdownMenuItem<CategoryModel?>(
+                  value: null,
+                  child: Text('Chưa chọn danh mục'),
+                ),
+                ...widget.categories
+                    .where((cat) => cat.type == type || cat.type == 'BOTH')
+                    .map(
+                      (cat) => DropdownMenuItem<CategoryModel?>(
+                        value: cat,
+                        child: Text(cat.name),
+                      ),
+                    ),
+              ],
+              onChanged: (value) => setState(() => category = value),
+              decoration: const InputDecoration(
+                labelText: 'Danh mục (Category)',
+                prefixIcon: Icon(Icons.category),
+              ),
+            ),
+          const SizedBox(height: 8),
           TextField(
             controller: noteController,
-            decoration: const InputDecoration(labelText: 'Note'),
+            decoration: const InputDecoration(labelText: 'Ghi chú / Mô tả'),
           ),
         ],
       ),
@@ -3003,7 +3089,7 @@ class _TransactionDialogState extends State<TransactionDialog> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: const Text('Hủy'),
       ),
       FilledButton(
         onPressed: () {
@@ -3015,11 +3101,12 @@ class _TransactionDialogState extends State<TransactionDialog> {
               type: type,
               account: account,
               amount: amount,
+              category: category,
               description: noteController.text,
             ),
           );
         },
-        child: const Text('Save'),
+        child: const Text('Lưu giao dịch'),
       ),
     ],
   );

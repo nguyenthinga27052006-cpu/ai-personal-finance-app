@@ -96,14 +96,19 @@ class FinanceViewModel extends ChangeNotifier {
     required String type,
     required AccountModel account,
     required int amount,
+    CategoryModel? category,
+    String? categoryId,
     String? description,
   }) async {
     try {
+      final targetCategoryId = category?.id ?? categoryId;
       final values = {
         'type': type,
         'account_id': account.id,
         'amount': amount,
         'currency': account.currency,
+        if (targetCategoryId != null && targetCategoryId.isNotEmpty)
+          'category_id': targetCategoryId,
         if (description != null && description.trim().isNotEmpty)
           'description': description.trim(),
       };

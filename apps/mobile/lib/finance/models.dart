@@ -67,6 +67,8 @@ class TransactionModel {
     required this.amount,
     required this.currency,
     required this.transactionDate,
+    this.categoryId,
+    this.categoryName,
     this.description,
   });
 
@@ -76,6 +78,8 @@ class TransactionModel {
   final int amount;
   final String currency;
   final DateTime transactionDate;
+  final String? categoryId;
+  final String? categoryName;
   final String? description;
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -86,6 +90,8 @@ class TransactionModel {
       amount: json['amount'] as int,
       currency: json['currency'] as String,
       transactionDate: DateTime.parse(json['transaction_date'] as String),
+      categoryId: json['category_id'] as String?,
+      categoryName: json['category_name'] as String?,
       description: json['description'] as String?,
     );
   }
