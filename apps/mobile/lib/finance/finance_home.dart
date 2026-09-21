@@ -1208,44 +1208,31 @@ class _CategoryAnalyticsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = InheritedSettings.of(context);
-    final Map<String, int> categoryTotals = {};
+    final map = <String, _CategoryAccumulator>{};
     int totalExpense = 0;
 
     for (final tx in model.transactions) {
-      if (tx.type.toLowerCase() == 'expense') {
-        final catName = tx.description?.isNotEmpty == true
-            ? _extractCategoryName(tx.description!)
-            : 'Chi tiêu mua sắm';
-        categoryTotals[catName] = (categoryTotals[catName] ?? 0) + tx.amount;
+      if (tx.type.toUpperCase() == 'EXPENSE') {
+        final catInfo = _resolveCategoryInfo(tx, model.categories);
+        final acc = map.putIfAbsent(
+          catInfo.name,
+          () => _CategoryAccumulator(catInfo.name, catInfo.color, catInfo.icon),
+        );
+        acc.amount += tx.amount;
+        acc.count += 1;
         totalExpense += tx.amount;
       }
     }
 
-    final categoryIcons = {
-      'Ăn uống & Cafe': Icons.restaurant,
-      'Hóa đơn & Tiện ích': Icons.receipt_long_outlined,
-      'Mua sắm đồ dùng': Icons.shopping_bag_outlined,
-      'Siêu thị & Bách hóa': Icons.storefront_outlined,
-      'Di chuyển & Xăng xe': Icons.directions_car_outlined,
-      'Giải trí': Icons.sports_esports_outlined,
-      'Sức khỏe': Icons.medical_services_outlined,
-    };
-
-    final categoryItems = categoryTotals.entries.toList().asMap().entries.map((entry) {
-      final idx = entry.key;
-      final e = entry.value;
-      final name = e.key;
-      final amount = e.value;
-      final pct = totalExpense > 0 ? (amount / totalExpense) * 100 : 0.0;
-      final color = _getCategoryColor(name, idx);
-      final icon = categoryIcons[name] ?? Icons.category;
+    final categoryItems = map.values.map((acc) {
+      final pct = totalExpense > 0 ? (acc.amount / totalExpense) * 100 : 0.0;
       return CategorySpendingItem(
-        name: name,
-        amount: amount,
+        name: acc.name,
+        amount: acc.amount,
         percentage: pct,
-        color: color,
-        icon: icon,
-        count: 1,
+        color: acc.color,
+        icon: acc.icon,
+        count: acc.count,
       );
     }).toList()..sort((a, b) => b.amount.compareTo(a.amount));
 
@@ -1494,21 +1481,6 @@ class _CategoryAnalyticsCard extends StatelessWidget {
     );
   }
 
-  String _extractCategoryName(String desc) {
-    if (desc.contains('Highlands') || desc.contains('Cafe') || desc.contains('Ăn')) {
-      return 'Ăn uống & Cafe';
-    }
-    if (desc.contains('WinMart') || desc.contains('Siêu thị') || desc.contains('Chợ')) {
-      return 'Siêu thị & Bách hóa';
-    }
-    if (desc.contains('Mua sắm') || desc.contains('Shopee') || desc.contains('Lazada')) {
-      return 'Mua sắm đồ dùng';
-    }
-    if (desc.contains('Xăng') || desc.contains('Grab') || desc.contains('Xe')) {
-      return 'Di chuyển & Xăng xe';
-    }
-    return 'Chi tiêu mua sắm';
-  }
 }
 
 class _AccountsView extends StatelessWidget {
@@ -1825,6 +1797,160 @@ class _ForecastBadge extends StatelessWidget {
   }
 }
 
+class _CategoryInfo {
+  const _CategoryInfo({
+    required this.name,
+    required this.color,
+    required this.icon,
+  });
+
+  final String name;
+  final Color color;
+  final IconData icon;
+}
+
+_CategoryInfo _resolveCategoryInfo(TransactionModel tx, List<CategoryModel> categories) {
+  String? rawName = tx.categoryName;
+  if ((rawName == null || rawName.trim().isEmpty) && tx.categoryId != null && tx.categoryId!.isNotEmpty) {
+    for (final cat in categories) {
+      if (cat.id == tx.categoryId) {
+        rawName = cat.name;
+        break;
+      }
+    }
+  }
+
+  if (rawName != null && rawName.trim().isNotEmpty) {
+    final lowerName = rawName.trim().toLowerCase();
+    if (lowerName.contains('điện') || lowerName.contains('nước') || lowerName.contains('utilities') ||
+        lowerName.contains('utility') || lowerName.contains('electric') || lowerName.contains('wifi') ||
+        lowerName.contains('internet') || lowerName.contains('hóa đơn')) {
+      return const _CategoryInfo(
+        name: 'Điện nước & Internet',
+        color: Color(0xFF2E7D32),
+        icon: Icons.receipt_long_outlined,
+      );
+    }
+    if (lowerName.contains('ăn') || lowerName.contains('food') || lowerName.contains('cơm') ||
+        lowerName.contains('phở') || lowerName.contains('siêu thị') || lowerName.contains('bách hóa')) {
+      return const _CategoryInfo(
+        name: 'Ăn uống & Siêu thị',
+        color: Color(0xFFE55737),
+        icon: Icons.restaurant,
+      );
+    }
+    if (lowerName.contains('di chuyển') || lowerName.contains('xăng') || lowerName.contains('transport') ||
+        lowerName.contains('vehicle') || lowerName.contains('xe')) {
+      return const _CategoryInfo(
+        name: 'Di chuyển & Xăng xe',
+        color: Color(0xFFFBC02D),
+        icon: Icons.directions_car_outlined,
+      );
+    }
+    if (lowerName.contains('mua sắm') || lowerName.contains('shopping') || lowerName.contains('thiết bị')) {
+      return const _CategoryInfo(
+        name: 'Mua sắm & Thiết bị',
+        color: Color(0xFF29B6F6),
+        icon: Icons.shopping_bag_outlined,
+      );
+    }
+    if (lowerName.contains('giải trí') || lowerName.contains('entertainment') || lowerName.contains('game')) {
+      return _CategoryInfo(
+        name: 'Giải trí',
+        color: Colors.purple.shade600,
+        icon: Icons.sports_esports_outlined,
+      );
+    }
+    if (lowerName.contains('sức khỏe') || lowerName.contains('health') || lowerName.contains('y tế')) {
+      return _CategoryInfo(
+        name: 'Sức khỏe',
+        color: Colors.teal.shade600,
+        icon: Icons.medical_services_outlined,
+      );
+    }
+    if (lowerName.contains('tiền nhà') || lowerName.contains('housing') || lowerName.contains('thuê nhà')) {
+      return _CategoryInfo(
+        name: 'Tiền nhà & Hóa đơn',
+        color: Colors.indigo.shade600,
+        icon: Icons.home_outlined,
+      );
+    }
+    if (lowerName.contains('giáo dục') || lowerName.contains('education') || lowerName.contains('học')) {
+      return _CategoryInfo(
+        name: 'Giáo dục',
+        color: Colors.deepOrange.shade600,
+        icon: Icons.school_outlined,
+      );
+    }
+
+    if (rawName.trim() != 'Other' && rawName.trim() != 'Chi tiêu khác' && rawName.trim() != 'Chưa chọn danh mục') {
+      return _CategoryInfo(
+        name: rawName.trim(),
+        color: _getCategoryColor(rawName, rawName.hashCode),
+        icon: Icons.category_outlined,
+      );
+    }
+  }
+
+  final desc = (tx.description ?? '').toLowerCase();
+  if (desc.contains('điện') || desc.contains('nước') || desc.contains('mạng') ||
+      desc.contains('internet') || desc.contains('wifi') || desc.contains('electric') ||
+      desc.contains('power') || desc.contains('utility') || desc.contains('utilities') ||
+      desc.contains('tiền nhà') || desc.contains('hóa đơn') || desc.contains('bill')) {
+    return const _CategoryInfo(
+      name: 'Điện nước & Internet',
+      color: Color(0xFF2E7D32),
+      icon: Icons.receipt_long_outlined,
+    );
+  } else if (desc.contains('cơm') || desc.contains('phở') || desc.contains('bún') ||
+             desc.contains('ăn') || desc.contains('lẩu') || desc.contains('cafe') ||
+             desc.contains('trà') || desc.contains('coffee') || desc.contains('nhà hàng') ||
+             desc.contains('bánh') || desc.contains('food') || desc.contains('restaurant')) {
+    return const _CategoryInfo(
+      name: 'Ăn uống & Siêu thị',
+      color: Color(0xFFE55737),
+      icon: Icons.restaurant,
+    );
+  } else if (desc.contains('chợ') || desc.contains('siêu thị') || desc.contains('shopee') ||
+             desc.contains('tiki') || desc.contains('lazada') || desc.contains('quần áo') ||
+             desc.contains('mua sắm') || desc.contains('đồ') || desc.contains('shopping') ||
+             desc.contains('store')) {
+    return const _CategoryInfo(
+      name: 'Mua sắm & Thiết bị',
+      color: Color(0xFF29B6F6),
+      icon: Icons.shopping_bag_outlined,
+    );
+  } else if (desc.contains('xăng') || desc.contains('grab') || desc.contains('be') ||
+             desc.contains('taxi') || desc.contains('gửi xe') || desc.contains('vé') ||
+             desc.contains('xe') || desc.contains('transport') || desc.contains('gas')) {
+    return const _CategoryInfo(
+      name: 'Di chuyển & Xăng xe',
+      color: Color(0xFFFBC02D),
+      icon: Icons.directions_car_outlined,
+    );
+  } else if (desc.contains('phim') || desc.contains('game') || desc.contains('du lịch') ||
+             desc.contains('chơi') || desc.contains('entertainment') || desc.contains('movie')) {
+    return _CategoryInfo(
+      name: 'Giải trí',
+      color: Colors.purple.shade600,
+      icon: Icons.sports_esports_outlined,
+    );
+  } else if (desc.contains('thuốc') || desc.contains('khám') || desc.contains('bệnh viện') ||
+             desc.contains('sức khỏe') || desc.contains('health') || desc.contains('doctor')) {
+    return _CategoryInfo(
+      name: 'Sức khỏe',
+      color: Colors.teal.shade600,
+      icon: Icons.medical_services_outlined,
+    );
+  }
+
+  return _CategoryInfo(
+    name: 'Chi tiêu khác',
+    color: Colors.grey.shade600,
+    icon: Icons.category_outlined,
+  );
+}
+
 class _CategoryAccumulator {
   _CategoryAccumulator(this.name, this.color, this.icon);
   final String name;
@@ -1964,43 +2090,11 @@ class _CategorySpendingReportViewState extends State<_CategorySpendingReportView
 
     final map = <String, _CategoryAccumulator>{};
     for (final t in expenseTx) {
-      final desc = (t.description ?? '').toLowerCase();
-      String name = 'Chi tiêu khác';
-      Color color = Colors.green.shade600;
-      IconData icon = Icons.category_outlined;
-
-      if (desc.contains('cơm') || desc.contains('phở') || desc.contains('bún') ||
-          desc.contains('ăn') || desc.contains('lẩu') || desc.contains('cafe') ||
-          desc.contains('trà') || desc.contains('coffee') || desc.contains('nhà hàng') || desc.contains('bánh')) {
-        name = 'Ăn uống';
-        color = const Color(0xFFE55737); // Orange Red
-        icon = Icons.restaurant;
-      } else if (desc.contains('chợ') || desc.contains('siêu thị') || desc.contains('shopee') ||
-                 desc.contains('tiki') || desc.contains('lazada') || desc.contains('quần áo') || desc.contains('mua sắm') || desc.contains('đồ')) {
-        name = 'Mua sắm';
-        color = const Color(0xFF29B6F6); // Bright Blue
-        icon = Icons.shopping_bag_outlined;
-      } else if (desc.contains('xăng') || desc.contains('grab') || desc.contains('be') ||
-                 desc.contains('taxi') || desc.contains('gửi xe') || desc.contains('vé') || desc.contains('xe')) {
-        name = 'Đi lại';
-        color = const Color(0xFFFBC02D); // Vibrant Yellow/Gold
-        icon = Icons.directions_car_outlined;
-      } else if (desc.contains('điện') || desc.contains('nước') || desc.contains('mạng') ||
-                 desc.contains('internet') || desc.contains('tiền nhà') || desc.contains('hóa đơn')) {
-        name = 'Hóa đơn & Tiện ích';
-        color = const Color(0xFF2E7D32); // Emerald Green
-        icon = Icons.receipt_long_outlined;
-      } else if (desc.contains('phim') || desc.contains('game') || desc.contains('du lịch') || desc.contains('chơi')) {
-        name = 'Giải trí';
-        color = Colors.purple.shade600;
-        icon = Icons.sports_esports_outlined;
-      } else if (desc.contains('thuốc') || desc.contains('khám') || desc.contains('bệnh viện') || desc.contains('sức khỏe')) {
-        name = 'Sức khỏe';
-        color = Colors.teal.shade600;
-        icon = Icons.medical_services_outlined;
-      }
-
-      final acc = map.putIfAbsent(name, () => _CategoryAccumulator(name, color, icon));
+      final catInfo = _resolveCategoryInfo(t, widget.model.categories);
+      final acc = map.putIfAbsent(
+        catInfo.name,
+        () => _CategoryAccumulator(catInfo.name, catInfo.color, catInfo.icon),
+      );
       acc.amount += t.amount;
       acc.count += 1;
     }
@@ -2008,14 +2102,12 @@ class _CategorySpendingReportViewState extends State<_CategorySpendingReportView
     final totalSpend = map.values.fold<int>(0, (sum, acc) => sum + acc.amount);
     if (totalSpend <= 0) return [];
 
-    final list = map.values.toList().asMap().entries.map((entry) {
-      final idx = entry.key;
-      final acc = entry.value;
+    final list = map.values.map((acc) {
       return CategorySpendingItem(
         name: acc.name,
         amount: acc.amount,
         percentage: (acc.amount / totalSpend) * 100,
-        color: _getCategoryColor(acc.name, idx),
+        color: acc.color,
         icon: acc.icon,
         count: acc.count,
       );
