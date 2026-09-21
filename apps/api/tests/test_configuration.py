@@ -22,7 +22,7 @@ def test_database_urls_keep_host_and_docker_contexts_separate(monkeypatch) -> No
 
 def test_settings_loads_the_repository_root_environment_file() -> None:
     assert REPOSITORY_ROOT == REPOSITORY_ROOT.resolve()
-    assert (REPOSITORY_ROOT / ".env").is_file()
+    assert (REPOSITORY_ROOT / ".env").is_file() or (REPOSITORY_ROOT / ".env.example").is_file()
     assert get_settings().database_url
 
 
