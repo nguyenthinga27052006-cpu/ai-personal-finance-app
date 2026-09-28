@@ -16,6 +16,7 @@ class ProviderRequest:
     context: dict[str, Any]
     tools: tuple[str, ...]
     timeout_seconds: float = 20.0
+    temperature: float = 0.2
 
 
 @dataclass(frozen=True)
@@ -286,6 +287,158 @@ class OpenAIProvider:
                     yield chunk.choices[0].delta.content
         except Exception as exc:
             raise ProviderUnavailableError(f"OpenAI Provider stream error: {exc}") from exc
+
+
+class OllamaLLMProvider:
+    name = "ollama"
+    is_production = True
+
+    def __init__(
+        self,
+        base_url: str = "http://localhost:11434/v1",
+        default_model: str = "qwen2.5:3b",
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.default_model = default_model
+
+    def generate(self, request: ProviderRequest) -> ProviderResponse:
+        started = monotonic()
+        import json
+        import urllib.request
+
+        candidate_urls = [f"{self.base_url}/chat/completions"]
+        if "localhost" in self.base_url or "127.0.0.1" in self.base_url:
+            candidate_urls.append(
+                self.base_url.replace("localhost", "host.docker.internal").replace("127.0.0.1", "host.docker.internal") + "/chat/completions"
+            )
+        elif "host.docker.internal" in self.base_url:
+            candidate_urls.append(
+                self.base_url.replace("host.docker.internal", "localhost") + "/chat/completions"
+            )
+
+        user_prompt = request.context.get("user_prompt")
+        prompt_text = (
+            str(user_prompt)
+            if user_prompt
+            else f"{request.instructions}\n\nContext:\n{_json(request.context)}"
+        )
+        temp = (
+            request.temperature
+            if getattr(request, "temperature", None) is not None
+            else request.context.get("temperature", 0.2)
+        )
+        payload = {
+            "model": request.model if request.model.startswith("qwen") else self.default_model,
+            "messages": [
+                {"role": "system", "content": request.instructions},
+                {"role": "user", "content": prompt_text},
+            ],
+            "temperature": temp,
+        }
+
+        last_error = None
+        for url in candidate_urls:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=request.timeout_seconds) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    content = data["choices"][0]["message"]["content"]
+                    return ProviderResponse(
+                        content=content,
+                        provider=self.name,
+                        model=self.default_model,
+                        estimated_cost=0.0,
+                        latency_ms=int((monotonic() - started) * 1000),
+                    )
+            except Exception as exc:
+                last_error = exc
+                continue
+
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        if settings.app_env in ("development", "test"):
+            return FakeProvider().generate(request)
+        raise ProviderUnavailableError(f"Ollama Local LLM Provider error: {last_error}") from last_error
+
+    async def stream_generate(self, request: ProviderRequest) -> AsyncGenerator[str, None]:
+        import json
+
+        import httpx
+
+        candidate_urls = [f"{self.base_url}/chat/completions"]
+        if "localhost" in self.base_url or "127.0.0.1" in self.base_url:
+            candidate_urls.append(
+                self.base_url.replace("localhost", "host.docker.internal").replace("127.0.0.1", "host.docker.internal") + "/chat/completions"
+            )
+        elif "host.docker.internal" in self.base_url:
+            candidate_urls.append(
+                self.base_url.replace("host.docker.internal", "localhost") + "/chat/completions"
+            )
+
+        user_prompt = request.context.get("user_prompt")
+        prompt_text = (
+            str(user_prompt)
+            if user_prompt
+            else f"{request.instructions}\n\nContext:\n{_json(request.context)}"
+        )
+        temp = (
+            request.temperature
+            if getattr(request, "temperature", None) is not None
+            else request.context.get("temperature", 0.2)
+        )
+        payload = {
+            "model": request.model if request.model.startswith("qwen") else self.default_model,
+            "messages": [
+                {"role": "system", "content": request.instructions},
+                {"role": "user", "content": prompt_text},
+            ],
+            "stream": True,
+            "temperature": temp,
+        }
+
+        streamed_any = False
+        last_error = None
+        for url in candidate_urls:
+            try:
+                async with httpx.AsyncClient(timeout=request.timeout_seconds) as client:
+                    async with client.stream("POST", url, json=payload) as response:
+                        if response.status_code != 200:
+                            raise ProviderUnavailableError(
+                                f"Ollama API returned status {response.status_code}"
+                            )
+                        async for line in response.aiter_lines():
+                            if line.startswith("data: "):
+                                data_str = line[6:].strip()
+                                if data_str == "[DONE]":
+                                    break
+                                try:
+                                    data = json.loads(data_str)
+                                    delta = data["choices"][0].get("delta", {})
+                                    if "content" in delta and delta["content"]:
+                                        streamed_any = True
+                                        yield delta["content"]
+                                except Exception:
+                                    pass
+                if streamed_any:
+                    return
+            except Exception as exc:
+                last_error = exc
+                continue
+
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        if settings.app_env in ("development", "test"):
+            async for chunk in FakeProvider().stream_generate(request):
+                yield chunk
+            return
+        raise ProviderUnavailableError(f"Ollama stream error: {last_error}") from last_error
 
 
 def _json(value: dict[str, Any]) -> str:

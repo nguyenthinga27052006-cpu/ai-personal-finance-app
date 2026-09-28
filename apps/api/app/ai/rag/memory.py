@@ -64,15 +64,24 @@ class RAGMemoryStore:
             raise AuthorizationError("Conversation does not belong to the authenticated user")
         return list(self._conversations.get(conv_id, []))
 
-    def get_formatted_context(self, user_id: str, conversation_id: str | None = None) -> str:
+    def get_formatted_context(
+        self,
+        user_id: str,
+        conversation_id: str | None = None,
+        max_messages: int = 6,
+    ) -> str:
         history = self.get_history(user_id, conversation_id)
         if not history:
             return "Chưa có ngữ cảnh hội thoại trước đó."
 
+        recent = history[-max_messages:]
         formatted = []
-        for msg in history:
+        for msg in recent:
             role_label = "Người dùng" if msg.role == "user" else "Trợ lý AI"
-            formatted.append(f"{role_label}: {msg.content}")
+            content = msg.content
+            if "*⚠️ Lưu ý:" in content:
+                content = content.split("*⚠️ Lưu ý:")[0].strip()
+            formatted.append(f"{role_label}: {content}")
 
         return "\n".join(formatted)
 

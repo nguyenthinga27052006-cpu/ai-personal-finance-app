@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../auth/api_client.dart';
 import '../settings/settings_controller.dart';
+import 'stt_service.dart';
 
 class AIMessageItem {
   const AIMessageItem({
@@ -30,13 +31,81 @@ class AIScreen extends StatefulWidget {
 class _AIScreenState extends State<AIScreen> {
   final controller = TextEditingController();
   final List<AIMessageItem> messages = [];
+  final SpeechToTextProvider _speechProvider = MobileAndWebSpeechProvider();
   String? error;
   bool loading = false;
+  VoiceState _voiceState = VoiceState.idle;
 
   @override
   void dispose() {
     controller.dispose();
+    _speechProvider.stop();
     super.dispose();
+  }
+
+  Future<void> _toggleListening(String? language) async {
+    if (_voiceState == VoiceState.listening || _voiceState == VoiceState.transcribing) {
+      await _speechProvider.stop();
+      if (mounted) {
+        setState(() {
+          _voiceState = controller.text.trim().isNotEmpty
+              ? VoiceState.transcriptReady
+              : VoiceState.idle;
+        });
+      }
+    } else {
+      final initialized = await _speechProvider.initialize(
+        onStatus: (status) {
+          debugPrint('[AI Screen] STT Status: $status');
+          if (status == 'done' || status == 'notListening') {
+            if (mounted && (_voiceState == VoiceState.listening || _voiceState == VoiceState.transcribing)) {
+              setState(() {
+                _voiceState = controller.text.trim().isNotEmpty
+                    ? VoiceState.transcriptReady
+                    : VoiceState.idle;
+              });
+            }
+          }
+        },
+        onError: (errMsg) {
+          debugPrint('[AI Screen] STT Error: $errMsg');
+          if (mounted) {
+            setState(() {
+              _voiceState = VoiceState.error;
+              error = 'Nhận diện giọng nói: $errMsg';
+            });
+          }
+        },
+      );
+
+      if (!initialized) {
+        if (mounted) {
+          setState(() {
+            _voiceState = VoiceState.error;
+            error = 'Tính năng nhận diện giọng nói không khả dụng hoặc chưa cấp quyền microphone.';
+          });
+        }
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _voiceState = VoiceState.listening;
+          error = null;
+        });
+      }
+
+      await _speechProvider.listen(
+        requestedLocale: language == 'en' ? 'en-US' : 'vi-VN',
+        onResult: (result) {
+          if (!mounted) return;
+          setState(() {
+            controller.text = result.text;
+            _voiceState = result.isFinal ? VoiceState.transcriptReady : VoiceState.transcribing;
+          });
+        },
+      );
+    }
   }
 
   Future<void> ask(String question, {String? language}) async {
@@ -63,7 +132,12 @@ class _AIScreenState extends State<AIScreen> {
       if (!mounted) return;
       setState(() => error = exception.toString());
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() {
+          loading = false;
+          _voiceState = VoiceState.idle;
+        });
+      }
     }
   }
 
@@ -228,10 +302,105 @@ class _AIScreenState extends State<AIScreen> {
               style: const TextStyle(color: Colors.red, fontSize: 12),
             ),
           ),
+        if (_voiceState == VoiceState.listening)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.shade300),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.mic, color: Colors.red.shade700),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '🎙 Đang lắng nghe giọng nói... Bạn hãy nói câu hỏi bằng tiếng Việt!',
+                    style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.w500, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (_voiceState == VoiceState.transcribing)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.amber.shade300),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '📝 Đang nhận dạng tiếng Việt...',
+                    style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.w500, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (_voiceState == VoiceState.transcriptReady && controller.text.trim().isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green.shade300),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Colors.green.shade700, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '✅ Đã nhận dạng câu hỏi. Bạn có thể sửa ô bên dưới hoặc bấm Gửi ngay.',
+                    style: TextStyle(color: Colors.green.shade900, fontWeight: FontWeight.w500, fontSize: 12),
+                  ),
+                ),
+                InkWell(
+                  onTap: () => setState(() => _voiceState = VoiceState.idle),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    child: Icon(Icons.close, size: 16, color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
+              IconButton.filledTonal(
+                onPressed: loading ? null : () => _toggleListening(settings.language.name),
+                icon: Icon(
+                  (_voiceState == VoiceState.listening || _voiceState == VoiceState.transcribing)
+                      ? Icons.mic
+                      : Icons.mic_none,
+                ),
+                color: (_voiceState == VoiceState.listening || _voiceState == VoiceState.transcribing)
+                    ? Colors.red
+                    : null,
+                style: (_voiceState == VoiceState.listening || _voiceState == VoiceState.transcribing)
+                    ? IconButton.styleFrom(backgroundColor: Colors.red.shade100)
+                    : null,
+                tooltip: (_voiceState == VoiceState.listening || _voiceState == VoiceState.transcribing)
+                    ? 'Dừng thu âm'
+                    : 'Trợ lý giọng nói tiếng Việt (Voice Chat)',
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: TextField(
                   controller: controller,

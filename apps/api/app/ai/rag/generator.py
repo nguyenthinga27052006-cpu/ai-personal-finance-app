@@ -16,6 +16,7 @@ from app.ai.rag.memory import RAGMemoryStore, get_memory_store
 from app.ai.rag.prompts import FINANCIAL_RAG_SYSTEM_PROMPT, build_rag_user_prompt
 from app.ai.rag.vector_store import get_vector_store
 from app.ai.retrievers.hybrid_retriever import HybridContext, HybridRetriever
+from app.ai.retrievers.intent_detector import IntentDetector
 from app.ai.retrievers.sql_retriever import FinancialFactValidator
 from app.db.models import User
 
@@ -75,6 +76,21 @@ class RAGResponse:
     detailed_citations: list[dict[str, Any]] = field(default_factory=list)
 
 
+def get_intent_temperature(intent: str) -> float:
+    """Calculates intent-aware generation temperature per Master Prompt Section XV."""
+    if intent in ("time_reference_query",):
+        return 0.0
+    elif intent in ("balance_query", "expense_query", "income_query"):
+        return 0.2  # Simple financial facts: strict precision
+    elif intent in ("spending_analysis", "comparison_query", "budget_review"):
+        return 0.35  # Financial analysis: grounded yet fluent
+    elif intent in ("knowledge", "saving_advice", "investment", "affordability"):
+        return 0.55  # Knowledge & advice: rich explanations
+    elif intent in ("greeting", "general_query"):
+        return 0.6  # Casual chat: friendly & conversational
+    return 0.3
+
+
 class FinancialRAGGenerator:
     """Coordinates intent detection, hybrid context retrieval, conversation memory, and natural response generation."""
 
@@ -99,11 +115,43 @@ class FinancialRAGGenerator:
         conversation_id: str | None = None,
         language: str = "vi",
     ) -> RAGResponse:
-        # 1. Get conversation memory (last 10 turns)
+        # 1. Early deterministic return for pure time reference queries (0 SQL, 0 Chroma, 0 LLM)
+        if IntentDetector.detect(question) == "time_reference_query":
+            answer_text = IntentDetector.resolve_time_reference(question)
+            self.memory_store.add_message(
+                user_id=user.id, content=question, role="user", conversation_id=conversation_id
+            )
+            self.memory_store.add_message(
+                user_id=user.id, content=answer_text, role="assistant", conversation_id=conversation_id
+            )
+            return RAGResponse(
+                answer_markdown=answer_text,
+                intent="time_reference_query",
+                citations=[],
+                status="SUCCESS",
+                has_sql_data=False,
+                has_rag_data=False,
+                metadata={
+                    "citations": [],
+                    "intent": "time_reference_query",
+                    "source": "deterministic_time_parser",
+                    "configured_provider": "deterministic",
+                    "active_provider": "deterministic",
+                    "active_model": None,
+                    "fallback_used": False,
+                    "provider": "deterministic",
+                    "model": None,
+                },
+                suggestions=[],
+                confidence=1.0,
+                detailed_citations=[],
+            )
+
+        # 2. Get conversation memory (last 10 turns)
         history_msgs = self.memory_store.get_history(user.id, conversation_id)
         history_text = self.memory_store.get_formatted_context(user.id, conversation_id)
 
-        # 2. Retrieve hybrid context (SQL user facts + Chroma VectorDB RAG knowledge)
+        # 3. Retrieve hybrid context (SQL user facts + Chroma VectorDB RAG knowledge)
         hybrid_context: HybridContext = self.hybrid_retriever.retrieve(
             user=user,
             question=question,
@@ -113,6 +161,37 @@ class FinancialRAGGenerator:
             top_k=4,
             history=history_msgs,
         )
+
+        if hybrid_context.intent == "time_reference_query":
+            answer_text = IntentDetector.resolve_time_reference(question)
+            self.memory_store.add_message(
+                user_id=user.id, content=question, role="user", conversation_id=conversation_id
+            )
+            self.memory_store.add_message(
+                user_id=user.id, content=answer_text, role="assistant", conversation_id=conversation_id
+            )
+            return RAGResponse(
+                answer_markdown=answer_text,
+                intent="time_reference_query",
+                citations=[],
+                status="SUCCESS",
+                has_sql_data=False,
+                has_rag_data=False,
+                metadata={
+                    "citations": [],
+                    "intent": "time_reference_query",
+                    "source": "deterministic_time_parser",
+                    "configured_provider": "deterministic",
+                    "active_provider": "deterministic",
+                    "active_model": None,
+                    "fallback_used": False,
+                    "provider": "deterministic",
+                    "model": None,
+                },
+                suggestions=[],
+                confidence=1.0,
+                detailed_citations=[],
+            )
 
         # Validate financial facts integrity & user ownership
         facts_status = "VALID"
@@ -126,8 +205,8 @@ class FinancialRAGGenerator:
             user_id=user.id, content=question, role="user", conversation_id=conversation_id
         )
 
-        # 3. Handle strict Hallucination Guard when no SQL data and no RAG data (skip for general/greeting conversational queries)
-        is_general_or_greeting = hybrid_context.intent in ("greeting", "general_query")
+        # 4. Handle strict Hallucination Guard when no SQL data and no RAG data (skip for general/greeting conversational queries)
+        is_general_or_greeting = hybrid_context.intent in ("greeting", "general_query", "time_reference_query")
         if (
             not hybrid_context.has_sql_data
             and not hybrid_context.has_rag_data
@@ -177,7 +256,7 @@ class FinancialRAGGenerator:
             )
 
         # 4. Build prompt
-        user_facts_text = hybrid_context.sql_context.summary_text()
+        user_facts_text = hybrid_context.sql_context.summary_text(intent=hybrid_context.intent)
         rag_knowledge_text = hybrid_context.formatted_rag_knowledge()
         raw_citations = hybrid_context.citations_summary()
         citations, detailed_citations = CitationValidator.validate(raw_citations, hybrid_context)
@@ -194,6 +273,7 @@ class FinancialRAGGenerator:
         )
 
         # 5. Call LLM via Gateway router
+        intent_temperature = get_intent_temperature(hybrid_context.intent)
         provider_req = ProviderRequest(
             feature="nl_query",
             model="foundation-simple",
@@ -203,16 +283,45 @@ class FinancialRAGGenerator:
                 "intent": hybrid_context.intent,
                 "has_sql_data": hybrid_context.has_sql_data,
                 "has_rag_data": hybrid_context.has_rag_data,
+                "temperature": intent_temperature,
             },
             tools=(),
+            temperature=intent_temperature,
         )
 
+        active_provider = "deterministic"
+        active_model = None
+        configured_provider = getattr(self.gateway.router, "primary_model", "ollama")
+        fallback_used = False
+
         try:
-            resp, decision, _ = self.gateway.router.generate(provider_req)
+            resp, decision, fallback_used = self.gateway.router.generate(provider_req)
             generated_text = resp.content
+            active_provider = resp.provider
+            active_model = resp.model
+            configured_provider = decision.primary_provider
         except Exception as exc:
             logger.warning("Gateway call failed, synthesizing deterministic response: %s", exc)
             generated_text = ""
+
+        # Determine pipeline source strictly per architecture specification
+        if hybrid_context.intent == "time_reference_query":
+            pipeline_source = "deterministic_time_parser"
+        elif (
+            (hybrid_context.plan and hybrid_context.plan.requires_sql and hybrid_context.plan.requires_knowledge)
+            or (hybrid_context.has_sql_data and hybrid_context.has_rag_data)
+        ):
+            pipeline_source = "hybrid_postgresql_chroma_rag"
+        elif (hybrid_context.plan and hybrid_context.plan.requires_sql) or hybrid_context.has_sql_data:
+            pipeline_source = "hybrid_postgresql"
+        elif (
+            (hybrid_context.plan and hybrid_context.plan.requires_knowledge)
+            or hybrid_context.has_rag_data
+            or hybrid_context.intent == "knowledge"
+        ):
+            pipeline_source = "hybrid_chroma_rag"
+        else:
+            pipeline_source = "hybrid_postgresql" if hybrid_context.has_sql_data else "deterministic"
 
         # 6. Format final answer structure
         final_markdown = self._format_markdown_response(
@@ -283,6 +392,11 @@ class FinancialRAGGenerator:
                 "citations": citations,
                 "intent": hybrid_context.intent,
                 "detailed_citations": detailed_citations,
+                "source": pipeline_source,
+                "configured_provider": configured_provider,
+                "active_provider": active_provider,
+                "active_model": active_model,
+                "fallback_used": fallback_used,
             },
             suggestions=suggestions,
             confidence=0.95,
@@ -299,11 +413,41 @@ class FinancialRAGGenerator:
         conversation_id: str | None = None,
         language: str = "vi",
     ) -> AsyncGenerator[str, None]:
-        # 1. Get conversation memory
+        # 1. Early deterministic return for pure time reference queries (0 SQL, 0 Chroma, 0 LLM)
+        if IntentDetector.detect(question) == "time_reference_query":
+            answer_text = IntentDetector.resolve_time_reference(question)
+            self.memory_store.add_message(
+                user_id=user.id, content=question, role="user", conversation_id=conversation_id
+            )
+            self.memory_store.add_message(
+                user_id=user.id, content=answer_text, role="assistant", conversation_id=conversation_id
+            )
+            words = answer_text.split(" ")
+            for i, w in enumerate(words):
+                chunk = w + (" " if i < len(words) - 1 else "")
+                yield f"data: {json.dumps({'type': 'token', 'content': chunk}, ensure_ascii=False)}\n\n"
+                await asyncio.sleep(0.01)
+
+            metadata_event = {
+                "type": "metadata",
+                "status": "SUCCESS",
+                "intent": "time_reference_query",
+                "citations": [],
+                "has_sql_data": False,
+                "has_rag_data": False,
+                "suggestions": [],
+                "source": "deterministic_time_parser",
+                "provider": "deterministic",
+                "model": None,
+            }
+            yield f"data: {json.dumps(metadata_event, ensure_ascii=False)}\n\n"
+            return
+
+        # 2. Get conversation memory
         history_msgs = self.memory_store.get_history(user.id, conversation_id)
         history_text = self.memory_store.get_formatted_context(user.id, conversation_id)
 
-        # 2. Retrieve hybrid context (SQL user facts + Chroma VectorDB RAG knowledge)
+        # 3. Retrieve hybrid context (SQL user facts + Chroma VectorDB RAG knowledge)
         hybrid_context: HybridContext = self.hybrid_retriever.retrieve(
             user=user,
             question=question,
@@ -313,6 +457,35 @@ class FinancialRAGGenerator:
             top_k=4,
             history=history_msgs,
         )
+
+        if hybrid_context.intent == "time_reference_query":
+            answer_text = IntentDetector.resolve_time_reference(question)
+            self.memory_store.add_message(
+                user_id=user.id, content=question, role="user", conversation_id=conversation_id
+            )
+            self.memory_store.add_message(
+                user_id=user.id, content=answer_text, role="assistant", conversation_id=conversation_id
+            )
+            words = answer_text.split(" ")
+            for i, w in enumerate(words):
+                chunk = w + (" " if i < len(words) - 1 else "")
+                yield f"data: {json.dumps({'type': 'token', 'content': chunk}, ensure_ascii=False)}\n\n"
+                await asyncio.sleep(0.01)
+
+            metadata_event = {
+                "type": "metadata",
+                "status": "SUCCESS",
+                "intent": "time_reference_query",
+                "citations": [],
+                "has_sql_data": False,
+                "has_rag_data": False,
+                "suggestions": [],
+                "source": "deterministic_time_parser",
+                "provider": "deterministic",
+                "model": None,
+            }
+            yield f"data: {json.dumps(metadata_event, ensure_ascii=False)}\n\n"
+            return
 
         # Validate financial facts integrity & user ownership
         facts_status = "VALID"
@@ -326,8 +499,8 @@ class FinancialRAGGenerator:
             user_id=user.id, content=question, role="user", conversation_id=conversation_id
         )
 
-        # 3. Handle strict Hallucination Guard when no SQL data and no RAG data (skip for general/greeting conversational queries)
-        is_general_or_greeting = hybrid_context.intent in ("greeting", "general_query")
+        # 4. Handle strict Hallucination Guard when no SQL data and no RAG data (skip for general/greeting conversational queries)
+        is_general_or_greeting = hybrid_context.intent in ("greeting", "general_query", "time_reference_query")
         if (
             not hybrid_context.has_sql_data
             and not hybrid_context.has_rag_data
@@ -385,7 +558,7 @@ class FinancialRAGGenerator:
             return
 
         # 4. Build prompt & citations
-        user_facts_text = hybrid_context.sql_context.summary_text()
+        user_facts_text = hybrid_context.sql_context.summary_text(intent=hybrid_context.intent)
         rag_knowledge_text = hybrid_context.formatted_rag_knowledge()
         raw_citations = hybrid_context.citations_summary()
         citations, detailed_citations = CitationValidator.validate(raw_citations, hybrid_context)
@@ -401,6 +574,7 @@ class FinancialRAGGenerator:
             language=language,
         )
 
+        intent_temperature = get_intent_temperature(hybrid_context.intent)
         provider_req = ProviderRequest(
             feature="nl_query",
             model="foundation-simple",
@@ -410,8 +584,10 @@ class FinancialRAGGenerator:
                 "intent": hybrid_context.intent,
                 "has_sql_data": hybrid_context.has_sql_data,
                 "has_rag_data": hybrid_context.has_rag_data,
+                "temperature": intent_temperature,
             },
             tools=(),
+            temperature=intent_temperature,
         )
 
         # 5. Stream response tokens
@@ -421,7 +597,7 @@ class FinancialRAGGenerator:
         primary = getattr(self.gateway.router, "primary", None)
         if primary and (
             getattr(primary, "is_production", False)
-            or getattr(primary, "name", "") in ("gemini", "openai")
+            or getattr(primary, "name", "") in ("gemini", "openai", "ollama")
         ):
             try:
                 async for token_chunk in self.gateway.router.stream_generate(provider_req):
@@ -456,6 +632,30 @@ class FinancialRAGGenerator:
             user_id=user.id, content=final_answer, role="assistant", conversation_id=conversation_id
         )
 
+        # Determine stream pipeline source strictly per architecture specification
+        if hybrid_context.intent == "time_reference_query":
+            stream_source = "deterministic_time_parser"
+        elif (
+            (hybrid_context.plan and hybrid_context.plan.requires_sql and hybrid_context.plan.requires_knowledge)
+            or (hybrid_context.has_sql_data and hybrid_context.has_rag_data)
+        ):
+            stream_source = "hybrid_postgresql_chroma_rag"
+        elif (hybrid_context.plan and hybrid_context.plan.requires_sql) or hybrid_context.has_sql_data:
+            stream_source = "hybrid_postgresql"
+        elif (
+            (hybrid_context.plan and hybrid_context.plan.requires_knowledge)
+            or hybrid_context.has_rag_data
+            or hybrid_context.intent == "knowledge"
+        ):
+            stream_source = "hybrid_chroma_rag"
+        else:
+            stream_source = "hybrid_postgresql" if hybrid_context.has_sql_data else "deterministic"
+
+        configured_provider = getattr(primary, "name", "ollama")
+        active_provider = getattr(primary, "name", "ollama") if is_real_llm_stream else "deterministic"
+        active_model = getattr(self.gateway.router, "primary_model", "qwen2.5:3b") if is_real_llm_stream else None
+        fallback_used = False
+
         # Actionable suggestions
         suggestions = []
         sql_ctx = hybrid_context.sql_context
@@ -488,6 +688,13 @@ class FinancialRAGGenerator:
             "has_sql_data": hybrid_context.has_sql_data,
             "has_rag_data": hybrid_context.has_rag_data,
             "suggestions": suggestions,
+            "source": stream_source,
+            "configured_provider": configured_provider,
+            "active_provider": active_provider,
+            "active_model": active_model,
+            "fallback_used": fallback_used,
+            "provider": active_provider,
+            "model": active_model,
         }
         yield f"data: {json.dumps(metadata_event, ensure_ascii=False)}\n\n"
 
@@ -515,7 +722,7 @@ class FinancialRAGGenerator:
         needs_disclaimer = intent in disclaimer_intents or hybrid_context.has_sql_data
         if (
             needs_disclaimer
-            and intent not in ("greeting", "general_query")
+            and intent not in ("greeting", "general_query", "time_reference_query")
             and FINANCIAL_LEGAL_DISCLAIMER.strip() not in body
         ):
             body = body.rstrip() + FINANCIAL_LEGAL_DISCLAIMER
@@ -530,7 +737,7 @@ class FinancialRAGGenerator:
     ) -> str:
         if (
             raw_text
-            and len(raw_text.strip()) > 30
+            and len(raw_text.strip()) >= 5
             and "AI provider foundation response" not in raw_text
             and "allowed financial query map" not in raw_text
             and "UNSUPPORTED_REQUEST" not in raw_text
@@ -539,6 +746,11 @@ class FinancialRAGGenerator:
 
         intent = hybrid_context.intent
         sql_ctx = hybrid_context.sql_context
+
+        # 0. Time Reference Queries
+        if intent == "time_reference_query":
+            q = hybrid_context.plan.question if hasattr(hybrid_context, "plan") and hybrid_context.plan else ""
+            return IntentDetector.resolve_time_reference(q)
 
         # 1. Greetings & General Non-Financial Queries
         if intent in ("greeting", "general_query"):
@@ -565,7 +777,30 @@ class FinancialRAGGenerator:
             num_m = len(sql_ctx.monthly_breakdown) if sql_ctx.monthly_breakdown else 1
             lines = [f"Theo thống kê chi tiêu trong **{num_m} tháng gần nhất**:\n"]
 
+            if sql_ctx.monthly_breakdown and len(sql_ctx.monthly_breakdown) >= 2:
+                prev_m = sql_ctx.monthly_breakdown[-2]
+                curr_m = sql_ctx.monthly_breakdown[-1]
+                diff = curr_m["expense"] - prev_m["expense"]
+                if diff > 0:
+                    pct_str = f"+{curr_m['change_pct']:.1f}%" if curr_m["change_pct"] is not None else ""
+                    lines.append(
+                        f"📊 **So sánh gần nhất**: Chi tiêu {curr_m['month']} **tăng** {pct_str} (+{diff:,.0f} {sql_ctx.currency}) so với {prev_m['month']}."
+                    )
+                elif diff < 0:
+                    pct_str = f"{curr_m['change_pct']:.1f}%" if curr_m["change_pct"] is not None else ""
+                    lines.append(
+                        f"📊 **So sánh gần nhất**: Chi tiêu {curr_m['month']} **giảm** {pct_str} (-{abs(diff):,.0f} {sql_ctx.currency}) so với {prev_m['month']}."
+                    )
+                else:
+                    lines.append(
+                        f"📊 **So sánh gần nhất**: Chi tiêu {curr_m['month']} **không đổi** (0.0%) so với {prev_m['month']} ({curr_m['expense']:,.0f} {sql_ctx.currency})."
+                    )
+
             if sql_ctx.monthly_breakdown:
+                total_period_exp = sum(m["expense"] for m in sql_ctx.monthly_breakdown)
+                lines.append(
+                    f"💰 **Tổng chi tiêu toàn kỳ ({num_m} tháng)**: **{total_period_exp:,.0f} {sql_ctx.currency}**."
+                )
                 max_expense_m = max(sql_ctx.monthly_breakdown, key=lambda x: x["expense"])
                 min_expense_m = min(sql_ctx.monthly_breakdown, key=lambda x: x["expense"])
                 lines.append(

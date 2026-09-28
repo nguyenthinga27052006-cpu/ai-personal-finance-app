@@ -181,15 +181,26 @@ class AIGateway:
 
 
 def default_gateway() -> AIGateway:
-    from app.ai.providers import FakeProvider, GeminiLLMProvider, OpenAIProvider
+    from app.ai.providers import FakeProvider, GeminiLLMProvider, OllamaLLMProvider, OpenAIProvider
     from app.core.config import get_settings
 
     settings = get_settings()
-    if settings.ai_provider == "gemini" and settings.gemini_api_key:
+    if settings.ai_provider == "ollama":
+        primary = OllamaLLMProvider(
+            base_url=settings.ollama_base_url, default_model=settings.ai_model
+        )
+        fallback = (
+            GeminiLLMProvider(api_key=settings.gemini_api_key, default_model=settings.ai_model)
+            if (settings.gemini_api_key and settings.gemini_api_key not in ("your-gemini-api-key", "test_key", "dummy"))
+            else FakeProvider()
+        )
+    elif settings.ai_provider == "gemini" and settings.gemini_api_key:
         primary = GeminiLLMProvider(
             api_key=settings.gemini_api_key, default_model=settings.ai_model
         )
-        fallback = FakeProvider()
+        fallback = OllamaLLMProvider(
+            base_url=settings.ollama_base_url, default_model=settings.ai_model
+        )
     elif settings.ai_provider == "openai" and settings.openai_api_key:
         primary = OpenAIProvider(api_key=settings.openai_api_key, default_model=settings.ai_model)
         fallback = FakeProvider()

@@ -50,4 +50,12 @@ scratch_*.txt
 *.scratch
 *.egg-info/
 MP4/
-docs/qa/Untitled-*
+docs/qa/Untitled-*
+build_*_docx.py
+create_planning_docx.py
+generate_master_word.py
+doc_structure.txt
+extracted_doc_text.txt
+emulator_output.txt
+verified_chapters.txt
+extracted_media/

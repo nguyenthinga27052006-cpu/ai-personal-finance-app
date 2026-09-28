@@ -7,7 +7,7 @@ from typing import Any, Literal
 from sqlalchemy.orm import Session
 
 from app.ai.rag.vector_store import DocumentChunk, RAGVectorStore, get_vector_store
-from app.ai.retrievers.intent_detector import IntentDetector, IntentType
+from app.ai.retrievers.intent_detector import IntentDetector, IntentType, QueryPlan
 from app.ai.retrievers.sql_retriever import SQLRetriever, SQLUserDataContext
 from app.db.models import User
 
@@ -22,6 +22,7 @@ class HybridContext:
     has_sql_data: bool
     has_rag_data: bool
     status: ContextStatus = "SUPPORTED"
+    plan: QueryPlan | None = None
 
     def formatted_rag_knowledge(self) -> str:
         if not self.vector_chunks:
@@ -119,33 +120,45 @@ class HybridRetriever:
         elif intent == "app_faq":
             filters = {"topic": "faq"}
 
-        # 3. SQL Retrieval (User real financial facts)
-        sql_context = self.sql_retriever.retrieve_user_financial_facts(
-            user=user, start=start, end=end, currency=currency, question=question
-        )
+        # 3. SQL Retrieval (User real financial facts) - ONLY if plan.requires_sql is True
+        if plan.requires_sql:
+            sql_context = self.sql_retriever.retrieve_user_financial_facts(
+                user=user, start=start, end=end, currency=currency, question=question
+            )
+        else:
+            sql_context = SQLUserDataContext.empty(
+                user_id=user.id,
+                period_start=plan.time_range.start,
+                period_end=plan.time_range.end,
+                currency=currency,
+            )
 
-        # 4. Hybrid Dense+Sparse Vector Retrieval
-        vector_chunks = self.vector_store.search(
-            query=question,
-            top_k=top_k,
-            similarity_threshold=similarity_threshold,
-            filters=filters,
-        )
-
-        # Fallback if topic filter returned no results
-        if not vector_chunks and filters:
+        # 4. Hybrid Dense+Sparse Vector Retrieval - ONLY if plan.requires_knowledge is True
+        if plan.requires_knowledge:
             vector_chunks = self.vector_store.search(
                 query=question,
                 top_k=top_k,
                 similarity_threshold=similarity_threshold,
-                filters=None,
+                filters=filters,
             )
+            # Fallback if topic filter returned no results
+            if not vector_chunks and filters:
+                vector_chunks = self.vector_store.search(
+                    query=question,
+                    top_k=top_k,
+                    similarity_threshold=similarity_threshold,
+                    filters=None,
+                )
+        else:
+            vector_chunks = []
 
         has_sql_data = sql_context.has_data
         has_rag_data = len(vector_chunks) > 0
 
         # Determine Context Status
-        if not has_sql_data and not has_rag_data:
+        if intent in ("time_reference_query", "greeting", "general_query"):
+            status: ContextStatus = "SUPPORTED"
+        elif not has_sql_data and not has_rag_data:
             status: ContextStatus = "INSUFFICIENT_DATA"
         elif intent in ("knowledge", "saving_advice", "debt_advice") and not has_rag_data:
             status = "NO_RELEVANT_CONTEXT"
@@ -161,4 +174,5 @@ class HybridRetriever:
             has_sql_data=has_sql_data,
             has_rag_data=has_rag_data,
             status=status,
+            plan=plan,
         )

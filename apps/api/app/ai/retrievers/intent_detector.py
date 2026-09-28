@@ -28,6 +28,7 @@ IntentType = Literal[
     "greeting",
     "unsupported_request",
     "general_query",
+    "time_reference_query",
 ]
 
 
@@ -62,12 +63,90 @@ class IntentDetector:
     """Classifies financial questions into specific high-precision intents and parses date/entity constraints."""
 
     @staticmethod
+    def resolve_time_reference(question: str, today: date | None = None) -> str:
+        """Deterministic resolver for calendar and relative time reference questions without invoking LLM or SQL."""
+        if today is None:
+            today = date.today()
+        q = question.lower().strip()
+
+        # Pattern 1: (tháng trước|trước) tháng X
+        match_prev = re.search(r"(?:tháng\s*trước|trước)\s*tháng\s*(\d{1,2})", q)
+        if match_prev:
+            base_m = int(match_prev.group(1))
+            target_m = 12 if base_m == 1 else base_m - 1
+            prefix = "Tháng trước" if "tháng trước" in q else "Trước"
+            if base_m == 1:
+                return f"{prefix} tháng 1 là tháng 12 năm trước."
+            return f"{prefix} tháng {base_m} là tháng {target_m}."
+
+        # Pattern 2: (tháng sau|sau) tháng X
+        match_next = re.search(r"(?:tháng\s*sau|sau)\s*tháng\s*(\d{1,2})", q)
+        if match_next:
+            base_m = int(match_next.group(1))
+            target_m = 1 if base_m == 12 else base_m + 1
+            prefix = "Tháng sau" if "tháng sau" in q else "Sau"
+            if base_m == 12:
+                return f"{prefix} tháng 12 là tháng 1 năm sau."
+            return f"{prefix} tháng {base_m} là tháng {target_m}."
+
+        # Pattern 3: tháng trước là tháng mấy / tháng trước là tháng nào
+        if "tháng trước" in q:
+            target_m = 12 if today.month == 1 else today.month - 1
+            target_y = today.year - 1 if today.month == 1 else today.year
+            return f"Tháng trước là tháng {target_m}/{target_y} (do hiện tại đang là tháng {today.month}/{today.year})."
+
+        # Pattern 4: tháng sau là tháng mấy / tháng sau là tháng nào
+        if "tháng sau" in q or "tháng tới" in q:
+            target_m = 1 if today.month == 12 else today.month + 1
+            target_y = today.year + 1 if today.month == 12 else today.year
+            return f"Tháng sau là tháng {target_m}/{target_y} (do hiện tại đang là tháng {today.month}/{today.year})."
+
+        # Pattern 5: hôm nay
+        if "hôm nay" in q:
+            d_str = today.strftime("%d/%m/%Y")
+            return f"Hôm nay là ngày {d_str}."
+
+        # Pattern 6: tháng này / bây giờ
+        if "tháng này" in q or "bây giờ" in q or "hiện tại" in q:
+            return f"Hiện tại đang là tháng {today.month}/{today.year}."
+
+        return f"Mốc thời gian bạn hỏi là tháng {today.month}/{today.year}."
+
+    @staticmethod
     def detect(question: str) -> IntentType:
         lowered = question.lower().strip()
 
         # 1. Greetings
         if lowered in {"hi", "hello", "xin chào", "chào bạn", "chào", "hey", "halo"}:
             return "greeting"
+
+        # 1.1 Pure Time Reference & Calendar Queries (Deterministic, no financial/SQL/Chroma needed)
+        has_financial_keywords = any(
+            kw in lowered
+            for kw in [
+                "tiêu", "chi", "thu", "lương", "số dư", "tài khoản", "tiết kiệm",
+                "ngân sách", "mua", "nợ", "bao nhiêu tiền", "hóa đơn", "giao dịch",
+                "thặng dư", "vượt hạn mức", "hạn mức", "tiến độ"
+            ]
+        )
+        if not has_financial_keywords:
+            time_ref_patterns = [
+                r"(?:tháng\s*trước|trước|tháng\s*sau|sau)\s*tháng\s*\d+",
+                r"tháng\s*trước\s*là\s*tháng\s*(?:mấy|nào)",
+                r"tháng\s*sau\s*là\s*tháng\s*(?:mấy|nào)",
+                r"hôm\s*nay\s*là\s*(?:ngày|thứ|tháng)\s*(?:mấy|nào|gì)",
+                r"bây\s*giờ\s*là\s*tháng\s*(?:mấy|nào)",
+                r"tháng\s*\d+\s*là\s*tháng\s*(?:mấy|nào)",
+                r"trước\s*tháng\s*\d+\s*(?:ý|đó|nhé|nha|ạ)?$",
+                r"sau\s*tháng\s*\d+\s*(?:ý|đó|nhé|nha|ạ)?$",
+                r"trước\s*tháng\s*\d+\s*thì\s*sao",
+                r"sau\s*tháng\s*\d+\s*thì\s*sao",
+                r"tháng\s*trước\s*là\s*tháng\s*mấy",
+                r"tháng\s*sau\s*là\s*tháng\s*mấy",
+                r"tháng\s*(?:mấy|nào)\s*(?:nhỉ|vậy|thế|đó|\?)?$",
+            ]
+            if any(re.search(p, lowered) for p in time_ref_patterns):
+                return "time_reference_query"
 
         is_personal = any(
             p in lowered
@@ -83,38 +162,45 @@ class IntentDetector:
             ]
         )
 
-        # 2. Personal Hybrid queries prioritize advice/affordability over generic knowledge
-        if is_personal:
-            if any(
-                kw in lowered
-                for kw in [
-                    "đủ tiền",
-                    "mua được",
-                    "mua laptop",
-                    "mua điện thoại",
-                    "có nên mua",
-                    "có thể bắt đầu",
-                    "afford",
-                ]
-            ):
-                return "affordability"
-            if any(kw in lowered for kw in ["trả nợ", "khoản nợ", "nợ nào"]):
-                return "debt_advice"
-            if any(kw in lowered for kw in ["vượt hạn mức", "mục tiêu tiết kiệm"]):
-                return "budget_review"
-            if any(
-                kw in lowered
-                for kw in [
-                    "tiết kiệm",
-                    "phân bổ",
-                    "tối ưu",
-                    "giảm chi",
-                    "cắt giảm",
-                    "trích",
-                    "xây dựng",
-                ]
-            ):
-                return "saving_advice"
+        # 2. Hybrid queries prioritize advice/affordability over generic keywords
+        if any(
+            kw in lowered
+            for kw in [
+                "đủ tiền",
+                "mua được",
+                "mua laptop",
+                "mua điện thoại",
+                "mua xe",
+                "muốn mua",
+                "có nên mua",
+                "có thể bắt đầu",
+                "phương án chi tiêu",
+                "afford",
+            ]
+        ):
+            return "affordability"
+        if any(kw in lowered for kw in ["trả nợ", "khoản nợ", "nợ nào"]):
+            return "debt_advice"
+        if any(kw in lowered for kw in ["vượt hạn mức", "mục tiêu tiết kiệm"]):
+            return "budget_review"
+        if any(
+            kw in lowered
+            for kw in [
+                "nên giảm",
+                "nên tăng",
+                "giảm chi tiêu",
+                "tăng chi tiêu",
+                "chi tiêu mục nào",
+                "tiết kiệm",
+                "phân bổ",
+                "tối ưu",
+                "giảm chi",
+                "cắt giảm",
+                "trích",
+                "xây dựng",
+            ]
+        ):
+            return "saving_advice"
 
         # 3. Knowledge queries (Educational / Framework / Financial rules)
         if any(
@@ -257,6 +343,14 @@ class IntentDetector:
                 "tiêu hết",
                 "khoản chi",
                 "tiêu nhiều tiền",
+                "chi bao nhiêu",
+                "tiêu bao nhiêu",
+                "đã chi",
+                "tôi chi",
+                "tôi tiêu",
+                "khoản nào tôi chi",
+                "khoản nào chi",
+                "mục nào chi",
             ]
         ):
             return "expense_query"
@@ -315,7 +409,60 @@ class IntentDetector:
 
         q = question.lower().strip()
 
-        # Check for historical extreme analytical questions ("tháng nào", "nhiều nhất", "ít nhất", etc.)
+        # 0a. Match clarification pattern: "ý tôi là ... là tháng X" or "ý tôi là tháng X" or "là tháng X"
+        clarify = re.search(
+            r"(?:ý tôi là.*?|là\s*)tháng\s*(\d{1,2})(?:\s*ý|\s*đó|\s*ạ|\s*nhé)?$", q
+        )
+        if clarify:
+            m = int(clarify.group(1))
+            y = today.year
+            if 1 <= m <= 12:
+                start = date(y, m, 1)
+                next_m = date(y + (m == 12), 1 if m == 12 else m + 1, 1)
+                end = next_m - timedelta(days=1)
+                return start, end, False
+
+        # 0b. Match relative to month: "tháng trước tháng X" or "trước tháng X" (e.g. tháng trước tháng 8 -> tháng 7)
+        match_rel_prev = re.search(
+            r"(?:tháng\s*trước|trước)\s*tháng\s*(\d{1,2})(?:\s*[/ năm]*\s*(\d{4}))?", q
+        )
+        if match_rel_prev:
+            base_m = int(match_rel_prev.group(1))
+            y = int(match_rel_prev.group(2)) if match_rel_prev.group(2) else today.year
+            m = base_m - 1
+            if m == 0:
+                m = 12
+                y -= 1
+            if 1 <= m <= 12:
+                start = date(y, m, 1)
+                next_m = date(y + (m == 12), 1 if m == 12 else m + 1, 1)
+                end = next_m - timedelta(days=1)
+                return start, end, False
+
+        # 1. Match specific month FIRST: "tháng X" or "tháng X/YYYY" (e.g. tháng 5, tháng 08, tháng 8/2026)
+        match_specific_month = re.search(r"tháng\s*(\d{1,2})(?:\s*[/ năm]*\s*(\d{4}))?", q)
+        if match_specific_month:
+            m = int(match_specific_month.group(1))
+            y = int(match_specific_month.group(2)) if match_specific_month.group(2) else today.year
+            if 1 <= m <= 12:
+                start = date(y, m, 1)
+                next_m = date(y + (m == 12), 1 if m == 12 else m + 1, 1)
+                end = next_m - timedelta(days=1)
+                return start, end, False
+
+        # 2. Match "tháng trước" or "tháng vừa rồi"
+        if "tháng trước" in q or "tháng vừa rồi" in q:
+            m = today.month - 1
+            y = today.year
+            if m == 0:
+                m = 12
+                y -= 1
+            start = date(y, m, 1)
+            next_m = date(y + (m == 12), 1 if m == 12 else m + 1, 1)
+            end = next_m - timedelta(days=1)
+            return start, end, False
+
+        # 3. Check for historical extreme analytical questions without specific month ("tháng nào", "nhiều nhất", "ít nhất", etc.)
         if any(
             kw in q
             for kw in [
@@ -343,9 +490,9 @@ class IntentDetector:
             end = next_month - timedelta(days=1)
             return start, end, True
 
-        # 1. Match "X tháng gần nhất" / "X tháng qua" / "X tháng vừa qua" / "X tháng"
+        # 4. Match "X tháng gần nhất" / "X tháng qua" / "X tháng vừa qua" / "X tháng"
         match_recent_months = re.search(r"(\d+)\s*tháng", q)
-        if match_recent_months and not re.search(r"tháng\s*\d{1,2}", q):
+        if match_recent_months:
             num_months = int(match_recent_months.group(1))
             num_months = max(1, min(num_months, 12))  # cap between 1 and 12
             start_month = today.month - num_months + 1
@@ -360,17 +507,6 @@ class IntentDetector:
             )
             end = next_month - timedelta(days=1)
             return start, end, num_months > 1
-
-        # 2. Match specific month: "tháng X" or "tháng X/YYYY" (e.g. tháng 5, tháng 08, tháng 8/2026)
-        match_specific_month = re.search(r"tháng\s*(\d{1,2})(?:\s*[/ năm]*\s*(\d{4}))?", q)
-        if match_specific_month:
-            m = int(match_specific_month.group(1))
-            y = int(match_specific_month.group(2)) if match_specific_month.group(2) else today.year
-            if 1 <= m <= 12:
-                start = date(y, m, 1)
-                next_m = date(y + (m == 12), 1 if m == 12 else m + 1, 1)
-                end = next_m - timedelta(days=1)
-                return start, end, False
 
         # 3. Match "tháng trước" or "tháng vừa rồi"
         if "tháng trước" in q or "tháng vừa rồi" in q:
@@ -424,9 +560,46 @@ class IntentDetector:
         """Decomposes user question into a structured QueryPlan with entity/time parsing and optional follow-up context resolution."""
         intent = cls.detect(question)
         start, end, is_multi = cls.parse_date_range(question, today=today)
-
         lowered = question.lower().strip()
-        is_followup_phrase = any(kw in lowered for kw in ["thế còn", "còn ", "thì sao"])
+
+        is_followup_phrase = (
+            lowered.startswith("còn ")
+            or "thế còn" in lowered
+            or "vậy còn" in lowered
+            or "thì sao" in lowered
+        ) and not any(kw in lowered for kw in ["còn bao nhiêu tiền", "còn tiền", "còn dư", "còn nợ"])
+
+        # Check if follow-up refers to relative month based on previous user query (e.g. "Còn tháng trước?")
+        if history and (
+            "còn tháng trước" in lowered
+            or "tháng trước đó" in lowered
+            or ("tháng trước" in lowered and is_followup_phrase)
+        ):
+            prev_user_month = None
+            prev_user_year = today.year if today else date.today().year
+            for msg in reversed(history):
+                role = getattr(msg, "role", None) or (msg.get("role") if isinstance(msg, dict) else None)
+                if role and role != "user":
+                    continue
+                content = (
+                    getattr(msg, "content", "")
+                    if hasattr(msg, "content")
+                    else str(msg.get("content", "") if isinstance(msg, dict) else msg)
+                )
+                if content:
+                    m_match = re.search(r"tháng\s*(\d{1,2})(?:\s*[/ năm]*\s*(\d{4}))?", content.lower())
+                    if m_match:
+                        prev_user_month = int(m_match.group(1))
+                        if m_match.group(2):
+                            prev_user_year = int(m_match.group(2))
+                        break
+            if prev_user_month and 1 <= prev_user_month <= 12:
+                target_m = 12 if prev_user_month == 1 else prev_user_month - 1
+                target_y = prev_user_year - 1 if prev_user_month == 1 else prev_user_year
+                start = date(target_y, target_m, 1)
+                next_m = date(target_y + (target_m == 12), 1 if target_m == 12 else target_m + 1, 1)
+                end = next_m - timedelta(days=1)
+                is_multi = False
 
         # Entity extraction
         cat_match = None
@@ -444,11 +617,14 @@ class IntentDetector:
                 cat_match = cat
                 break
 
-        # Follow-up context inheritance from history
+        # Follow-up context inheritance from history (ONLY inspect USER messages, NEVER assistant!)
         prev_intent = None
         prev_cat = None
         if history:
             for msg in reversed(history):
+                role = getattr(msg, "role", None) or (msg.get("role") if isinstance(msg, dict) else None)
+                if role and role != "user":
+                    continue
                 content = (
                     getattr(msg, "content", "")
                     if hasattr(msg, "content")
@@ -470,26 +646,38 @@ class IntentDetector:
                             prev_cat = cat
                             break
                     detected_prev = cls.detect(content)
-                    if detected_prev not in ("general_query", "greeting", "knowledge"):
+                    if detected_prev not in (
+                        "general_query",
+                        "greeting",
+                        "knowledge",
+                        "time_reference_query",
+                    ):
                         prev_intent = detected_prev
                     if prev_cat and prev_intent:
                         break
 
-        # If it's a follow-up or general query and previous turn had a specific intent, inherit context (unless it's personal chat)
+        # If it's a follow-up or general query and previous turn had a specific intent, inherit context (unless it's personal chat or specific non-financial query)
         is_personal_chat = any(
             w in lowered for w in ["tên", "tuổi", "bạn là ai", "tôi là ai", "ai đấy", "ai đây"]
         )
+
         if (
             (is_followup_phrase or intent == "general_query")
             and prev_intent
-            and not is_personal_chat
-            and intent not in ("knowledge", "greeting", "app_faq")
+            and intent not in (
+                "knowledge",
+                "greeting",
+                "app_faq",
+                "time_reference_query",
+                "balance_query",
+                "income_query",
+            )
         ):
             intent = prev_intent
         if (
             cat_match is None
             and prev_cat
-            and intent not in ("knowledge", "greeting", "app_faq")
+            and intent not in ("knowledge", "greeting", "app_faq", "time_reference_query")
             and (
                 is_followup_phrase
                 or intent in ("spending_analysis", "expense_query", "category_analysis")
@@ -507,7 +695,33 @@ class IntentDetector:
             elif unit == "k":
                 amt_match = val * 1_000
 
-        requires_sql = intent not in ("knowledge", "greeting", "app_faq")
+        is_personal_financial = any(
+            p in lowered
+            for p in [
+                "của tôi",
+                "của mình",
+                "với số dư",
+                "với tổng dư",
+                "thặng dư",
+                "ngân sách hiện có",
+                "tài khoản của tôi",
+                "tháng này của tôi",
+                "tôi chi",
+                "tôi tiêu",
+                "tôi thu",
+                "tiêu bao nhiêu",
+                "chi bao nhiêu",
+                "thu bao nhiêu",
+                "lương của tôi",
+                "số dư của tôi",
+            ]
+        )
+        requires_sql = intent not in (
+            "knowledge",
+            "greeting",
+            "app_faq",
+            "time_reference_query",
+        ) and (intent != "general_query" or is_personal_financial)
         requires_knowledge = intent in (
             "knowledge",
             "saving_advice",

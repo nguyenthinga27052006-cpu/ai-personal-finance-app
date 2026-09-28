@@ -157,27 +157,89 @@ class FinancialFactValidator:
 
 @dataclass(frozen=True)
 class SQLUserDataContext:
-    user_id: str
-    period_start: date
-    period_end: date
-    currency: str
-    total_income: Decimal
-    total_expense: Decimal
-    net_savings: Decimal
-    accounts: list[dict[str, Any]]
-    total_balance: Decimal
-    top_categories: list[dict[str, Any]]
-    recent_transactions: list[dict[str, Any]]
-    budgets: list[dict[str, Any]]
-    goals: list[dict[str, Any]]
-    notifications: list[dict[str, Any]]
-    transaction_count: int
-    has_data: bool
+    user_id: str = ""
+    period_start: date = field(default_factory=date.today)
+    period_end: date = field(default_factory=date.today)
+    currency: str = "VND"
+    total_income: Decimal = Decimal("0")
+    total_expense: Decimal = Decimal("0")
+    net_savings: Decimal = Decimal("0")
+    accounts: list[dict[str, Any]] = field(default_factory=list)
+    total_balance: Decimal = Decimal("0")
+    top_categories: list[dict[str, Any]] = field(default_factory=list)
+    recent_transactions: list[dict[str, Any]] = field(default_factory=list)
+    budgets: list[dict[str, Any]] = field(default_factory=list)
+    goals: list[dict[str, Any]] = field(default_factory=list)
+    notifications: list[dict[str, Any]] = field(default_factory=list)
+    transaction_count: int = 0
+    has_data: bool = False
     monthly_breakdown: list[dict[str, Any]] = field(default_factory=list)
 
-    def summary_text(self) -> str:
+    @classmethod
+    def empty(
+        cls,
+        user_id: str = "",
+        period_start: date | None = None,
+        period_end: date | None = None,
+        currency: str = "VND",
+    ) -> SQLUserDataContext:
+        """Constructs a clean empty financial context with no financial facts or transactions."""
+        today = date.today()
+        return cls(
+            user_id=user_id,
+            period_start=period_start or today,
+            period_end=period_end or today,
+            currency=currency.upper(),
+            total_income=Decimal("0"),
+            total_expense=Decimal("0"),
+            net_savings=Decimal("0"),
+            accounts=[],
+            total_balance=Decimal("0"),
+            top_categories=[],
+            recent_transactions=[],
+            budgets=[],
+            goals=[],
+            notifications=[],
+            transaction_count=0,
+            has_data=False,
+            monthly_breakdown=[],
+        )
+
+    def summary_text(self, intent: str | None = None) -> str:
         if not self.has_data:
             return "Không tìm thấy giao dịch hoặc dữ liệu tài chính trong khoảng thời gian này."
+
+        if intent in ("knowledge", "greeting", "app_faq", "time_reference_query"):
+            return "Không yêu cầu dữ liệu tài chính cho câu hỏi này."
+
+        if intent == "balance_query":
+            parts = [
+                f"Tổng số dư tài khoản ({len(self.accounts)} tài khoản): {self.total_balance:,.0f} {self.currency}",
+            ]
+            if self.accounts:
+                parts.append("Chi tiết tài khoản:")
+                for acc in self.accounts:
+                    parts.append(f"* {acc['name']}: {acc['balance']:,.0f} {self.currency}")
+            return "\n".join(parts)
+
+        if intent == "income_query":
+            return (
+                f"Thu nhập tổng kỳ ({self.period_start} đến {self.period_end}): {self.total_income:,.0f} {self.currency}\n"
+                f"Thặng dư tích lũy kỳ: {self.net_savings:,.0f} {self.currency}\n"
+                f"Tổng chi tiêu cùng kỳ: {self.total_expense:,.0f} {self.currency}"
+            )
+
+        if intent in ("expense_query", "spending_analysis", "category_analysis"):
+            parts = [
+                f"Chi tiêu tổng kỳ ({self.period_start} đến {self.period_end}): {self.total_expense:,.0f} {self.currency} (gồm {self.transaction_count} giao dịch)",
+            ]
+            if self.top_categories:
+                cat_strings = [
+                    f"{c['category']}: {c['amount']:,.0f} {self.currency} ({c['percentage']:.1f}%)"
+                    for c in self.top_categories[:4]
+                ]
+                parts.append(f"Danh mục chi tiêu hàng đầu: {', '.join(cat_strings)}")
+            return "\n".join(parts)
 
         parts = [
             f"Tổng số dư tài khoản ({len(self.accounts)} tài khoản): {self.total_balance:,.0f} {self.currency}",
@@ -191,11 +253,14 @@ class SQLUserDataContext:
                 f"\nPhân tích & So sánh chi tiết từng tháng ({self.period_start} đến {self.period_end}):"
             )
             for m in self.monthly_breakdown:
-                chg = (
-                    f" (Biến động chi tiêu: {'+' if m['change_pct'] > 0 else ''}{m['change_pct']}%)"
-                    if m["change_pct"] is not None
-                    else ""
-                )
+                chg = ""
+                if m["change_pct"] is not None:
+                    if m["change_pct"] > 0:
+                        chg = f" (Biến động chi tiêu: +{m['change_pct']}% - Tăng)"
+                    elif m["change_pct"] < 0:
+                        chg = f" (Biến động chi tiêu: {m['change_pct']}% - Giảm)"
+                    else:
+                        chg = " (Biến động chi tiêu: 0.0% - Không đổi)"
                 parts.append(
                     f"* {m['month']}: Chi tiêu {m['expense']:,.0f} {self.currency}{chg} | Thu nhập {m['income']:,.0f} {self.currency} | Thặng dư {m['savings']:,.0f} {self.currency} (Danh mục chính: {m['top_category']})"
                 )

@@ -172,7 +172,17 @@ class DenseEmbeddingProvider:
     def __init__(self) -> None:
         import os
 
-        self.provider_type = os.getenv("EMBEDDING_PROVIDER", "semantic_vector").lower()
+        self.provider_type = os.getenv("EMBEDDING_PROVIDER", "bge-m3").lower()
+        self.model_name = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
+        self._st_model = None
+
+        if self.provider_type in ("bge-m3", "sentence_transformers", "fastembed"):
+            try:
+                from sentence_transformers import SentenceTransformer  # type: ignore
+
+                self._st_model = SentenceTransformer(self.model_name)
+            except Exception:
+                self._st_model = None
 
     def embed_text(self, text: str) -> dict[str, float]:
         """Generate semantic concept feature vector."""
@@ -194,7 +204,14 @@ class DenseEmbeddingProvider:
         return vec
 
     def embed_dense_list(self, text: str) -> list[float]:
-        """Produces a normalized dense float array suitable for vector DBs like ChromaDB."""
+        """Produces a normalized dense float array suitable for vector DBs like ChromaDB or pgvector."""
+        if self._st_model is not None:
+            try:
+                embeddings = self._st_model.encode(text, normalize_embeddings=True)
+                return [round(float(x), 6) for x in embeddings]
+            except Exception:
+                pass
+
         vec = self.embed_text(text)
         dense_dim = 32
         dense = [0.0] * dense_dim

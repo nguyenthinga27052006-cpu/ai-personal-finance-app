@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     ai_daily_budget_units: int = Field(default=100, ge=1)
     daily_user_token_limit: int = Field(default=50000, ge=1)
     ai_max_retries: int = Field(default=2, ge=0, le=5)
+    embedding_provider: str = "bge-m3"
+    embedding_model: str = "BAAI/bge-m3"
+    ollama_base_url: str = "http://localhost:11434/v1"
     release: str = "local"
 
     model_config = SettingsConfigDict(

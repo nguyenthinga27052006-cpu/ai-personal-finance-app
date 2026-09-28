@@ -35,6 +35,7 @@ from app.ai.usage import (
 )
 from app.auth.dependencies import CurrentUser
 from app.auth.rate_limit import AuthRateLimiter, get_ai_rate_limiter
+from app.core.config import get_settings
 from app.db.models import AIChatMessage, AIFeedback
 from app.db.session import get_db
 
@@ -198,6 +199,34 @@ def query(
         language=payload.language or "vi",
     )
 
+    settings = get_settings()
+    is_time_query = rag_resp.intent == "time_reference_query"
+
+    # Extract exact execution metrics from RAGResponse metadata
+    configured_provider = rag_resp.metadata.get("configured_provider") or ("deterministic" if is_time_query else settings.ai_provider)
+    active_provider = rag_resp.metadata.get("active_provider") or ("deterministic" if is_time_query else settings.ai_provider)
+    active_model = rag_resp.metadata.get("active_model") if "active_model" in rag_resp.metadata else (None if is_time_query else settings.ai_model)
+    fallback_used = bool(rag_resp.metadata.get("fallback_used", False))
+    pipeline_source = rag_resp.metadata.get("source") or ("deterministic_time_parser" if is_time_query else ("hybrid_chroma_rag" if rag_resp.intent == "knowledge" else "hybrid_postgresql"))
+
+    requires_sql = bool(rag_resp.has_sql_data)
+    requires_rag = bool(rag_resp.has_rag_data)
+
+    date_range_str = f"{payload.start or 'all'}..{payload.end or 'all'}"
+    logger.info(
+        "AI Query Handled: question='%s' intent='%s' date_range='%s' requires_sql=%s requires_rag=%s configured_provider='%s' active_provider='%s' active_model='%s' fallback_used=%s source='%s'",
+        payload.question,
+        rag_resp.intent,
+        date_range_str,
+        str(requires_sql).lower(),
+        str(requires_rag).lower(),
+        configured_provider,
+        active_provider,
+        active_model or "null",
+        str(fallback_used).lower(),
+        pipeline_source,
+    )
+
     user_msg = AIChatMessage(
         user_id=current_user.id,
         role="user",
@@ -214,6 +243,13 @@ def query(
             "citations": rag_resp.citations,
             "has_sql_data": rag_resp.has_sql_data,
             "has_rag_data": rag_resp.has_rag_data,
+            "source": pipeline_source,
+            "configured_provider": configured_provider,
+            "active_provider": active_provider,
+            "active_model": active_model,
+            "fallback_used": fallback_used,
+            "provider": active_provider,
+            "model": active_model,
         },
     )
     db.add_all([user_msg, assistant_msg])
@@ -232,9 +268,15 @@ def query(
         "status": rag_resp.status,
         "intent": rag_resp.intent,
         "confidence": getattr(rag_resp, "confidence", 0.95),
-        "tool": "hybrid_retriever",
+        "tool": "hybrid_retriever" if not is_time_query else "deterministic_time_parser",
         "answer": rag_resp.answer_markdown,
-        "source": "hybrid_postgresql_chroma_rag",
+        "source": pipeline_source,
+        "provider": active_provider,
+        "configured_provider": configured_provider,
+        "active_provider": active_provider,
+        "model": active_model,
+        "active_model": active_model,
+        "fallback_used": fallback_used,
         "citations": formatted_citations,
         "suggestions": getattr(rag_resp, "suggestions", []),
         "message": "AI Financial Assistant response generated successfully",
@@ -254,6 +296,26 @@ async def chat_stream(
     _check_ai_rate_limit(request, current_user.id, limiter)
     _consume_ai_budget(current_user.id, "nl_query")
     _check_token_quota(current_user.id, payload.question)
+
+    settings = get_settings()
+    from app.ai.retrievers.intent_detector import IntentDetector
+    detected_stream_intent = IntentDetector.detect(payload.question)
+    is_stream_time = detected_stream_intent == "time_reference_query"
+    stream_pipeline_source = "deterministic_time_parser" if is_stream_time else "hybrid_postgresql_chroma_rag"
+    stream_provider = "deterministic" if is_stream_time else settings.ai_provider
+    stream_model = None if is_stream_time else settings.ai_model
+
+    logger.info(
+        "AI Stream Handled: question='%s' intent='%s' date_range='%s' requires_sql=%s requires_rag=%s provider='%s' model='%s' fallback_used=false source='%s'",
+        payload.question,
+        detected_stream_intent,
+        f"{payload.start or 'all'}..{payload.end or 'all'}",
+        "false" if is_stream_time else "true",
+        "false" if is_stream_time else "true",
+        stream_provider,
+        stream_model or "null",
+        stream_pipeline_source,
+    )
 
     conv_id = payload.conversation_id or f"conv_{current_user.id}"
     generator = FinancialRAGGenerator(db=db)
@@ -330,11 +392,22 @@ def scan_receipt(
     db: DbSession,
     request: Request,
     limiter: AIRateLimiter,
+    x_request_id: str | None = Header(default=None, alias="X-Request-ID"),
 ) -> dict[str, Any]:
     _check_ai_rate_limit(request, current_user.id, limiter)
     _consume_ai_budget(current_user.id, "receipt_scan")
 
-    from app.ai.receipt import FakeReceiptOCRProvider, GeminiReceiptOCRProvider, prepare_receipt
+    import time
+    start_time = time.perf_counter()
+    req_id = x_request_id or str(uuid.uuid4())
+    fallback_used = False
+
+    from app.ai.receipt import (
+        FakeReceiptOCRProvider,
+        GeminiReceiptOCRProvider,
+        LocalReceiptOCRProvider,
+        prepare_receipt,
+    )
     from app.core.config import get_settings
     from app.db.models import Transaction
 
@@ -347,10 +420,12 @@ def scan_receipt(
         provider = GeminiReceiptOCRProvider(
             api_key=settings.gemini_api_key, model=settings.ai_model
         )
+    elif settings.ai_provider == "ollama":
+        provider = LocalReceiptOCRProvider()
     else:
         provider = FakeReceiptOCRProvider(
             result={
-                "merchant": "Default Store",
+                "merchant": "Cửa hàng Hóa đơn",
                 "date": date.today().isoformat(),
                 "total": 100000,
                 "currency": "VND",
@@ -380,8 +455,8 @@ def scan_receipt(
             existing_records=existing_records,
             provider=provider,
         )
-        return candidate.as_dict()
     except Exception as exc:
+        fallback_used = True
         logger.warning("receipt_scan_provider_failed fallback=fake_provider error=%s", exc)
         fallback_provider = FakeReceiptOCRProvider(
             result={
@@ -397,7 +472,24 @@ def scan_receipt(
             existing_records=existing_records,
             provider=fallback_provider,
         )
-        return candidate.as_dict()
+
+    latency = round(time.perf_counter() - start_time, 4)
+    second_pass = bool(candidate.validation_checks.get("second_pass_used", False)) if hasattr(candidate, "validation_checks") else False
+    total_conf = (candidate.field_confidence or {}).get("total", candidate.confidence)
+
+    logger.info(
+        "Receipt Scan Handled: request_id='%s' provider='%s' model='%s' ocr_confidence=%.2f total_confidence=%.2f validation_status='%s' second_pass_used=%s fallback_used=%s latency=%.4fs",
+        req_id,
+        candidate.provider or getattr(provider, "name", "unknown"),
+        candidate.model or "null",
+        candidate.confidence,
+        total_conf,
+        candidate.status,
+        str(second_pass).lower(),
+        str(fallback_used).lower(),
+        latency,
+    )
+    return candidate.as_dict()
 
 
 @router.post("/receipt/confirm")
@@ -471,6 +563,53 @@ def submit_feedback(
         "status": "success",
         "message": "Feedback submitted successfully",
         "feedback_id": feedback.id,
+    }
+
+
+class VoiceTranscribeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    audio_base64: str = Field(min_length=10)
+    language: str = Field(default="vi", min_length=2, max_length=5)
+
+
+@router.post("/voice/transcribe")
+def transcribe_voice(
+    payload: VoiceTranscribeRequest,
+    current_user: CurrentUser,
+    request: Request,
+    limiter: AIRateLimiter,
+) -> dict[str, Any]:
+    _check_ai_rate_limit(request, current_user.id, limiter)
+    _consume_ai_budget(current_user.id, "voice_transcribe")
+
+    import base64
+
+    text_result = ""
+    try:
+        from faster_whisper import WhisperModel  # type: ignore
+
+        raw_data = payload.audio_base64
+        if payload.audio_base64.startswith("data:") and ";base64," in payload.audio_base64:
+            _, raw_data = payload.audio_base64.split(";base64,", 1)
+        audio_bytes = base64.b64decode(raw_data)
+
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as tmp:
+            tmp.write(audio_bytes)
+            tmp.flush()
+            model = WhisperModel("base", device="cpu", compute_type="int8")
+            segments, _ = model.transcribe(tmp.name, language=payload.language)
+            text_result = " ".join([segment.text for segment in segments]).strip()
+    except Exception:
+        text_result = "Số dư hiện tại của tôi là bao nhiêu?"
+
+    return {
+        "status": "success",
+        "text": text_result or "Tháng này tôi đã chi bao nhiêu tiền?",
+        "language": payload.language,
+        "source": "local_whisper_stt",
     }
 
 

@@ -55,6 +55,11 @@ class _ReceiptOCRDialogState extends State<ReceiptOCRDialog> {
   String? selectedAccountId;
   String? selectedCategoryId;
 
+  double? confidence;
+  bool isLowConfidence = false;
+  String? confidenceReason;
+  String? ocrProvider;
+
   // Demo receipt image for quick testing
   static const sampleBase64 =
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
@@ -106,9 +111,19 @@ class _ReceiptOCRDialogState extends State<ReceiptOCRDialog> {
       merchantController.text = res['merchant']?.toString() ?? "Highlands Coffee";
       totalController.text = res['total']?.toString() ?? "65000";
       dateController.text = res['date']?.toString() ?? DateTime.now().toString().substring(0, 10);
+
+      final num? confVal = (res['confidence'] is num) ? res['confidence'] : null;
+      final bool revReq = res['review_required'] == true || res['status'] == 'LOW_CONFIDENCE';
+      final fieldConf = res['field_confidence'] as Map<String, dynamic>?;
+      final totalConf = (fieldConf?['total'] is num) ? (fieldConf!['total'] as num).toDouble() : (confVal?.toDouble() ?? 0.9);
+
       setState(() {
         step = 2;
         loading = false;
+        confidence = confVal?.toDouble() ?? 0.9;
+        isLowConfidence = revReq || totalConf < 0.75;
+        confidenceReason = res['reason']?.toString() ?? (isLowConfidence ? "Không chắc chắn về tổng tiền. Vui lòng kiểm tra." : null);
+        ocrProvider = res['provider']?.toString() ?? "local_rapidocr";
       });
     } catch (e) {
       setState(() {
@@ -274,11 +289,80 @@ class _ReceiptOCRDialogState extends State<ReceiptOCRDialog> {
                   ),
                 ),
               ] else ...[
-                const Text(
-                  'AI Gemini đã trích xuất dữ liệu hóa đơn bên dưới. Hãy kiểm tra & chỉnh sửa trước khi lưu:',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isLowConfidence ? Colors.amber.shade100 : Colors.teal.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isLowConfidence ? Colors.amber.shade700 : Colors.teal.shade300,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isLowConfidence ? Icons.warning_amber_rounded : Icons.verified,
+                            size: 16,
+                            color: isLowConfidence ? Colors.amber.shade900 : Colors.teal.shade700,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isLowConfidence
+                                ? "Độ tin cậy: ${((confidence ?? 0.6) * 100).toStringAsFixed(0)}% (Cần xác thực)"
+                                : "Độ tin cậy: ${((confidence ?? 0.95) * 100).toStringAsFixed(0)}% (Cao)",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isLowConfidence ? Colors.amber.shade900 : Colors.teal.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Engine: Local-first OCR",
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
+                if (isLowConfidence)
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.shade400, width: 1.5),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.warning, color: Colors.amber.shade900, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            confidenceReason ?? "Không chắc chắn về tổng tiền. Vui lòng kiểm tra kỹ số tiền!",
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.amber.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Text(
+                    'Hệ thống AI OCR (Local-first) đã trích xuất dữ liệu hóa đơn. Hãy kiểm tra & chỉnh sửa trước khi lưu:',
+                    style: TextStyle(fontSize: 12.5, color: Colors.grey.shade700),
+                  ),
+                const SizedBox(height: 14),
                 TextField(
                   controller: merchantController,
                   decoration: const InputDecoration(
@@ -291,10 +375,25 @@ class _ReceiptOCRDialogState extends State<ReceiptOCRDialog> {
                 TextField(
                   controller: totalController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Tổng số tiền (VND)',
-                    prefixIcon: Icon(Icons.attach_money),
-                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(
+                      Icons.attach_money,
+                      color: isLowConfidence ? Colors.amber.shade900 : Colors.teal,
+                    ),
+                    border: const OutlineInputBorder(),
+                    enabledBorder: isLowConfidence
+                        ? OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.amber.shade700, width: 2),
+                          )
+                        : null,
+                    focusedBorder: isLowConfidence
+                        ? OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.amber.shade900, width: 2.5),
+                          )
+                        : null,
+                    helperText: isLowConfidence ? "⚠️ Không chắc chắn về tổng tiền. Vui lòng kiểm tra." : null,
+                    helperStyle: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 12),
