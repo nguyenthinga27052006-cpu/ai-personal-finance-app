@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-import re
-from typing import Any
-import pytest
-
 
 def test_real_vat_invoice_with_lookup_code():
     """
@@ -17,7 +13,7 @@ def test_real_vat_invoice_with_lookup_code():
     - Mã tra cứu: 74589218491829
     Expected: Total MUST BE 5.090.000, NOT 745... and NOT 4.712.963!
     """
-    from app.ai.receipt import LocalReceiptOCRProvider, extract_receipt
+    from app.ai.receipt import LocalReceiptOCRProvider
 
     ocr_provider = LocalReceiptOCRProvider()
     

@@ -148,20 +148,6 @@ class IntentDetector:
             if any(re.search(p, lowered) for p in time_ref_patterns):
                 return "time_reference_query"
 
-        is_personal = any(
-            p in lowered
-            for p in [
-                "của tôi",
-                "của mình",
-                "với số dư",
-                "với tổng dư",
-                "thặng dư",
-                "ngân sách hiện có",
-                "tài khoản của tôi",
-                "tháng này của tôi",
-            ]
-        )
-
         # 2. Hybrid queries prioritize advice/affordability over generic keywords
         if any(
             kw in lowered
@@ -664,6 +650,7 @@ class IntentDetector:
         if (
             (is_followup_phrase or intent == "general_query")
             and prev_intent
+            and not is_personal_chat
             and intent not in (
                 "knowledge",
                 "greeting",

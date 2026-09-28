@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass, field
-from datetime import date, datetime
-import io
 import logging
 import re
+from dataclasses import dataclass, field
+from datetime import date, datetime
 from typing import Any, Literal, Protocol
 
 logger = logging.getLogger("app.ai.ocr")
@@ -339,7 +338,7 @@ class LayoutExtractor:
             line.text = " ".join(b.text for b in line.boxes)
 
         # Sort lines top-to-bottom
-        lines.sort(key=lambda l: l.y_center)
+        lines.sort(key=lambda line_item: line_item.y_center)
         return lines, max_y, max_x
 
 
@@ -661,7 +660,6 @@ class LocalReceiptOCRProvider:
 
     def extract(self, source: str) -> dict[str, Any]:
         """Extract structured financial info from receipt image source locally using RapidOCR & Layout Analysis."""
-        import base64
         import re
 
         img_bytes: bytes | None = None
@@ -696,7 +694,7 @@ class LocalReceiptOCRProvider:
         # Pass 1: Normal scale preprocessing + RapidOCR
         second_pass_used = False
         ocr_res_1, lines_1, h1, w1 = self._run_rapid_ocr(img_bytes, pass_num=1)
-        raw_lines_1 = [l.text if isinstance(l, LayoutLine) else str(l) for l in lines_1]
+        raw_lines_1 = [line_obj.text if isinstance(line_obj, LayoutLine) else str(line_obj) for line_obj in lines_1]
         prelim_items_1 = self._extract_items_from_lines(raw_lines_1)
         eval_1 = self.scorer.evaluate(lines_1, doc_height=h1, doc_width=w1, items=prelim_items_1)
 
@@ -708,7 +706,7 @@ class LocalReceiptOCRProvider:
         if eval_1["total_confidence"] < 0.85:
             logger.info("Pass 1 confidence %.2f < 0.85; triggering Pass 2 enhancement...", eval_1["total_confidence"])
             ocr_res_2, lines_2, h2, w2 = self._run_rapid_ocr(img_bytes, pass_num=2)
-            raw_lines_2 = [l.text if isinstance(l, LayoutLine) else str(l) for l in lines_2]
+            raw_lines_2 = [line_obj.text if isinstance(line_obj, LayoutLine) else str(line_obj) for line_obj in lines_2]
             prelim_items_2 = self._extract_items_from_lines(raw_lines_2)
             eval_2 = self.scorer.evaluate(lines_2, doc_height=h2, doc_width=w2, items=prelim_items_2)
             second_pass_used = True
@@ -747,7 +745,7 @@ class LocalReceiptOCRProvider:
         eval_res: dict[str, Any],
         items: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        raw_text_lines = [l.text if isinstance(l, LayoutLine) else str(l) for l in lines]
+        raw_text_lines = [line_obj.text if isinstance(line_obj, LayoutLine) else str(line_obj) for line_obj in lines]
 
         # Extract Merchant
         merchant = "Cửa hàng"

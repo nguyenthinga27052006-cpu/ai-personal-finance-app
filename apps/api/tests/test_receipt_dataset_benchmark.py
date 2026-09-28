@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-import pytest
 from app.ai.receipt import LocalReceiptOCRProvider, extract_receipt
-
 
 # =====================================================================
 # 15 GROUND-TRUTH TEST BENCHMARK DATASET (Section XX)

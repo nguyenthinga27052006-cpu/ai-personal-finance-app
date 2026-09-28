@@ -1,21 +1,22 @@
-import pytest
 from datetime import date
-from decimal import Decimal
 from uuid import uuid4
 
-from app.db.models import (
-    User,
-    UserStatus,
-    Account,
-    AccountType,
-    Transaction,
-    TransactionType,
-    TransactionStatus,
-    Category,
-    CategoryType,
-)
+import pytest
+
 from app.ai.rag.generator import FinancialRAGGenerator
 from app.ai.retrievers.intent_detector import IntentDetector
+from app.db.models import (
+    Account,
+    AccountType,
+    Category,
+    CategoryType,
+    Transaction,
+    TransactionStatus,
+    TransactionType,
+    User,
+    UserStatus,
+)
+
 
 @pytest.mark.postgres
 def test_all_11_verified_cases(db_session):
@@ -115,7 +116,7 @@ def test_all_11_verified_cases(db_session):
     print(f"Turn 1: 'tháng này tôi còn bao nhiêu tiền?' -> Intent: {resp_6_1.intent}")
     
     resp_6_2 = generator.generate_response(user=user, question="trước tháng 7 là tháng nào?", conversation_id=conv_id_6)
-    print(f"Turn 2: 'trước tháng 7 là tháng nào?'")
+    print("Turn 2: 'trước tháng 7 là tháng nào?'")
     print(f"  -> Intent: {resp_6_2.intent}")
     print(f"  -> Answer: {resp_6_2.answer_markdown}")
     print(f"  -> has_sql_data: {resp_6_2.has_sql_data}")
@@ -130,7 +131,7 @@ def test_all_11_verified_cases(db_session):
     print(f"Turn 1: 'tháng này tôi tiêu bao nhiêu?' -> Intent: {resp_7_1.intent}")
 
     resp_7_2 = generator.generate_response(user=user, question="trước tháng 8 là tháng nào?", conversation_id=conv_id_7)
-    print(f"Turn 2: 'trước tháng 8 là tháng nào?'")
+    print("Turn 2: 'trước tháng 8 là tháng nào?'")
     print(f"  -> Intent: {resp_7_2.intent}")
     print(f"  -> Answer: {resp_7_2.answer_markdown}")
     print(f"  -> has_sql_data: {resp_7_2.has_sql_data}")
