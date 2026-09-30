@@ -112,9 +112,67 @@ class IntentDetector:
 
         return f"Mốc thời gian bạn hỏi là tháng {today.month}/{today.year}."
 
-    @staticmethod
-    def detect(question: str) -> IntentType:
-        lowered = question.lower().strip()
+    @classmethod
+    def normalize_vietnamese_time_text(cls, text: str) -> str:
+        """
+        Normalizes Vietnamese verbal time expressions (e.g. from Speech-to-Text / Voice) into standard numerical expressions:
+        - 'tháng mười hai' -> 'tháng 12'
+        - 'tháng mười một' -> 'tháng 11'
+        - 'tháng mười' -> 'tháng 10'
+        - 'tháng chín' -> 'tháng 9'
+        - 'tháng tám' -> 'tháng 8'
+        - 'tháng bảy' / 'tháng bẩy' -> 'tháng 7'
+        - 'tháng sáu' -> 'tháng 6'
+        - 'tháng năm' -> 'tháng 5'
+        - 'tháng tư' / 'tháng bốn' -> 'tháng 4'
+        - 'tháng ba' -> 'tháng 3'
+        - 'tháng hai' -> 'tháng 2'
+        - 'tháng một' / 'tháng giêng' -> 'tháng 1'
+        - 'năm tháng' -> '5 tháng'
+        - 'ba tháng' -> '3 tháng', etc.
+        """
+        q = text.lower()
+        # Word numbers to digits for months
+        month_mappings = [
+            (r"\btháng\s+(?:mười\s*hai|chạp)\b", "tháng 12"),
+            (r"\btháng\s+mười\s*một\b", "tháng 11"),
+            (r"\btháng\s+mười\b", "tháng 10"),
+            (r"\btháng\s+chín\b", "tháng 9"),
+            (r"\btháng\s+tám\b", "tháng 8"),
+            (r"\btháng\s+(?:bảy|bẩy)\b", "tháng 7"),
+            (r"\btháng\s+sáu\b", "tháng 6"),
+            (r"\btháng\s+năm\b", "tháng 5"),
+            (r"\btháng\s+(?:tư|bốn)\b", "tháng 4"),
+            (r"\btháng\s+ba\b", "tháng 3"),
+            (r"\btháng\s+hai\b", "tháng 2"),
+            (r"\btháng\s+(?:một|giêng)\b", "tháng 1"),
+        ]
+        for pattern, repl in month_mappings:
+            q = re.sub(pattern, repl, q)
+
+        # Count mappings: "năm tháng", "ba tháng", "sáu tháng", etc.
+        count_mappings = [
+            (r"\b(?:mười\s*hai)\s+tháng\b", "12 tháng"),
+            (r"\b(?:mười\s*một)\s+tháng\b", "11 tháng"),
+            (r"\bmười\s+tháng\b", "10 tháng"),
+            (r"\bchín\s+tháng\b", "9 tháng"),
+            (r"\btám\s+tháng\b", "8 tháng"),
+            (r"\b(?:bảy|bẩy)\s+tháng\b", "7 tháng"),
+            (r"\bsáu\s+tháng\b", "6 tháng"),
+            (r"\bnăm\s+tháng\b", "5 tháng"),
+            (r"\b(?:bốn|tư)\s+tháng\b", "4 tháng"),
+            (r"\bba\s+tháng\b", "3 tháng"),
+            (r"\bhai\s+tháng\b", "2 tháng"),
+            (r"\bmột\s+tháng\b", "1 tháng"),
+        ]
+        for pattern, repl in count_mappings:
+            q = re.sub(pattern, repl, q)
+
+        return q
+
+    @classmethod
+    def detect(cls, question: str) -> IntentType:
+        lowered = cls.normalize_vietnamese_time_text(question.lower().strip())
 
         # 1. Greetings
         if lowered in {"hi", "hello", "xin chào", "chào bạn", "chào", "hey", "halo"}:
@@ -277,8 +335,10 @@ class IntentDetector:
                 "max",
                 "min",
                 "kỷ lục",
+                "giống nhau",
+                "khác nhau",
             ]
-        ) or re.search(r"\d+\s*tháng", lowered):
+        ) or re.search(r"tháng\s*\d+\s*(?:và|với|đến|-|tới|\&)\s*(?:tháng\s*)?\d+", lowered) or re.search(r"\d+\s*tháng", lowered):
             return "comparison_query"
 
         # 7. Balance Queries
@@ -374,8 +434,27 @@ class IntentDetector:
         ):
             return "affordability"
 
-        # 12. Debt Advice
-        if any(kw in lowered for kw in ["nợ", "trả nợ", "khoản nợ", "lãi suất"]):
+        # 12. Debt Advice & Status
+        if any(
+            kw in lowered
+            for kw in [
+                "nợ",
+                "trả nợ",
+                "khoản nợ",
+                "lãi suất",
+                "ai nợ",
+                "nợ ai",
+                "nợ của ai",
+                "đang nợ",
+                "sổ nợ",
+                "cho vay",
+                "đi vay",
+                "vay ai",
+                "ai vay",
+                "khoản vay",
+                "đòi nợ",
+            ]
+        ):
             return "debt_advice"
 
         # 13. App FAQ
@@ -384,8 +463,8 @@ class IntentDetector:
 
         return "general_query"
 
-    @staticmethod
-    def parse_date_range(question: str, today: date | None = None) -> tuple[date, date, bool]:
+    @classmethod
+    def parse_date_range(cls, question: str, today: date | None = None) -> tuple[date, date, bool]:
         """
         Extracts start date, end date, and multi_month flag from a natural language user question.
         Returns (start_date, end_date, is_multi_month).
@@ -393,7 +472,7 @@ class IntentDetector:
         if today is None:
             today = date.today()
 
-        q = question.lower().strip()
+        q = cls.normalize_vietnamese_time_text(question.lower().strip())
 
         # 0a. Match clarification pattern: "ý tôi là ... là tháng X" or "ý tôi là tháng X" or "là tháng X"
         clarify = re.search(
@@ -424,6 +503,25 @@ class IntentDetector:
                 next_m = date(y + (m == 12), 1 if m == 12 else m + 1, 1)
                 end = next_m - timedelta(days=1)
                 return start, end, False
+
+        # 0c. Match comparison/range between two months: e.g. "tháng 8 và tháng 9", "tháng 8 đến tháng 10", "tháng 8 với tháng 9"
+        match_two_months = re.search(
+            r"tháng\s*(\d{1,2})(?:\s*[/ năm]*\s*(\d{4}))?\s*(?:và|với|đến|-|tới|\&)\s*(?:tháng\s*)?(\d{1,2})(?:\s*[/ năm]*\s*(\d{4}))?",
+            q,
+        )
+        if match_two_months:
+            m1 = int(match_two_months.group(1))
+            y1 = int(match_two_months.group(2)) if match_two_months.group(2) else today.year
+            m2 = int(match_two_months.group(3))
+            y2 = int(match_two_months.group(4)) if match_two_months.group(4) else today.year
+            if 1 <= m1 <= 12 and 1 <= m2 <= 12:
+                d1_start = date(y1, m1, 1)
+                d1_end = date(y1 + (m1 == 12), 1 if m1 == 12 else m1 + 1, 1) - timedelta(days=1)
+                d2_start = date(y2, m2, 1)
+                d2_end = date(y2 + (m2 == 12), 1 if m2 == 12 else m2 + 1, 1) - timedelta(days=1)
+                start = min(d1_start, d2_start)
+                end = max(d1_end, d2_end)
+                return start, end, True
 
         # 1. Match specific month FIRST: "tháng X" or "tháng X/YYYY" (e.g. tháng 5, tháng 08, tháng 8/2026)
         match_specific_month = re.search(r"tháng\s*(\d{1,2})(?:\s*[/ năm]*\s*(\d{4}))?", q)

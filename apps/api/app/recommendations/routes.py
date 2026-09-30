@@ -9,6 +9,7 @@ from app.auth.dependencies import CurrentUser
 from app.db.models import Recommendation, RecommendationEvent
 from app.db.session import get_db
 from app.recommendations.schemas import (
+    CopilotCardResponse,
     RecommendationEventResponse,
     RecommendationFeedbackRequest,
     RecommendationListResponse,
@@ -19,6 +20,7 @@ from app.recommendations.service import (
     DISMISSED,
     active_recommendations,
     add_feedback,
+    build_copilot_card,
     transition,
 )
 
@@ -31,6 +33,16 @@ def _not_found() -> HTTPException:
         status_code=404,
         detail={"code": "recommendation_not_found", "message": "Recommendation not found"},
     )
+
+
+@router.get("/copilot-card", response_model=CopilotCardResponse)
+def get_copilot_card(
+    current_user: CurrentUser,
+    db: DbSession,
+    as_of_date: date | None = Query(default=None),
+) -> CopilotCardResponse:
+    card = build_copilot_card(db, current_user, today=as_of_date)
+    return CopilotCardResponse(**card)
 
 
 @router.get("", response_model=RecommendationListResponse)

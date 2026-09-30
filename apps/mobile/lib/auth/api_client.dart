@@ -101,6 +101,18 @@ abstract interface class FinanceGateway {
 
   Future<DashboardModel> dashboard();
 
+  Future<CopilotCardModel> copilotCard({DateTime? asOfDate});
+
+  Future<List<DebtModel>> debts({String? status, String? type});
+
+  Future<DebtModel> createDebt(Map<String, dynamic> values);
+
+  Future<DebtPaymentModel> addDebtPayment(String debtId, Map<String, dynamic> values);
+
+  Future<List<FinancialContactModel>> financialContacts();
+
+  Future<FinancialContactModel> createFinancialContact(Map<String, dynamic> values);
+
   Future<Map<String, dynamic>> scanReceipt(String base64Image);
 
   Future<Map<String, dynamic>> confirmReceipt(Map<String, dynamic> data);
@@ -502,6 +514,51 @@ class ApiClient implements AuthGateway, FinanceGateway, AIGateway {
     return DashboardModel.fromJson(
       _decodeSuccess(await request('GET', '/api/v1/dashboard')),
     );
+  }
+
+  @override
+  Future<CopilotCardModel> copilotCard({DateTime? asOfDate}) async {
+    final dateParam = asOfDate != null ? '?as_of_date=${asOfDate.toIso8601String().substring(0, 10)}' : '';
+    final json = _decodeSuccess(await request('GET', '/api/v1/recommendations/copilot-card$dateParam'));
+    return CopilotCardModel.fromJson(json);
+  }
+
+  @override
+  Future<List<DebtModel>> debts({String? status, String? type}) async {
+    final params = <String>[];
+    if (status != null) params.add('status=$status');
+    if (type != null) params.add('type=$type');
+    final query = params.isNotEmpty ? '?${params.join('&')}' : '';
+    final list = _decodeListSuccess(await request('GET', '/api/v1/debts$query'));
+    return list
+        .map((e) => DebtModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<DebtModel> createDebt(Map<String, dynamic> values) async {
+    final json = _decodeSuccess(await request('POST', '/api/v1/debts', body: values));
+    return DebtModel.fromJson(json);
+  }
+
+  @override
+  Future<DebtPaymentModel> addDebtPayment(String debtId, Map<String, dynamic> values) async {
+    final json = _decodeSuccess(await request('POST', '/api/v1/debts/$debtId/payments', body: values));
+    return DebtPaymentModel.fromJson(json);
+  }
+
+  @override
+  Future<List<FinancialContactModel>> financialContacts() async {
+    final list = _decodeListSuccess(await request('GET', '/api/v1/financial-contacts'));
+    return list
+        .map((e) => FinancialContactModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<FinancialContactModel> createFinancialContact(Map<String, dynamic> values) async {
+    final json = _decodeSuccess(await request('POST', '/api/v1/financial-contacts', body: values));
+    return FinancialContactModel.fromJson(json);
   }
 
   @override

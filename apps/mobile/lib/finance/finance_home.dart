@@ -11,6 +11,7 @@ import 'finance_repository.dart';
 import 'finance_view_model.dart';
 import 'models.dart';
 import 'receipt_ocr_dialog.dart';
+import 'debts_and_contacts_dialog.dart';
 
 class FinanceHome extends StatefulWidget {
   const FinanceHome({
@@ -993,6 +994,15 @@ class _HomeView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+        _AICopilotInsightCard(
+          model: model,
+          onSelectTab: (index) {
+            final state = context.findAncestorStateOfType<_FinanceHomeState>();
+            if (state != null) {
+              state._selectTab(index);
+            }
+          },
+        ),
         if (model.dashboard case final dashboard?) ...[
           Card(
             child: Column(
@@ -1023,12 +1033,15 @@ class _HomeView extends StatelessWidget {
             child: EmptyState(label: 'No dashboard data yet'),
           ),
         const SizedBox(height: 16),
-        _QuickFeatureShortcuts(onSelectTab: (index) {
-          final state = context.findAncestorStateOfType<_FinanceHomeState>();
-          if (state != null) {
-            state._selectTab(index);
-          }
-        }),
+        _QuickFeatureShortcuts(
+          onSelectTab: (index) {
+            final state = context.findAncestorStateOfType<_FinanceHomeState>();
+            if (state != null) {
+              state._selectTab(index);
+            }
+          },
+          onOpenDebts: () => DebtsAndContactsDialog.show(context, model: model),
+        ),
         const SizedBox(height: 16),
         _CategoryAnalyticsCard(model: model),
         const SizedBox(height: 16),
@@ -1058,8 +1071,12 @@ class _HomeView extends StatelessWidget {
 }
 
 class _QuickFeatureShortcuts extends StatelessWidget {
-  const _QuickFeatureShortcuts({required this.onSelectTab});
+  const _QuickFeatureShortcuts({
+    required this.onSelectTab,
+    required this.onOpenDebts,
+  });
   final ValueChanged<int> onSelectTab;
+  final VoidCallback onOpenDebts;
 
   @override
   Widget build(BuildContext context) {
@@ -1079,6 +1096,13 @@ class _QuickFeatureShortcuts extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
+              _FeatureShortcutChip(
+                icon: Icons.handshake_outlined,
+                color: Colors.indigo,
+                label: 'Sổ nợ & Danh bạ',
+                onTap: onOpenDebts,
+              ),
+              const SizedBox(width: 8),
               _FeatureShortcutChip(
                 icon: Icons.pie_chart,
                 color: Colors.teal,
@@ -1161,6 +1185,181 @@ class _FeatureShortcutChip extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _AICopilotInsightCard extends StatelessWidget {
+  const _AICopilotInsightCard({
+    required this.model,
+    required this.onSelectTab,
+  });
+
+  final FinanceViewModel model;
+  final ValueChanged<int> onSelectTab;
+
+  @override
+  Widget build(BuildContext context) {
+    final card = model.copilotCard;
+    if (card == null) return const SizedBox.shrink();
+
+    final isRisk = card.status == 'RISK';
+    final isOpportunity = card.status == 'OPPORTUNITY';
+    final isSaving = card.status == 'SAVING';
+
+    final gradientColors = isRisk
+        ? [const Color(0xFFFFF1F2), const Color(0xFFFFE4E6)]
+        : isOpportunity
+            ? [const Color(0xFFEFF6FF), const Color(0xFFE0E7FF)]
+            : isSaving
+                ? [const Color(0xFFF0FDF4), const Color(0xFFDCFCE7)]
+                : [const Color(0xFFF8FAFC), const Color(0xFFF1F5F9)];
+
+    final borderColor = isRisk
+        ? Colors.red.shade300
+        : isOpportunity
+            ? Colors.indigo.shade300
+            : isSaving
+                ? Colors.green.shade300
+                : Colors.blueGrey.shade200;
+
+    final primaryColor = isRisk
+        ? Colors.red.shade700
+        : isOpportunity
+            ? Colors.indigo.shade700
+            : isSaving
+                ? Colors.green.shade700
+                : Colors.blueGrey.shade700;
+
+    final iconData = isRisk
+        ? Icons.warning_amber_rounded
+        : isOpportunity
+            ? Icons.auto_awesome
+            : isSaving
+                ? Icons.savings_outlined
+                : Icons.smart_toy_outlined;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(iconData, color: primaryColor, size: 20),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'TRỢ LÝ COPILOT',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.8,
+                              color: primaryColor,
+                            ),
+                          ),
+                          const Spacer(),
+                          InkWell(
+                            onTap: () => model.reloadCopilotCard(),
+                            borderRadius: BorderRadius.circular(12),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.refresh, size: 16, color: Colors.black45),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        card.headline,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              card.message,
+              style: const TextStyle(
+                fontSize: 13.5,
+                height: 1.45,
+                color: Colors.black87,
+              ),
+            ),
+            if (card.actions.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: card.actions.map((action) {
+                  return FilledButton.tonal(
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      visualDensity: VisualDensity.compact,
+                      backgroundColor: primaryColor.withOpacity(0.15),
+                      foregroundColor: primaryColor,
+                    ),
+                    onPressed: () => _handleCopilotAction(context, action),
+                    child: Text(
+                      action.label,
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleCopilotAction(BuildContext context, CopilotActionModel action) {
+    if (action.targetScreen == '/debts') {
+      DebtsAndContactsDialog.show(context, model: model, initialTab: 0);
+    } else if (action.targetScreen == '/financial-contacts') {
+      DebtsAndContactsDialog.show(context, model: model, initialTab: 1);
+    } else if (action.targetScreen == '/budgets') {
+      onSelectTab(3);
+    } else if (action.targetScreen == '/goals') {
+      onSelectTab(4);
+    } else if (action.targetScreen == '/insights') {
+      onSelectTab(6);
+    }
   }
 }
 

@@ -39,6 +39,12 @@ class FinanceRepository {
     Future<RecommendationModel> giveRecommendationFeedback(String id, String feedback) =>
       gateway.giveRecommendationFeedback(id, feedback);
   Future<DashboardModel> dashboard() => gateway.dashboard();
+  Future<CopilotCardModel> copilotCard({DateTime? asOfDate}) => gateway.copilotCard(asOfDate: asOfDate);
+  Future<List<DebtModel>> debts({String? status, String? type}) => gateway.debts(status: status, type: type);
+  Future<DebtModel> createDebt(Map<String, dynamic> values) => gateway.createDebt(values);
+  Future<DebtPaymentModel> addDebtPayment(String debtId, Map<String, dynamic> values) => gateway.addDebtPayment(debtId, values);
+  Future<List<FinancialContactModel>> financialContacts() => gateway.financialContacts();
+  Future<FinancialContactModel> createFinancialContact(Map<String, dynamic> values) => gateway.createFinancialContact(values);
 
   Future<void> createTransaction(
     Map<String, dynamic> values, {

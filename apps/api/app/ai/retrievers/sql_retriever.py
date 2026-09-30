@@ -13,6 +13,7 @@ from app.db.models import (
     Account,
     Budget,
     Category,
+    Debt,
     FinancialGoal,
     Notification,
     Transaction,
@@ -171,6 +172,7 @@ class SQLUserDataContext:
     budgets: list[dict[str, Any]] = field(default_factory=list)
     goals: list[dict[str, Any]] = field(default_factory=list)
     notifications: list[dict[str, Any]] = field(default_factory=list)
+    debts: list[dict[str, Any]] = field(default_factory=list)
     transaction_count: int = 0
     has_data: bool = False
     monthly_breakdown: list[dict[str, Any]] = field(default_factory=list)
@@ -200,6 +202,7 @@ class SQLUserDataContext:
             budgets=[],
             goals=[],
             notifications=[],
+            debts=[],
             transaction_count=0,
             has_data=False,
             monthly_breakdown=[],
@@ -211,6 +214,39 @@ class SQLUserDataContext:
 
         if intent in ("knowledge", "greeting", "app_faq", "time_reference_query"):
             return "Không yêu cầu dữ liệu tài chính cho câu hỏi này."
+
+        if intent == "debt_advice":
+            parts = [
+                "[SỔ NỢ & CHO VAY (DEBTS)]:",
+            ]
+            borrow_debts = [d for d in self.debts if d.get("type") == "BORROW"]
+            lend_debts = [d for d in self.debts if d.get("type") == "LEND"]
+            if borrow_debts:
+                parts.append("* MỤC 1 - CÁC KHOẢN BẠN NỢ NGƯỜI KHÁC (BẠN LÀ CON NỢ, BẠN PHẢI TRẢ TIỀN):")
+                for d in borrow_debts:
+                    due_info = f", Hạn trả: {d['due_date']}" if d.get("due_date") else ""
+                    notes_info = f", Ghi chú: {d['notes']}" if d.get("notes") else ""
+                    parts.append(
+                        f"  - Bạn nợ đối tác '{d['counterparty_name']}': Số tiền bạn phải trả là {d['remaining_amount']:,.0f} {d['currency']}{due_info}{notes_info}"
+                    )
+            else:
+                parts.append("* MỤC 1: Hiện tại bạn KHÔNG NỢ ai khoản tiền nào.")
+
+            if lend_debts:
+                parts.append("* MỤC 2 - CÁC KHOẢN NGƯỜI KHÁC NỢ BẠN (BẠN CHO VAY, NGƯỜI TA PHẢI TRẢ TIỀN CHO BẠN):")
+                for d in lend_debts:
+                    due_info = f", Hạn thu: {d['due_date']}" if d.get("due_date") else ""
+                    notes_info = f", Ghi chú: {d['notes']}" if d.get("notes") else ""
+                    parts.append(
+                        f"  - Đối tác '{d['counterparty_name']}' đang nợ bạn (bạn cho vay): Số tiền họ phải trả cho bạn là {d['remaining_amount']:,.0f} {d['currency']}{due_info}{notes_info}"
+                    )
+            else:
+                parts.append("* MỤC 2: Hiện không có ai nợ tiền bạn.")
+
+            parts.append(
+                f"\nLƯU Ý: Đây là dữ liệu thực tế từ Sổ Nợ. TUYỆT ĐỐI KHÔNG lấy số dư tài khoản hay số thặng dư thu chi để coi là khoản nợ."
+            )
+            return "\n".join(parts)
 
         if intent == "balance_query":
             parts = [
@@ -230,15 +266,46 @@ class SQLUserDataContext:
             )
 
         if intent in ("expense_query", "spending_analysis", "category_analysis"):
+            if self.transaction_count == 0:
+                return (
+                    f"- Thời gian: Từ {self.period_start} đến {self.period_end}\n"
+                    f"- Tổng chi tiêu: 0 {self.currency} (0 giao dịch)\n"
+                    f"- TRẠNG THÁI: KHÔNG CÓ GIAO DỊCH NÀO PHÁT SINH TRONG KỲ NÀY.\n"
+                    f"- LƯU Ý: Người dùng chưa có bất kỳ giao dịch chi tiêu nào trong khoảng thời gian này. Tuyệt đối không lấy số liệu tháng khác."
+                )
             parts = [
-                f"Chi tiêu tổng kỳ ({self.period_start} đến {self.period_end}): {self.total_expense:,.0f} {self.currency} (gồm {self.transaction_count} giao dịch)",
+                f"- Thời gian: Từ {self.period_start} đến {self.period_end}",
+                f"- Tổng chi tiêu thực tế: {self.total_expense:,.0f} {self.currency} (gồm {self.transaction_count} giao dịch)",
             ]
             if self.top_categories:
-                cat_strings = [
-                    f"{c['category']}: {c['amount']:,.0f} {self.currency} ({c['percentage']:.1f}%)"
-                    for c in self.top_categories[:4]
-                ]
-                parts.append(f"Danh mục chi tiêu hàng đầu: {', '.join(cat_strings)}")
+                parts.append("- Danh mục chi tiêu chi tiết:")
+                for c in self.top_categories:
+                    parts.append(f"  + {c['category']}: {c['amount']:,.0f} {self.currency} ({c['percentage']:.1f}%)")
+            return "\n".join(parts)
+
+        if intent == "comparison_query":
+            parts = [
+                f"So sánh chi tiêu tổng kỳ ({self.period_start} đến {self.period_end}):",
+                f"- Tổng chi tiêu toàn kỳ: {self.total_expense:,.0f} {self.currency} ({self.transaction_count} giao dịch)",
+                f"- Tổng thu nhập toàn kỳ: {self.total_income:,.0f} {self.currency}",
+            ]
+            if self.monthly_breakdown:
+                parts.append("\n- Chi tiết từng tháng:")
+                for m in self.monthly_breakdown:
+                    chg = ""
+                    if m["change_pct"] is not None:
+                        if m["change_pct"] > 0:
+                            chg = f" (Biến động chi tiêu: +{m['change_pct']}% - Tăng)"
+                        elif m["change_pct"] < 0:
+                            chg = f" (Biến động chi tiêu: {m['change_pct']}% - Giảm)"
+                        else:
+                            chg = " (Biến động chi tiêu: 0.0% - Không đổi)"
+                    parts.append(
+                        f"  * {m['month']}: Tổng chi tiêu {m['expense']:,.0f} {self.currency}{chg} | Thu nhập {m['income']:,.0f} {self.currency}"
+                    )
+                    if m.get("top_categories"):
+                        cat_list = [f"{c['category']}: {c['amount']:,.0f} {self.currency}" for c in m["top_categories"][:4]]
+                        parts.append(f"    - Các danh mục chi tiêu: {', '.join(cat_list)}")
             return "\n".join(parts)
 
         parts = [
@@ -285,6 +352,25 @@ class SQLUserDataContext:
                 for g in self.goals
             ]
             parts.append(f"Mục tiêu tiết kiệm: {'; '.join(g_strings)}")
+
+        if self.debts:
+            borrow_debts = [d for d in self.debts if d.get("type") == "BORROW"]
+            lend_debts = [d for d in self.debts if d.get("type") == "LEND"]
+            d_parts = []
+            if borrow_debts:
+                d_parts.append(
+                    f"Đang nợ {len(borrow_debts)} khoản ("
+                    + ", ".join([f"{d['counterparty_name']}: {d['remaining_amount']:,.0f} {d['currency']}" for d in borrow_debts])
+                    + ")"
+                )
+            if lend_debts:
+                d_parts.append(
+                    f"Cho vay {len(lend_debts)} khoản ("
+                    + ", ".join([f"{d['counterparty_name']}: {d['remaining_amount']:,.0f} {d['currency']}" for d in lend_debts])
+                    + ")"
+                )
+            if d_parts:
+                parts.append(f"Sổ nợ & Cho vay: {'; '.join(d_parts)}")
 
         return "\n".join(parts)
 
@@ -370,6 +456,24 @@ class SQLRetriever:
         monthly_stats: dict[str, dict[str, Any]] = {}
         recent_txs: list[dict[str, Any]] = []
 
+        # Pre-populate all months in [start, end] so empty months are tracked explicitly
+        curr_m = date(start.year, start.month, 1)
+        while curr_m <= end:
+            m_key = curr_m.strftime("%Y-%m")
+            monthly_stats[m_key] = {
+                "month_label": f"Tháng {curr_m.strftime('%m/%Y')}",
+                "income": Decimal("0"),
+                "expense": Decimal("0"),
+                "tx_count": 0,
+                "categories": {},
+            }
+            next_m = curr_m.month + 1
+            next_y = curr_m.year
+            if next_m > 12:
+                next_m = 1
+                next_y += 1
+            curr_m = date(next_y, next_m, 1)
+
         for tx, cat in tx_query:
             amt = Decimal(str(tx.amount))
             raw_type = getattr(tx, "type", getattr(tx, "transaction_type", "EXPENSE"))
@@ -434,14 +538,29 @@ class SQLRetriever:
             inc = ms["income"]
             exp = ms["expense"]
             savings = inc - exp
-            top_cat = "Khác"
+            top_cat = "Chưa có" if ms["tx_count"] == 0 else "Khác"
             if ms["categories"]:
                 top_cat = max(ms["categories"].items(), key=lambda x: x[1])[0]
 
             change_pct = None
-            if prev_expense is not None and prev_expense > 0:
-                change_pct = round(float((exp - prev_expense) / prev_expense * 100), 1)
+            if prev_expense is not None:
+                if prev_expense > 0:
+                    change_pct = round(float((exp - prev_expense) / prev_expense * 100), 1)
+                elif exp > 0:
+                    change_pct = 100.0
+                else:
+                    change_pct = 0.0
             prev_expense = exp
+
+            m_cats = sorted(ms["categories"].items(), key=lambda x: x[1], reverse=True)
+            m_top_cats = [
+                {
+                    "category": c,
+                    "amount": a,
+                    "percentage": round(float(a / exp * 100), 1) if exp > 0 else 0.0,
+                }
+                for c, a in m_cats
+            ]
 
             monthly_breakdown.append(
                 {
@@ -451,6 +570,7 @@ class SQLRetriever:
                     "savings": savings,
                     "tx_count": ms["tx_count"],
                     "top_category": top_cat,
+                    "top_categories": m_top_cats,
                     "change_pct": change_pct,
                 }
             )
@@ -517,7 +637,29 @@ class SQLRetriever:
             for n in notifs_query
         ]
 
-        has_data = len(tx_query) > 0 or len(accounts_data) > 0
+        # 6. Debts (Sổ nợ & Cho vay)
+        debts_query = (
+            self.db.query(Debt)
+            .filter(Debt.user_id == user.id)
+            .order_by(Debt.created_at.desc())
+            .all()
+        )
+        debts_data = [
+            {
+                "id": d.id,
+                "type": str(d.type).upper(),
+                "counterparty_name": d.counterparty_name,
+                "total_amount": Decimal(str(d.total_amount)),
+                "remaining_amount": Decimal(str(d.remaining_amount)),
+                "currency": (d.currency or "VND").upper(),
+                "due_date": d.due_date.isoformat() if d.due_date else None,
+                "status": str(d.status).upper(),
+                "notes": d.notes or "",
+            }
+            for d in debts_query
+        ]
+
+        has_data = len(tx_query) > 0 or len(accounts_data) > 0 or len(debts_data) > 0
 
         return SQLUserDataContext(
             user_id=user.id,
@@ -534,6 +676,7 @@ class SQLRetriever:
             budgets=budgets_data,
             goals=goals_data,
             notifications=notifs_data,
+            debts=debts_data,
             transaction_count=len(tx_query),
             has_data=has_data,
             monthly_breakdown=monthly_breakdown,

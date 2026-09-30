@@ -18,6 +18,9 @@ class FinanceViewModel extends ChangeNotifier {
   List<NotificationModel> notifications = const [];
   List<RecommendationModel> recommendations = const [];
   DashboardModel? dashboard;
+  CopilotCardModel? copilotCard;
+  List<DebtModel> debts = const [];
+  List<FinancialContactModel> financialContacts = const [];
   var _disposed = false;
 
   @override
@@ -42,6 +45,9 @@ class FinanceViewModel extends ChangeNotifier {
         repository.notifications(),
         repository.recommendations(),
         repository.dashboard(),
+        repository.copilotCard(),
+        repository.debts(),
+        repository.financialContacts(),
       ]);
       if (_disposed) return;
       accounts = results[0] as List<AccountModel>;
@@ -53,6 +59,9 @@ class FinanceViewModel extends ChangeNotifier {
       notifications = results[6] as List<NotificationModel>;
       recommendations = results[7] as List<RecommendationModel>;
       dashboard = results[8] as DashboardModel;
+      copilotCard = results[9] as CopilotCardModel;
+      debts = results[10] as List<DebtModel>;
+      financialContacts = results[11] as List<FinancialContactModel>;
     } catch (exception) {
       if (_disposed) return;
       error = exception.toString();
@@ -340,5 +349,79 @@ class FinanceViewModel extends ChangeNotifier {
     } catch (exception) {
       return exception.toString();
     }
+  }
+
+  Future<String?> createDebt({
+    required String type,
+    required String counterpartyName,
+    required int totalAmount,
+    String? contactId,
+    String? dueDate,
+    String? notes,
+  }) async {
+    try {
+      await repository.createDebt({
+        'type': type,
+        'counterparty_name': counterpartyName.trim(),
+        'total_amount': totalAmount,
+        'currency': 'VND',
+        if (contactId != null && contactId.isNotEmpty) 'contact_id': contactId,
+        if (dueDate != null && dueDate.isNotEmpty) 'due_date': dueDate,
+        if (notes != null && notes.isNotEmpty) 'notes': notes.trim(),
+      });
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> addDebtPayment({
+    required String debtId,
+    required int amount,
+    String? accountId,
+    String? notes,
+  }) async {
+    try {
+      await repository.addDebtPayment(debtId, {
+        'amount': amount,
+        if (accountId != null && accountId.isNotEmpty) 'account_id': accountId,
+        if (notes != null && notes.isNotEmpty) 'notes': notes.trim(),
+      });
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<String?> createFinancialContact({
+    required String name,
+    String? relationshipType,
+    String? phone,
+    String? notes,
+    bool isSupportContact = true,
+  }) async {
+    try {
+      await repository.createFinancialContact({
+        'name': name.trim(),
+        if (relationshipType != null && relationshipType.isNotEmpty)
+          'relationship_type': relationshipType.trim(),
+        if (phone != null && phone.isNotEmpty) 'phone': phone.trim(),
+        if (notes != null && notes.isNotEmpty) 'notes': notes.trim(),
+        'is_support_contact': isSupportContact,
+      });
+      await loadCore();
+      return null;
+    } catch (exception) {
+      return exception.toString();
+    }
+  }
+
+  Future<void> reloadCopilotCard() async {
+    try {
+      copilotCard = await repository.copilotCard();
+      notifyListeners();
+    } catch (_) {}
   }
 }

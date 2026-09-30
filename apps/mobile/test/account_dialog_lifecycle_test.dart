@@ -118,6 +118,24 @@ class FakeFinanceGateway implements FinanceGateway {
     periodStart: DateTime(2026, 9, 1),
     periodEnd: DateTime(2026, 9, 30),
   );
+  @override
+  Future<CopilotCardModel> copilotCard({DateTime? asOfDate}) async => const CopilotCardModel(
+    status: 'STABLE',
+    headline: 'Ổn định',
+    message: 'Tài chính ổn định',
+    facts: {},
+    actions: [],
+  );
+  @override
+  Future<List<DebtModel>> debts({String? status, String? type}) async => const [];
+  @override
+  Future<DebtModel> createDebt(Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<DebtPaymentModel> addDebtPayment(String debtId, Map<String, dynamic> values) => throw UnimplementedError();
+  @override
+  Future<List<FinancialContactModel>> financialContacts() async => const [];
+  @override
+  Future<FinancialContactModel> createFinancialContact(Map<String, dynamic> values) => throw UnimplementedError();
 }
 
 void main() {

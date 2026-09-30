@@ -16,6 +16,7 @@ from app.budget_goals.routes import router as budget_goals_router
 from app.catalog.routes import router as catalog_router
 from app.core.config import get_settings
 from app.dashboard.routes import router as dashboard_router
+from app.debts import contacts_router, debts_router
 from app.error_tracking import LocalErrorTracker
 from app.health import router as health_router
 from app.insights.routes import router as insights_router
@@ -168,4 +169,6 @@ app.include_router(insights_router)
 app.include_router(dashboard_router)
 app.include_router(notifications_router)
 app.include_router(recommendations_router)
+app.include_router(debts_router)
+app.include_router(contacts_router)
 app.include_router(ai_router)

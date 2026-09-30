@@ -98,6 +98,17 @@ class EntryType(str, Enum):
     DEBIT = "DEBIT"
 
 
+class DebtType(str, Enum):
+    BORROW = "BORROW"
+    LEND = "LEND"
+
+
+class DebtStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    PAID = "PAID"
+    CANCELLED = "CANCELLED"
+
+
 class User(IdMixin, TimestampMixin, Base):
     __tablename__ = "users"
 
@@ -138,6 +149,12 @@ class User(IdMixin, TimestampMixin, Base):
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
     device_sessions: Mapped[list["DeviceSession"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    financial_contacts: Mapped[list["FinancialContact"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    debts: Mapped[list["Debt"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -738,3 +755,82 @@ class SystemSetting(Base, IdMixin, TimestampMixin):
     value: Mapped[str] = mapped_column(String(2000), nullable=False)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     updated_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
+
+
+class FinancialContact(Base, IdMixin, TimestampMixin):
+    __tablename__ = "financial_contacts"
+
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    relationship_type: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    is_support_contact: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="financial_contacts")
+    debts: Mapped[list["Debt"]] = relationship(back_populates="contact")
+
+    __table_args__ = (
+        Index("ix_financial_contacts_user_id", "user_id"),
+    )
+
+
+class Debt(Base, IdMixin, TimestampMixin):
+    __tablename__ = "debts"
+
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    type: Mapped[str] = mapped_column(String(20), nullable=False)  # BORROW / LEND
+    counterparty_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    contact_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("financial_contacts.id", ondelete="SET NULL"), nullable=True
+    )
+    total_amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    remaining_amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="VND")
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    interest_rate: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
+    notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    user: Mapped["User"] = relationship(back_populates="debts")
+    contact: Mapped["FinancialContact | None"] = relationship(back_populates="debts")
+    payments: Mapped[list["DebtPayment"]] = relationship(
+        back_populates="debt", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        CheckConstraint("total_amount > 0", name="ck_debts_total_amount_positive"),
+        CheckConstraint("remaining_amount >= 0", name="ck_debts_remaining_amount_non_negative"),
+        Index("ix_debts_user_id", "user_id"),
+        Index("ix_debts_due_date", "due_date"),
+        Index("ix_debts_user_status", "user_id", "status"),
+    )
+
+
+class DebtPayment(Base, IdMixin, TimestampMixin):
+    __tablename__ = "debt_payments"
+
+    debt_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("debts.id", ondelete="CASCADE"), nullable=False
+    )
+    account_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True
+    )
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    payment_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )
+    notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    debt: Mapped["Debt"] = relationship(back_populates="payments")
+    account: Mapped["Account | None"] = relationship()
+
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="ck_debt_payments_amount_positive"),
+        Index("ix_debt_payments_debt_id", "debt_id"),
+    )

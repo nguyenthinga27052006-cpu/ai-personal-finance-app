@@ -44,3 +44,17 @@ class RecommendationEventResponse(BaseModel):
     status: str
 
     model_config = ConfigDict(extra="forbid")
+
+
+class CopilotAction(BaseModel):
+    action_id: str
+    label: str
+    target_screen: str
+
+
+class CopilotCardResponse(BaseModel):
+    status: str
+    headline: str
+    message: str
+    facts: dict[str, Any]
+    actions: list[CopilotAction]

@@ -185,11 +185,11 @@ class ImagePreprocessor:
 
     @staticmethod
     def preprocess(image_bytes: bytes, pass_num: int = 1) -> tuple[bytes, dict[str, Any]]:
-        import cv2
-        import numpy as np
-
         info: dict[str, Any] = {"pass": pass_num, "modified": False}
         try:
+            import cv2
+            import numpy as np
+
             arr = np.frombuffer(image_bytes, np.uint8)
             img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
             if img is None:
@@ -716,7 +716,76 @@ class LocalReceiptOCRProvider:
                 final_items = prelim_items_2
 
         final_eval["second_pass_used"] = second_pass_used
-        return self._build_output_from_lines_and_eval(final_lines, final_eval, items=final_items)
+        output = self._build_output_from_lines_and_eval(final_lines, final_eval, items=final_items)
+
+        # Enhance with local Ollama LLM if available
+        raw_text_lines = [line_obj.text if isinstance(line_obj, LayoutLine) else str(line_obj) for line_obj in final_lines]
+        ollama_data = self._refine_with_ollama(raw_text_lines)
+        if ollama_data:
+            if ollama_data.get("merchant"):
+                cand_m = str(ollama_data["merchant"]).strip()
+                is_buyer = any(b in cand_m.lower() for b in ["người mua", "buyer", "nguyễn văn a"])
+                if not is_buyer and len(cand_m) > 2:
+                    output["merchant"] = cand_m
+                    output["field_confidence"]["merchant"] = 0.95
+            if ollama_data.get("date") and re.match(r"^\d{4}-\d{2}-\d{2}$", str(ollama_data["date"])):
+                output["date"] = str(ollama_data["date"])
+                output["field_confidence"]["date"] = 0.98
+            if ollama_data.get("total") and isinstance(ollama_data["total"], int) and ollama_data["total"] > 0:
+                output["total"] = ollama_data["total"]
+                output["field_confidence"]["total"] = 0.96
+            if ollama_data.get("items") and isinstance(ollama_data["items"], list) and len(ollama_data["items"]) > 0:
+                output["items"] = ollama_data["items"]
+            output["provider"] = "local_rapidocr_ollama"
+            output["confidence"] = 0.96
+
+        return output
+
+    def _refine_with_ollama(self, raw_lines: list[str]) -> dict[str, Any] | None:
+        """Refines OCR extracted fields using local Ollama (qwen2.5:3b) structured JSON output."""
+        if not raw_lines or len(raw_lines) < 2:
+            return None
+        try:
+            import json
+            import urllib.request
+            from app.core.config import get_settings
+
+            settings = get_settings()
+            ollama_base = settings.ollama_base_url.removesuffix("/v1").rstrip("/")
+            ollama_url = f"{ollama_base}/api/generate"
+            ocr_text = "\n".join(raw_lines[:45])
+            prompt = (
+                "Bạn là trợ lý AI trích xuất hóa đơn tài chính. Dựa vào các dòng chữ OCR từ hóa đơn, hãy trích xuất thành JSON với các trường:\n"
+                "- merchant: Tên công ty/cửa hàng/đơn vị bán hàng hoặc cung cấp dịch vụ (bên bán/phát hành, không lấy tên người mua hàng)\n"
+                "- date: Ngày hóa đơn/giao dịch định dạng YYYY-MM-DD\n"
+                "- total: Tổng số tiền thanh toán cuối cùng (số nguyên VND, ví dụ 399585, đã gồm VAT nếu có)\n"
+                "- items: Danh sách mặt hàng/dịch vụ [{\"name\": str, \"amount\": int}]\n\n"
+                f"Các dòng OCR:\n{ocr_text}\n\n"
+                "Chỉ trả về JSON hợp lệ duy nhất, không giải thích."
+            )
+            req = urllib.request.Request(
+                ollama_url,
+                data=json.dumps({
+                    "model": settings.ai_model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "format": "json",
+                }).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=12) as res:
+                body = json.loads(res.read().decode("utf-8"))
+                response_str = body.get("response", "")
+                data = json.loads(response_str)
+                if isinstance(data, dict):
+                    if "total" in data:
+                        tot = str(data["total"]).replace(".", "").replace(",", "").replace("VND", "").replace("đ", "").strip()
+                        if tot.isdigit() and int(tot) > 0:
+                            data["total"] = int(tot)
+                    return data
+        except Exception as exc:
+            logger.info("Ollama OCR refinement skipped: %s", exc)
+        return None
 
     def _run_rapid_ocr(self, img_bytes: bytes, pass_num: int = 1) -> tuple[list[Any], list[LayoutLine], float, float]:
         processed_bytes, _ = ImagePreprocessor.preprocess(img_bytes, pass_num=pass_num)
@@ -778,7 +847,11 @@ class LocalReceiptOCRProvider:
         parsed_date = date.today().isoformat()
         date_confidence = 0.50
         for line in raw_text_lines:
-            m_vn = re.search(r"ngày\s*(\d{1,2})\s*tháng\s*(\d{1,2})\s*năm\s*(\d{4})", line, re.IGNORECASE)
+            m_vn = re.search(
+                r"ngày(?:\s*\([^)]*\))?\s*(\d{1,2})\s*tháng(?:\s*\([^)]*\))?\s*(\d{1,2})\s*năm(?:\s*\([^)]*\))?\s*(\d{4})",
+                line,
+                re.IGNORECASE,
+            )
             if m_vn:
                 d_str, m_str, y_str = m_vn.group(1).zfill(2), m_vn.group(2).zfill(2), m_vn.group(3)
                 parsed_date = f"{y_str}-{m_str}-{d_str}"

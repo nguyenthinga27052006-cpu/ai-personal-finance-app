@@ -17,7 +17,11 @@ STATUS: PASS WITH DOCUMENTED LIMITATIONS — Journey A critical E2E test timing 
 - PHASE 09: PASS
 - PHASE 10: PASS WITH DOCUMENTED LIMITATIONS
 - PHASE 11: PASS WITH DOCUMENTED LIMITATIONS
-- CURRENT ALEMBIC HEAD: `c93e2b7f4a18 (head)`
+- CURRENT ALEMBIC HEAD: `e41d89b3a012 (head)` (Added debts, debt_payments, financial_contacts)
+- EXTENSION FEATURE: Deterministic AI Financial Copilot & Sổ Nợ / Danh Bạ Hỗ Trợ (COMPLETE)
+  - Backend: Deterministic 2-sided insights (Risks vs Opportunities), Cash Gap formula, Debt Payoff Opportunity, Ollama natural language narrative generator (`qwen2.5:3b`) with deterministic fallback.
+  - Database: `financial_contacts`, `debts`, `debt_payments` with Alembic migration `e41d89b3a012`.
+  - Frontend: Interactive `_AICopilotInsightCard` on Dashboard + "Sổ nợ & Danh bạ" Modal dialog with full CRUD & payments.
 - PHASE 16 BLOCKER RESOLVED: Mobile app numeric casting bug fixed (InsightModel.confidence + DashboardModel.savingRate)
 - OFFICIAL PHASE 16 UNPASSED REGISTER: `docs/testing/PHASE16_UNPASSED_ITEMS.md`
 - PHASE 16 BUG FIX REPORT: `PHASE_16_BUG_FIX_RESOLUTION.md`

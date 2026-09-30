@@ -100,7 +100,7 @@ def _candidate(
         source_value=source_value,
         baseline=baseline,
         evidence=evidence,
-        expires_at=datetime.combine(end + timedelta(days=30), time.min, tzinfo=timezone.utc),
+        expires_at=datetime.combine(end + timedelta(days=45), time.min, tzinfo=timezone.utc),
         created_at=created_at,
     )
 
@@ -418,6 +418,95 @@ def _goal_insights(
     return result
 
 
+def _debt_due_risks(
+    db: Session, user: User, start: date, end: date, currency: str
+) -> list[InsightCandidate]:
+    result: list[InsightCandidate] = []
+    from app.debts.service import list_debts
+
+    active_debts = list_debts(db, user, status_filter="ACTIVE", debt_type="BORROW")
+    in_7_days = end + timedelta(days=7)
+
+    for debt in active_debts:
+        if debt.currency != currency or not debt.due_date:
+            continue
+        if debt.due_date < end:
+            # Overdue
+            result.append(
+                _candidate(
+                    user,
+                    start,
+                    end,
+                    insight_type="DEBT_OVERDUE",
+                    title=f"Nợ quá hạn: {debt.counterparty_name}",
+                    description=f"Khoản nợ {debt.remaining_amount:,} {debt.currency} với {debt.counterparty_name} đã quá hạn.",
+                    severity="HIGH",
+                    confidence="0.99",
+                    rule_id="debt_overdue",
+                    subject_id=debt.id,
+                    source_metric="debt.remaining_amount",
+                    source_value=debt.remaining_amount,
+                    baseline=0,
+                    evidence={"counterparty": debt.counterparty_name, "due_date": debt.due_date.isoformat()},
+                )
+            )
+        elif end <= debt.due_date <= in_7_days:
+            # Due soon
+            days_left = (debt.due_date - end).days
+            result.append(
+                _candidate(
+                    user,
+                    start,
+                    end,
+                    insight_type="DEBT_DUE_SOON",
+                    title=f"Nợ sắp đến hạn: {debt.counterparty_name}",
+                    description=f"Khoản nợ {debt.remaining_amount:,} {debt.currency} đến hạn thanh toán sau {days_left} ngày.",
+                    severity="HIGH" if days_left <= 3 else "MEDIUM",
+                    confidence="0.98",
+                    rule_id="debt_due_soon",
+                    subject_id=debt.id,
+                    source_metric="debt.remaining_amount",
+                    source_value=debt.remaining_amount,
+                    baseline=days_left,
+                    evidence={"counterparty": debt.counterparty_name, "due_date": debt.due_date.isoformat(), "days_left": days_left},
+                )
+            )
+    return result
+
+
+def _debt_payoff_opportunity(
+    db: Session, user: User, start: date, end: date, currency: str, overview: dict[str, Any]
+) -> list[InsightCandidate]:
+    saving = int(overview["summary"]["saving"])
+    rate = _decimal(overview["summary"]["saving_rate"])
+    if saving <= 0 or rate < POSITIVE_SAVING_RATE_THRESHOLD:
+        return []
+    from app.debts.service import list_debts
+
+    active_debts = list_debts(db, user, status_filter="ACTIVE", debt_type="BORROW")
+    if not active_debts:
+        return []
+    total_debt = sum(d.remaining_amount for d in active_debts)
+    return [
+        _candidate(
+            user,
+            start,
+            end,
+            insight_type="DEBT_PAYOFF_OPPORTUNITY",
+            title="Cơ hội trả nợ sớm",
+            description=f"Bạn đang có thặng dư tài chính {saving:,} {currency}. Cân nhắc trích trả bớt nợ để giảm gánh nặng tài chính.",
+            severity="INFO",
+            confidence="0.92",
+            rule_id="debt_payoff_opportunity",
+            subject_id=active_debts[0].id,
+            source_metric="summary.saving",
+            source_value=saving,
+            baseline=total_debt,
+            evidence={"saving": saving, "total_debt": total_debt},
+        )
+    ]
+
+
 def generate_insights(
     db: Session,
     user: User,
@@ -438,6 +527,8 @@ def generate_insights(
         + _weekend_pattern(user, start, end, overview)
         + _budget_risks(db, user, start, end, currency)
         + _goal_insights(db, user, start, end, currency)
+        + _debt_due_risks(db, user, start, end, currency)
+        + _debt_payoff_opportunity(db, user, start, end, currency, overview)
     )
     ranked = sorted(
         candidates,

@@ -327,3 +327,154 @@ class DashboardModel {
     );
   }
 }
+
+class CopilotActionModel {
+  const CopilotActionModel({
+    required this.actionId,
+    required this.label,
+    required this.targetScreen,
+  });
+
+  final String actionId;
+  final String label;
+  final String targetScreen;
+
+  factory CopilotActionModel.fromJson(Map<String, dynamic> json) {
+    return CopilotActionModel(
+      actionId: json['action_id'] as String,
+      label: json['label'] as String,
+      targetScreen: json['target_screen'] as String,
+    );
+  }
+}
+
+class CopilotCardModel {
+  const CopilotCardModel({
+    required this.status,
+    required this.headline,
+    required this.message,
+    required this.facts,
+    required this.actions,
+  });
+
+  final String status;
+  final String headline;
+  final String message;
+  final Map<String, dynamic> facts;
+  final List<CopilotActionModel> actions;
+
+  factory CopilotCardModel.fromJson(Map<String, dynamic> json) {
+    final actionsList = (json['actions'] as List<dynamic>? ?? [])
+        .map((e) => CopilotActionModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return CopilotCardModel(
+      status: json['status'] as String? ?? 'STABLE',
+      headline: json['headline'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+      facts: json['facts'] as Map<String, dynamic>? ?? {},
+      actions: actionsList,
+    );
+  }
+}
+
+class FinancialContactModel {
+  const FinancialContactModel({
+    required this.id,
+    required this.name,
+    this.relationshipType,
+    this.phone,
+    this.notes,
+    required this.isSupportContact,
+    required this.isActive,
+  });
+
+  final String id;
+  final String name;
+  final String? relationshipType;
+  final String? phone;
+  final String? notes;
+  final bool isSupportContact;
+  final bool isActive;
+
+  factory FinancialContactModel.fromJson(Map<String, dynamic> json) {
+    return FinancialContactModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      relationshipType: json['relationship_type'] as String?,
+      phone: json['phone'] as String?,
+      notes: json['notes'] as String?,
+      isSupportContact: json['is_support_contact'] as bool? ?? true,
+      isActive: json['is_active'] as bool? ?? true,
+    );
+  }
+}
+
+class DebtPaymentModel {
+  const DebtPaymentModel({
+    required this.id,
+    required this.amount,
+    required this.paymentDate,
+    this.notes,
+  });
+
+  final String id;
+  final int amount;
+  final DateTime paymentDate;
+  final String? notes;
+
+  factory DebtPaymentModel.fromJson(Map<String, dynamic> json) {
+    return DebtPaymentModel(
+      id: json['id'] as String,
+      amount: json['amount'] as int,
+      paymentDate: DateTime.parse(json['payment_date'] as String),
+      notes: json['notes'] as String?,
+    );
+  }
+}
+
+class DebtModel {
+  const DebtModel({
+    required this.id,
+    required this.type,
+    required this.counterpartyName,
+    this.contactId,
+    required this.totalAmount,
+    required this.remainingAmount,
+    required this.currency,
+    this.dueDate,
+    required this.status,
+    this.notes,
+    required this.payments,
+  });
+
+  final String id;
+  final String type;
+  final String counterpartyName;
+  final String? contactId;
+  final int totalAmount;
+  final int remainingAmount;
+  final String currency;
+  final String? dueDate;
+  final String status;
+  final String? notes;
+  final List<DebtPaymentModel> payments;
+
+  factory DebtModel.fromJson(Map<String, dynamic> json) {
+    final paymentsList = (json['payments'] as List<dynamic>? ?? [])
+        .map((e) => DebtPaymentModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return DebtModel(
+      id: json['id'] as String,
+      type: json['type'] as String,
+      counterpartyName: json['counterparty_name'] as String,
+      contactId: json['contact_id'] as String?,
+      totalAmount: json['total_amount'] as int,
+      remainingAmount: json['remaining_amount'] as int,
+      currency: json['currency'] as String? ?? 'VND',
+      dueDate: json['due_date'] as String?,
+      status: json['status'] as String? ?? 'ACTIVE',
+      notes: json['notes'] as String?,
+      payments: paymentsList,
+    );
+  }
+}

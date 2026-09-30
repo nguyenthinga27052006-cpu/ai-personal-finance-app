@@ -13,6 +13,9 @@ dependencies = [
     "redis>=5.2,<6.0",
     "sqlalchemy>=2.0,<3.0",
     "uvicorn[standard]>=0.34,<1.0",
+    "numpy>=1.26,<3.0",
+    "opencv-python-headless>=4.8,<6.0",
+    "rapidocr-onnxruntime>=1.2,<2.0",
 ]
 
 [project.optional-dependencies]
