@@ -27,3 +27,13 @@ def seed_super_admin(session: Session) -> User:
     session.commit()
     session.refresh(admin)
     return admin
+
+
+if __name__ == "__main__":
+    from app.db.session import SessionLocal
+
+    with SessionLocal() as db:
+        seed_system_categories(db)
+        admin = seed_super_admin(db)
+        print(f"Seed completed successfully! Admin account: {admin.email}")
+

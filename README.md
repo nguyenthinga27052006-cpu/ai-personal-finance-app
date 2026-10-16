@@ -2,6 +2,10 @@
 
 Ứng dụng quản lý tài chính cá nhân thông minh tích hợp **Trợ lý AI RAG (Retrieval-Augmented Generation)**, cho phép theo dõi giao dịch, lập ngân sách, phân tích chi tiêu và trò chuyện bằng ngôn ngữ tự nhiên với AI tư vấn tài chính.
 
+> 🤖 **DÀNH CHO AI AGENTS & LẬP TRÌNH VIÊN:**  
+> Xem tài liệu hướng dẫn cài đặt phần mềm cần thiết, thiết lập môi trường và thứ tự khởi động toàn bộ hệ thống từ A - Z tại: **[AGENT_STARTUP_GUIDE.md](./AGENT_STARTUP_GUIDE.md)** hoặc **[SYSTEM_STARTUP_GUIDE_AZ.md](./SYSTEM_STARTUP_GUIDE_AZ.md)**.
+
+
 ---
 
 ## 🌟 Tính Năng Nổi Bật (Key Features)

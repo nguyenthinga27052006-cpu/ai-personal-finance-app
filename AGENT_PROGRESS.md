@@ -486,3 +486,11 @@ The current database migration, schema, seed/idempotency, integration tests, hea
 - No database migration was required; Alembic current/head remains `c93e2b7f4a18 (head)`.
 - Validation: Phase 13 tests `12 passed`; full backend tests `90 passed`; Ruff, compile, OpenAPI route registration, migration checks, and `git diff --check` passed. Existing 10 deprecation warnings remain non-blocking.
 - Historical Phase 13 checkpoint: Phase 14 had not yet been implemented at the time of this checkpoint. This statement is superseded by the current Phase 14 acceptance.
+
+## Agent Onboarding & System Startup Guide
+
+- Created canonical `AGENT_STARTUP_GUIDE.md` detailing all prerequisites (Docker Desktop, Python 3.12+, Flutter SDK 3.x, Chrome/Android emulator), environment variables (`.env`), and step-by-step startup sequence.
+- Added direct execution entrypoint (`if __name__ == '__main__':`) to `apps/api/app/db/seed.py` for standalone seeding via Docker or local CLI.
+- Linked `AGENT_STARTUP_GUIDE.md` prominently in `README.md` for zero-friction AI Agent and developer onboarding.
+- Verified and pushed all current codebase and onboarding documentation to GitHub remote.
+
